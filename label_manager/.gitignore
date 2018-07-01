@@ -1,0 +1,13 @@
+.cproject
+.project
+.pydevproject
+cmake_install.cmake
+build/
+bin/
+lib/
+msg_gen/
+srv_gen/
+*.pyc
+*~
+*.swp
+src/mesh_msgs/

@@ -1,0 +1,34 @@
+<package>
+  <name>label_manager</name>
+  <description>
+    Serving and persisting label information
+  </description>
+  <version>1.0.0</version>
+  <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
+
+  <license>BSD</license>
+
+  <build_depend>actionlib_msgs</build_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>genmsg</build_depend>
+  <build_depend>mesh_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tf</build_depend>
+
+  <run_depend>actionlib_msgs</run_depend>
+  <run_depend>actionlib</run_depend>
+  <run_depend>genmsg</run_depend>
+  <run_depend>mesh_msgs</run_depend>
+  <run_depend>message_generation</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>tf</run_depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>

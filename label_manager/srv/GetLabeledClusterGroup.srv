@@ -1,0 +1,4 @@
+string uuid
+string labelGroup
+---
+mesh_msgs/Cluster[] clusters

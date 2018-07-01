@@ -1,0 +1,6 @@
+[submodule "include/HighFive"]
+	path = include/HighFive
+	url = https://github.com/BlueBrain/HighFive.git
+[submodule "ext/HighFive"]
+	path = ext/HighFive
+	url = https://github.com/BlueBrain/HighFive.git

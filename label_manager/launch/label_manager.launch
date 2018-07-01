@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="label_manager" type="label_manager" name="label_manager" output="screen">
+        <param name="folder_path" value="/tmp/label_manager/"/>
+    </node>
+
+</launch>

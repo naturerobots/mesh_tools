@@ -1,0 +1,4 @@
+string uuid
+uint32 texture_index
+---
+mesh_msgs/Texture texture
