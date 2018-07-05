@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(mesh_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
-  actionlib
-  actionlib_msgs
   geometry_msgs
   message_generation
   roscpp
@@ -53,14 +51,8 @@ add_service_files(
   GetVertexCosts.srv
 )
 
-add_action_files(
-  FILES
-  CalcCosts.action
-)
-
 generate_messages(
   DEPENDENCIES
-  actionlib_msgs
   geometry_msgs
   sensor_msgs
   std_msgs
@@ -69,7 +61,6 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS
   CATKIN_DEPENDS
-    actionlib_msgs
     geometry_msgs
     message_runtime
     roscpp

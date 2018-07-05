@@ -6,14 +6,12 @@
   <version>1.0.0</version>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
-  <author email="hdeeken@uos.de">Henning Deeken</author>
-  <author email="mmrozins@uos.de">Marcel Mrozinski</author>
   <author email="krschmidt@uos.de">Kristin Schmidt</author>
   <author email="jvogtherr@uos.de">Jan Philipp Vogtherr</author>
   <buildtool_depend>catkin</buildtool_depend>
 
   <license>BSD</license>
-  <url>http://ros.org/wiki/rviz_map_plugin</url>
+  <url>http://ros.org/wiki/mash_tools/rviz_map_plugin</url>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rviz</build_depend>

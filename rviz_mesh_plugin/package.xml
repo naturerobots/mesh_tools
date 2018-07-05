@@ -13,7 +13,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <license>BSD</license>
-  <url>http://ros.org/wiki/rviz_mesh_plugin</url>
+  <url>http://ros.org/wiki/mesh_tools/rviz_mesh_plugin</url>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rviz</build_depend>
