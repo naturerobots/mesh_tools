@@ -59,7 +59,7 @@
 namespace rviz_map_plugin
 {
 
-MeshDisplay::MeshDisplay()
+MeshDisplay::MeshDisplay(): rviz::Display()
 {
 
     // Display type selection dropdown
@@ -71,10 +71,10 @@ MeshDisplay::MeshDisplay()
         SLOT(updateMesh()),
         this
     );
-    m_displayType->addOption("Faces with fixed color", 0);
-    m_displayType->addOption("Faces with vertex color", 1);
-    m_displayType->addOption("Faces with textures", 2);
-    m_displayType->addOption("Faces with vertex costs", 3);
+    m_displayType->addOption("Fixed Color", 0);
+    m_displayType->addOption("Vertex Color", 1);
+    m_displayType->addOption("Textures", 2);
+    m_displayType->addOption("Vertex Costs", 3);
     m_displayType->addOption("Hide Faces", 4);
 
     m_showTexturedFacesOnly = new rviz::BoolProperty(

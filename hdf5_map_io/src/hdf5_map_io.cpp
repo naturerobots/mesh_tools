@@ -5,7 +5,7 @@
 namespace hdf5_map_io
 {
 
-inline HDF5MapIO::HDF5MapIO(string filename)
+HDF5MapIO::HDF5MapIO(std::string filename)
     : m_file(filename, hf::File::ReadWrite)
 {
     if (!m_file.exist(GEOMETRY_GROUP) ||
@@ -14,7 +14,7 @@ inline HDF5MapIO::HDF5MapIO(string filename)
         !m_file.exist(TEXTURES_GROUP) ||
         !m_file.exist(LABELS_GROUP))
     {
-        throw "No valid pluto map h5 file";
+        throw "No valid map h5 file";
     }
 
     m_geometryGroup = m_file.getGroup(GEOMETRY_GROUP);
@@ -24,10 +24,10 @@ inline HDF5MapIO::HDF5MapIO(string filename)
     m_labelsGroup = m_file.getGroup(LABELS_GROUP);
 }
 
-inline HDF5MapIO::HDF5MapIO(
-    string filename,
-    const vector<float>& vertices,
-    const vector<uint32_t>& face_ids
+HDF5MapIO::HDF5MapIO(
+    std::string filename,
+    const std::vector<float>& vertices,
+    const std::vector<uint32_t>& face_ids
 )
     : m_file(filename, hf::File::ReadWrite | hf::File::Create | hf::File::Truncate)
 {
@@ -53,7 +53,7 @@ inline HDF5MapIO::HDF5MapIO(
         .write(face_ids);
 }
 
-inline HDF5MapIO::~HDF5MapIO()
+HDF5MapIO::~HDF5MapIO()
 {
     if (!m_file.isValid())
     {
@@ -71,9 +71,9 @@ inline HDF5MapIO::~HDF5MapIO()
 }
 
 
-inline vector<float> HDF5MapIO::getVertices()
+std::vector<float> HDF5MapIO::getVertices()
 {
-    vector<float> vertices;
+    std::vector<float> vertices;
 
     if (!m_geometryGroup.exist("vertices"))
     {
@@ -86,9 +86,9 @@ inline vector<float> HDF5MapIO::getVertices()
     return vertices;
 }
 
-inline vector<uint32_t> HDF5MapIO::getFaceIds()
+std::vector<uint32_t> HDF5MapIO::getFaceIds()
 {
-    vector<uint32_t> faceIds;
+    std::vector<uint32_t> faceIds;
 
     if (!m_geometryGroup.exist("faces"))
     {
@@ -101,9 +101,9 @@ inline vector<uint32_t> HDF5MapIO::getFaceIds()
     return faceIds;
 }
 
-inline vector<float> HDF5MapIO::getVertexNormals()
+std::vector<float> HDF5MapIO::getVertexNormals()
 {
-    vector<float> normals;
+    std::vector<float> normals;
 
     if (!m_attributesGroup.exist("normals"))
     {
@@ -116,9 +116,9 @@ inline vector<float> HDF5MapIO::getVertexNormals()
     return normals;
 }
 
-inline vector<uint8_t> HDF5MapIO::getVertexColors()
+std::vector<uint8_t> HDF5MapIO::getVertexColors()
 {
-    vector<uint8_t> rgbColors;
+    std::vector<uint8_t> rgbColors;
 
     if (!m_attributesGroup.exist("rgb_colors"))
     {
@@ -131,9 +131,9 @@ inline vector<uint8_t> HDF5MapIO::getVertexColors()
     return rgbColors;
 }
 
-inline vector<MapImage> HDF5MapIO::getTextures()
+std::vector<MapImage> HDF5MapIO::getTextures()
 {
-    vector<MapImage> textures;
+    std::vector<MapImage> textures;
 
     if (!m_texturesGroup.exist("images"))
     {
@@ -149,9 +149,9 @@ inline vector<MapImage> HDF5MapIO::getTextures()
     return textures;
 }
 
-inline unordered_map<MapVertex, vector<float>> HDF5MapIO::getFeatures()
+std::unordered_map<MapVertex, std::vector<float>> HDF5MapIO::getFeatures()
 {
-    unordered_map<MapVertex, vector<float>> features;
+    std::unordered_map<MapVertex, std::vector<float>> features;
 
     if (!m_attributesGroup.exist("texture_features"))
     {
@@ -164,13 +164,13 @@ inline unordered_map<MapVertex, vector<float>> HDF5MapIO::getFeatures()
     for (auto name : featuresGroup.listObjectNames())
     {
         // fill vector with descriptor
-        vector<float> descriptor;
+        std::vector<float> descriptor;
         auto dataset = featuresGroup.getDataSet(name);
         dataset.read(descriptor);
 
         // read vector attribute with xyz coords
         MapVertex v;
-        vector<float> xyz(3);
+        std::vector<float> xyz(3);
         auto vector_attr = dataset.getAttribute("vector");
         vector_attr.read(xyz);
 
@@ -184,9 +184,9 @@ inline unordered_map<MapVertex, vector<float>> HDF5MapIO::getFeatures()
     return features;
 }
 
-inline vector<MapMaterial> HDF5MapIO::getMaterials()
+std::vector<MapMaterial> HDF5MapIO::getMaterials()
 {
-    vector<MapMaterial> materials;
+    std::vector<MapMaterial> materials;
 
     if (!m_texturesGroup.exist("materials"))
     {
@@ -199,9 +199,9 @@ inline vector<MapMaterial> HDF5MapIO::getMaterials()
     return materials;
 }
 
-inline vector<uint32_t> HDF5MapIO::getMaterialFaceIndices()
+std::vector<uint32_t> HDF5MapIO::getMaterialFaceIndices()
 {
-    vector<uint32_t> matFaceIndices;
+    std::vector<uint32_t> matFaceIndices;
 
     if (!m_texturesGroup.exist("mat_face_indices"))
     {
@@ -214,9 +214,9 @@ inline vector<uint32_t> HDF5MapIO::getMaterialFaceIndices()
     return matFaceIndices;
 }
 
-inline vector<float> HDF5MapIO::getVertexTextureCoords()
+std::vector<float> HDF5MapIO::getVertexTextureCoords()
 {
-    vector<float> coords;
+    std::vector<float> coords;
 
     if (!m_texturesGroup.exist("coords"))
     {
@@ -229,24 +229,24 @@ inline vector<float> HDF5MapIO::getVertexTextureCoords()
     return coords;
 }
 
-inline vector<string> HDF5MapIO::getLabelGroups()
+std::vector<std::string> HDF5MapIO::getLabelGroups()
 {
     return m_labelsGroup.listObjectNames();
 }
 
-inline vector<string> HDF5MapIO::getAllLabelsOfGroup(string groupName)
+std::vector<std::string> HDF5MapIO::getAllLabelsOfGroup(std::string groupName)
 {
     if (!m_labelsGroup.exist(groupName))
     {
-        return vector<string>();
+        return std::vector<std::string>();
     }
 
     return m_labelsGroup.getGroup(groupName).listObjectNames();
 }
 
-inline vector<uint32_t> HDF5MapIO::getFaceIdsOfLabel(string groupName, string labelName)
+std::vector<uint32_t> HDF5MapIO::getFaceIdsOfLabel(std::string groupName, std::string labelName)
 {
-    vector<uint32_t> faceIds;
+    std::vector<uint32_t> faceIds;
 
     if (!m_labelsGroup.exist(groupName))
     {
@@ -265,9 +265,9 @@ inline vector<uint32_t> HDF5MapIO::getFaceIdsOfLabel(string groupName, string la
     return faceIds;
 }
 
-inline vector<float> HDF5MapIO::getRoughness()
+std::vector<float> HDF5MapIO::getRoughness()
 {
-    vector<float> roughness;
+    std::vector<float> roughness;
 
     if (!m_attributesGroup.exist("roughness"))
     {
@@ -280,9 +280,9 @@ inline vector<float> HDF5MapIO::getRoughness()
     return roughness;
 }
 
-inline vector<float> HDF5MapIO::getHeightDifference()
+std::vector<float> HDF5MapIO::getHeightDifference()
 {
-    vector<float> diff;
+    std::vector<float> diff;
 
     if (!m_attributesGroup.exist("height_difference"))
     {
@@ -295,7 +295,7 @@ inline vector<float> HDF5MapIO::getHeightDifference()
     return diff;
 }
 
-inline MapImage HDF5MapIO::getImage(hf::Group group, string name)
+MapImage HDF5MapIO::getImage(hf::Group group, std::string name)
 {
     MapImage t;
 
@@ -313,7 +313,7 @@ inline MapImage HDF5MapIO::getImage(hf::Group group, string name)
     H5IMget_image_info(group.getId(), name.c_str(), &width, &height, &pixel_size, interlace, &npals);
 
     auto bufSize = width * height * pixel_size;
-    vector<unsigned char> buf;
+    std::vector<unsigned char> buf;
     buf.resize(bufSize);
     H5IMread_image(group.getId(), name.c_str(), buf.data());
 
@@ -326,7 +326,7 @@ inline MapImage HDF5MapIO::getImage(hf::Group group, string name)
     return t;
 }
 
-inline hf::DataSet HDF5MapIO::addVertexNormals(vector<float>& normals)
+hf::DataSet HDF5MapIO::addVertexNormals(std::vector<float>& normals)
 {
     // TODO make more versatile to add and/or overwrite normals in file
     auto dataSet = m_attributesGroup.createDataSet<float>("normals", hf::DataSpace::From(normals));
@@ -335,7 +335,7 @@ inline hf::DataSet HDF5MapIO::addVertexNormals(vector<float>& normals)
     return dataSet;
 }
 
-inline hf::DataSet HDF5MapIO::addVertexColors(vector<uint8_t>& colors)
+hf::DataSet HDF5MapIO::addVertexColors(std::vector<uint8_t>& colors)
 {
     auto dataSet = m_attributesGroup.createDataSet<uint8_t>("rgb_colors", hf::DataSpace::From(colors));
     dataSet.write(colors);
@@ -343,7 +343,7 @@ inline hf::DataSet HDF5MapIO::addVertexColors(vector<uint8_t>& colors)
     return dataSet;
 }
 
-inline void HDF5MapIO::addTexture(int index, uint32_t width, uint32_t height, uint8_t *data)
+void HDF5MapIO::addTexture(int index, uint32_t width, uint32_t height, uint8_t *data)
 {
     if (!m_texturesGroup.exist("images"))
     {
@@ -351,7 +351,7 @@ inline void HDF5MapIO::addTexture(int index, uint32_t width, uint32_t height, ui
     }
 
     auto imagesGroup = m_texturesGroup.getGroup("images");
-    const string& name = std::to_string(index);
+    const std::string& name = std::to_string(index);
 
     if (imagesGroup.exist(name))
     {
@@ -361,7 +361,7 @@ inline void HDF5MapIO::addTexture(int index, uint32_t width, uint32_t height, ui
     addImage(imagesGroup, name, width, height, data);
 }
 
-inline void HDF5MapIO::addMaterials(vector<MapMaterial>& materials, vector<uint32_t>& matFaceIndices)
+void HDF5MapIO::addMaterials(std::vector<MapMaterial>& materials, std::vector<uint32_t>& matFaceIndices)
 {
     m_texturesGroup
         .createDataSet<MapMaterial>("materials", hf::DataSpace::From(materials))
@@ -372,14 +372,14 @@ inline void HDF5MapIO::addMaterials(vector<MapMaterial>& materials, vector<uint3
         .write(matFaceIndices);
 }
 
-inline void HDF5MapIO::addVertexTextureCoords(vector<float>& coords)
+void HDF5MapIO::addVertexTextureCoords(std::vector<float>& coords)
 {
     m_texturesGroup
         .createDataSet<float>("coords", hf::DataSpace::From(coords))
         .write(coords);
 }
 
-inline void HDF5MapIO::addLabel(string groupName, string labelName, vector<uint32_t>& faceIds)
+void HDF5MapIO::addLabel(std::string groupName, std::string labelName, std::vector<uint32_t>& faceIds)
 {
     if (!m_labelsGroup.exist(groupName))
     {
@@ -391,7 +391,7 @@ inline void HDF5MapIO::addLabel(string groupName, string labelName, vector<uint3
         .write(faceIds);
 }
 
-void HDF5MapIO::addTextureKeypointsMap(unordered_map<MapVertex, std::vector<float>>& keypoints_map)
+void HDF5MapIO::addTextureKeypointsMap(std::unordered_map<MapVertex, std::vector<float>>& keypoints_map)
 {
     if (!m_attributesGroup.exist("texture_features"))
     {
@@ -406,7 +406,7 @@ void HDF5MapIO::addTextureKeypointsMap(unordered_map<MapVertex, std::vector<floa
         auto dataset = tf.createDataSet<float>(std::to_string(i), hf::DataSpace::From(keypoint_features.second));
         dataset.write(keypoint_features.second);
 
-        vector<float> v = {keypoint_features.first.x, keypoint_features.first.y, keypoint_features.first.z};
+        std::vector<float> v = {keypoint_features.first.x, keypoint_features.first.y, keypoint_features.first.z};
         dataset.template createAttribute<float>("vector", hf::DataSpace::From(v))
             .write(v);
 
@@ -414,37 +414,37 @@ void HDF5MapIO::addTextureKeypointsMap(unordered_map<MapVertex, std::vector<floa
     }
 }
 
-inline void HDF5MapIO::addRoughness(vector<float>& roughness)
+void HDF5MapIO::addRoughness(std::vector<float>& roughness)
 {
     m_attributesGroup.createDataSet<float>("roughness", hf::DataSpace::From(roughness))
         .write(roughness);
 }
 
-inline void HDF5MapIO::addHeightDifference(vector<float>& diff)
+void HDF5MapIO::addHeightDifference(std::vector<float>& diff)
 {
     m_attributesGroup.createDataSet<float>("height_difference", hf::DataSpace::From(diff))
         .write(diff);
 }
 
-inline void HDF5MapIO::addImage(hf::Group group, string name, const uint32_t width, const uint32_t height,
+void HDF5MapIO::addImage(hf::Group group, std::string name, const uint32_t width, const uint32_t height,
                                  const uint8_t *pixelBuffer)
 {
     H5IMmake_image_24bit(group.getId(), name.c_str(), width, height, "INTERLACE_PIXEL", pixelBuffer);
 }
 
-inline bool HDF5MapIO::removeAllLabels()
+bool HDF5MapIO::removeAllLabels()
 {
     bool result = true;
-    for (string name : m_labelsGroup.listObjectNames())
+    for (std::string name : m_labelsGroup.listObjectNames())
     {
-        string fullPath = string(LABELS_GROUP) + "/" + name;
+        std::string fullPath = std::string(LABELS_GROUP) + "/" + name;
         result = H5Ldelete(m_file.getId(), fullPath.data(), H5P_DEFAULT) > 0;
     }
 
     return result;
 }
 
-inline void HDF5MapIO::flush()
+void HDF5MapIO::flush()
 {
     m_file.flush();
 }

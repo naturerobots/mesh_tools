@@ -17,8 +17,6 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
-
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 find_package(OpenCL 2 REQUIRED)
@@ -34,9 +32,11 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${HDF5_INCLUDE_DIRS}
   ${OpenCL_INCLUDE_DIRS}
+  ${MPI_INCLUDE_PATH}
+  /usr/include
 )
 
-#link_directories(${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+link_directories(${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
@@ -58,14 +58,25 @@ add_definitions(-DQT_NO_KEYWORDS)
 set(SOURCE_FILES
   src/ClusterLabelDisplay.cpp
   src/ClusterLabelPanel.cpp
+  src/ClusterLabelTool.cpp
   src/ClusterLabelVisual.cpp
   src/MapDisplay.cpp
   src/MeshDisplay.cpp
   src/TexturedMeshVisual.cpp
-  src/ClusterLabelTool.cpp
 )
 
-add_library(${PROJECT_NAME} ${SOURCE_FILES})
+set(HEADER_FILES
+  include/ClusterLabelDisplay.hpp
+  include/ClusterLabelPanel.hpp
+  include/ClusterLabelVisual.hpp
+  include/MapDisplay.hpp
+  include/MeshDisplay.hpp
+  include/TexturedMeshVisual.hpp
+  include/ClusterLabelTool.hpp
+  include/CLUtil.hpp
+)
+
+add_library(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}
   ${QT_LIBRARIES}

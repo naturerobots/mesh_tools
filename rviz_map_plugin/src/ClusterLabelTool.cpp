@@ -148,9 +148,11 @@ void ClusterLabelTool::onInitialize()
                 ROS_DEBUG("Found device: %s", device.getInfo<CL_DEVICE_NAME>().c_str());
                 ROS_DEBUG("Device work units: %d", device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>());
                 ROS_DEBUG("Device work group size: %lu", device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>());
-		auto device_info_version = device.getInfo<CL_DEVICE_VERSION>();
+
+                std::string device_info = device.getInfo<CL_DEVICE_VERSION>();
                 // getVersion extracts the version number with major in the upper 16 bits and minor in the lower 16 bits
-                auto version = cl::detail::getVersion(std::vector<char>(device_info_version.begin(), device_info_version.end()));
+                auto version = cl::detail::getVersion(std::vector<char>(device_info.begin(), device_info.end()));
+
                 // shift 16 to the right to get the number in the upper 16 bits
                 cl_uint majorVersion = version >> 16;
                 // use bitwise AND to extract the number in the lower 16 bits

@@ -11,10 +11,6 @@
 
 namespace hf = HighFive;
 
-using std::string;
-using std::vector;
-using std::unordered_map;
-
 namespace hdf5_map_io
 {
 
@@ -32,11 +28,11 @@ struct MapVertex {
  * Helper struct to save textures / images to the map.
  */
 struct MapImage {
-    string name;
+    std::string name;
     uint32_t width;
     uint32_t height;
     uint32_t channels;
-    vector<uint8_t> data;
+    std::vector<uint8_t> data;
 };
 
 /**
@@ -66,15 +62,15 @@ public:
     /**
      * @brief Opens a map file for reading and writing.
      */
-    HDF5MapIO(string filename);
+    HDF5MapIO(std::string filename);
 
     /**
      * @brief Creates a map file (or truncates if the file already exists).
      */
     HDF5MapIO(
-        string filename,
-        const vector<float>& vertices,
-        const vector<uint32_t>& face_ids
+        std::string filename,
+        const std::vector<float>& vertices,
+        const std::vector<uint32_t>& face_ids
     );
 
     /**
@@ -85,89 +81,89 @@ public:
     /**
      * @brief Returns vertices vector
      */
-    vector<float> getVertices();
+    std::vector<float> getVertices();
 
     /**
      * @brief Returns face ids vector
      */
-    vector<uint32_t> getFaceIds();
+    std::vector<uint32_t> getFaceIds();
 
     /**
      * @brief Returns vertex normals vector
      */
-    vector<float> getVertexNormals();
+    std::vector<float> getVertexNormals();
 
     /**
      * @brief Returns vertex colors vector
      */
-    vector<uint8_t> getVertexColors();
+    std::vector<uint8_t> getVertexColors();
 
     /**
      * @brief Returns textures vector
      */
-    vector<MapImage> getTextures();
+    std::vector<MapImage> getTextures();
 
     /**
      * @brief Returns an map which keys are representing the features point in space and the values
      * are an vector of floats representing the keypoints.
      */
-    unordered_map<MapVertex, vector<float>> getFeatures();
+    std::unordered_map<MapVertex, std::vector<float>> getFeatures();
 
     /**
      * @brief Returns materials as MapMaterial
      */
-    vector<MapMaterial> getMaterials();
+    std::vector<MapMaterial> getMaterials();
 
     /**
      * @brief Returns material <-> face indices
      */
-    vector<uint32_t> getMaterialFaceIndices();
+    std::vector<uint32_t> getMaterialFaceIndices();
 
     /**
      * @brief Returns vertex texture coordinates
      */
-    vector<float> getVertexTextureCoords();
+    std::vector<float> getVertexTextureCoords();
 
     /**
      * @brief Returns all available label groups
      */
-    vector<string> getLabelGroups();
+    std::vector<std::string> getLabelGroups();
 
     /**
      * @brief  Returns all labels inside the given group
      */
-    vector<string> getAllLabelsOfGroup(string groupName);
+    std::vector<std::string> getAllLabelsOfGroup(std::string groupName);
 
     /**
      * @brief Returns face ids for the given label inside the group.
      * E.g: label=tree_1 -> groupName=tree; labelName=1
      */
-    vector<uint32_t> getFaceIdsOfLabel(string groupName, string labelName);
+    std::vector<uint32_t> getFaceIdsOfLabel(std::string groupName, std::string labelName);
 
     /**
      * @brief Returns the roughness as float vector.
      */
-    vector<float> getRoughness();
+    std::vector<float> getRoughness();
 
     /**
      * @brief Returns the height difference as float vector.
      */
-    vector<float> getHeightDifference();
+    std::vector<float> getHeightDifference();
 
     /**
      * @brief Returns the image in the group, if it exists. If not an empty struct is returned
      */
-    MapImage getImage(hf::Group group, string name);
+    MapImage getImage(hf::Group group, std::string name);
 
     /**
      * @brief Add normals to the attributes group.
      */
-    hf::DataSet addVertexNormals(vector<float>& normals);
+    hf::DataSet addVertexNormals(std::vector<float>& normals);
 
     /**
      * @brief Add vertex colors to the attributes group.
      */
-    hf::DataSet addVertexColors(vector<uint8_t>& colors);
+    hf::DataSet addVertexColors(std::vector<uint8_t>& colors);
 
     /**
      * Add texture img with given index to the textures group. Texture CAN NOT be overridden
@@ -177,40 +173,40 @@ public:
     /**
      * @brief Add materials as MapMaterial and the corresponding material <-> face indices
      */
-    void addMaterials(vector<MapMaterial>& materials, vector<uint32_t>& matFaceIndices);
+    void addMaterials(std::vector<MapMaterial>& materials, std::vector<uint32_t>& matFaceIndices);
 
     /**
      * @brief Add vertex texture coordinates to the textures group.
      */
-    void addVertexTextureCoords(vector<float>& coords);
+    void addVertexTextureCoords(std::vector<float>& coords);
 
     /**
      * @brief Adds the label (labelName) to the label group with the given faces.
      * E.g.: tree_1 -> groupName=tree; labelName=1; separated by the '_'
      */
-    void addLabel(string groupName, string labelName, vector<uint32_t>& faceIds);
+    void addLabel(std::string groupName, std::string labelName, std::vector<uint32_t>& faceIds);
 
     /**
      * @brief Adds the keypoints with their corresponding positions to the attributes_group. The position
      * is saved to the entry via an attribute called 'vector'.
      */
-    void addTextureKeypointsMap(unordered_map<MapVertex, std::vector<float>>& keypoints_map);
+    void addTextureKeypointsMap(std::unordered_map<MapVertex, std::vector<float>>& keypoints_map);
 
     /**
      * @brief Adds the roughness to the attributes group.
      */
-    void addRoughness(vector<float>& roughness);
+    void addRoughness(std::vector<float>& roughness);
 
     /**
      * @brief Adds the height difference to the attributes group.
      */
-    void addHeightDifference(vector<float>& diff);
+    void addHeightDifference(std::vector<float>& diff);
 
     /**
      * @brief Adds an image with given data set name to the given group
      */
     void addImage(hf::Group group,
-                  string name,
+                  std::string name,
                   const uint32_t width,
                   const uint32_t height,
                   const uint8_t* pixelBuffer
