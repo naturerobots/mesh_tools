@@ -3,10 +3,15 @@
   <description>
     Serving and persisting label information
   </description>
-  <version>1.0.0</version>
+  <version>0.0.0</version>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
 
-  <license>BSD</license>
+  <url type="website">http://wiki.ros.org/ros_mesh_tools/label_manager</url>
+
+  <author email="spuetz@uos.de">Sebastian Pütz</author>
+  <author email="jvogtherr@uos.de">Jan Philipp Vogtherr</author>
+
+  <license>3-Clause BSD</license>
 
   <build_depend>actionlib_msgs</build_depend>
   <build_depend>actionlib</build_depend>
