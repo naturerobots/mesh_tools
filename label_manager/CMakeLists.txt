@@ -26,6 +26,7 @@ generate_messages(DEPENDENCIES
 )
 
 catkin_package(
+  INCLUDE_DIRS include
   CATKIN_DEPENDS
   actionlib actionlib_msgs genmsg mesh_msgs message_generation message_runtime roscpp sensor_msgs std_msgs tf
 )
