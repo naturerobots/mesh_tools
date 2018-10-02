@@ -5,6 +5,7 @@ project(mesh_msgs_hdf5)
 set(PACKAGE_DEPENDENCIES
   mesh_msgs
   hdf5_map_io
+  label_manager
 )
 
 find_package(catkin REQUIRED COMPONENTS ${PACKAGE_DEPENDENCIES})
