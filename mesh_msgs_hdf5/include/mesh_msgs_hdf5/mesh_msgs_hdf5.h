@@ -6,7 +6,7 @@
 
 #include <hdf5_map_io/hdf5_map_io.h>
 
-#include <mesh_msgs/ClusterLabel.h>
+#include <mesh_msgs/MeshFaceClusterStamped.h>
 #include <mesh_msgs/GetGeometry.h>
 #include <mesh_msgs/GetMaterials.h>
 #include <mesh_msgs/GetTexture.h>
@@ -82,7 +82,7 @@ class hdf5_to_msg
       mesh_msgs::GetVertexCosts::Request &req,
       mesh_msgs::GetVertexCosts::Response &res);
 
-  void callback_clusterLabel(const mesh_msgs::ClusterLabel::ConstPtr &msg);
+  void callback_clusterLabel(const mesh_msgs::MeshFaceClusterStamped::ConstPtr &msg);
 
  private:
 

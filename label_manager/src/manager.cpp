@@ -4,7 +4,7 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include "mesh_msgs/Cluster.h"
+#include "mesh_msgs/MeshFaceCluster.h"
 
 using namespace boost::filesystem;
 
@@ -25,7 +25,7 @@ namespace label_manager
         }
 
         clusterLabelSub = nh.subscribe("cluster_label", 10, &LabelManager::clusterLabelCallback, this);
-        newClusterLabelPub = nh.advertise<mesh_msgs::Cluster>("new_cluster_label", 1);
+        newClusterLabelPub = nh.advertise<mesh_msgs::MeshFaceCluster>("new_cluster_label", 1);
         srv_get_labeled_clusters = nh.advertiseService(
             "get_labeled_clusters",
             &LabelManager::service_getLabeledClusters,
@@ -52,7 +52,7 @@ namespace label_manager
         ros::spin();
     }
 
-    void LabelManager::clusterLabelCallback(const mesh_msgs::ClusterLabel::ConstPtr& msg)
+    void LabelManager::clusterLabelCallback(const mesh_msgs::MeshFaceClusterStamped::ConstPtr& msg)
     {
         ROS_INFO_STREAM("Got msg for mesh: " << msg->uuid << " with label: " << msg->cluster.label);
 
@@ -127,7 +127,7 @@ namespace label_manager
                 // remove extension from label
                 boost::replace_all(label, itr->path().filename().extension().string(), "");
 
-                mesh_msgs::Cluster c;
+                mesh_msgs::MeshFaceCluster c;
                 c.face_indices = readIndicesFromFile(itr->path().string());
                 c.label = label;
 
@@ -220,7 +220,7 @@ namespace label_manager
                 // remove extension from label
                 boost::replace_all(label, itr->path().filename().extension().string(), "");
 
-                mesh_msgs::Cluster c;
+                mesh_msgs::MeshFaceCluster c;
                 c.face_indices = readIndicesFromFile(itr->path().string());
                 c.label = label;
 

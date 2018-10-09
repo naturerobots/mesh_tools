@@ -65,7 +65,7 @@ MeshDisplay::MeshDisplay(): rviz::Display()
     // Display type selection dropdown
     m_displayType = new rviz::EnumProperty(
         "Display Type",
-        "Faces with fixed color",
+        "Fixed Color",
         "Select Display Type for Mesh",
         this,
         SLOT(updateMesh()),

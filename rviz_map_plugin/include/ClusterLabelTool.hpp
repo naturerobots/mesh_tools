@@ -82,7 +82,7 @@
 #include <rviz/tool_manager.h>
 #include <rviz/display_group.h>
 
-#include <mesh_msgs/ClusterLabel.h>
+#include <mesh_msgs/MeshFaceClusterStamped.h>
 
 #ifndef Q_MOC_RUN
 #include <rviz/mesh_loader.h>

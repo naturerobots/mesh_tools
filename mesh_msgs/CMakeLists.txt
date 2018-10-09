@@ -11,12 +11,12 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  Cluster.msg
-  ClusterLabel.msg
+  MeshFaceCluster.msg
+  MeshFaceClusterStamped.msg
   Feature.msg
-  Material.msg
-  MeshCostMap.msg
-  MeshCostMapStamped.msg
+  MeshMaterial.msg
+  #MeshCostMap.msg
+  #MeshCostMapStamped.msg
   MeshFeatures.msg
   MeshGeometry.msg
   MeshGeometryStamped.msg
@@ -26,16 +26,16 @@ add_message_files(
   MeshVertexColorsStamped.msg
   MeshVertexCosts.msg
   MeshVertexCostsStamped.msg
-  PolygonIndices.msg
-  PolygonMesh.msg
-  PolygonMeshStamped.msg
-  Texture.msg
+  #PolygonIndices.msg
+  #PolygonMesh.msg
+  #PolygonMeshStamped.msg
+  MeshTexture.msg
   TriangleIndices.msg
   TriangleMesh.msg
   TriangleMeshStamped.msg
   Vectorfield.msg
   VectorfieldStamped.msg
-  VertexTexCoords.msg
+  MeshVertexTexCoords.msg
 )
 
 add_service_files(

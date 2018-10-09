@@ -675,10 +675,10 @@ void TexturedMeshVisual::enteringTexturedTriangleMesh(
   for (size_t clusterIndex = 0; clusterIndex < clusterCounter; clusterIndex++)
   {
 
-    mesh_msgs::Cluster cluster = meshMaterials.clusters[clusterIndex];
+    mesh_msgs::MeshFaceCluster cluster = meshMaterials.clusters[clusterIndex];
 
     uint32_t materialIndex = meshMaterials.cluster_materials[clusterIndex];
-    mesh_msgs::Material material = meshMaterials.materials[materialIndex];
+    mesh_msgs::MeshMaterial material = meshMaterials.materials[materialIndex];
     bool hasTexture = material.has_texture;
 
 
@@ -1087,7 +1087,7 @@ bool TexturedMeshVisual::setMaterials(const mesh_msgs::MeshMaterialsStamped::Con
   return true;
 }
 
-bool TexturedMeshVisual::addTexture(const mesh_msgs::Texture::ConstPtr& textureMsg)
+bool TexturedMeshVisual::addTexture(const mesh_msgs::MeshTexture::ConstPtr& textureMsg)
 {
   if(m_meshUuid != textureMsg->uuid || m_materialsUuid != textureMsg->uuid)
   {

@@ -1,4 +1,4 @@
 string uuid
 string labelGroup
 ---
-mesh_msgs/Cluster[] clusters
+mesh_msgs/MeshFaceCluster[] clusters

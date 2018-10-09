@@ -53,7 +53,6 @@
 #include "textured_mesh_display.h"
 
 #include <mesh_msgs/GetVertexColors.h>
-#include <mesh_msgs/GetVertexCosts.h>
 #include <mesh_msgs/GetMaterials.h>
 #include <mesh_msgs/GetGeometry.h>
 #include <mesh_msgs/GetTexture.h>
@@ -122,10 +121,10 @@ TexturedMeshDisplay::TexturedMeshDisplay()
         SLOT(updateMesh()),
         this
     );
-    m_displayType->addOption("Faces with fixed color", 0);
-    m_displayType->addOption("Faces with vertex color", 1);
-    m_displayType->addOption("Faces with textures", 2);
-    m_displayType->addOption("Faces with vertex costs", 3);
+    m_displayType->addOption("Fixed Color", 0);
+    m_displayType->addOption("Vertex Color", 1);
+    m_displayType->addOption("Textures", 2);
+    m_displayType->addOption("Vertex Costs", 3);
     m_displayType->addOption("Hide Faces", 4);
 
     m_costColorType = new rviz::EnumProperty(
@@ -217,16 +216,6 @@ TexturedMeshDisplay::TexturedMeshDisplay()
         "Name of the Texture Service to request Textures from.",
         m_displayType,
         SLOT(updateMaterialAndTextureServices()),
-        this
-    );
-
-    // Vertex Cost service name property
-    m_vertexCostServiceName = new rviz::StringProperty(
-        "Vertex Costs Service Name",
-        "get_vertex_costs",
-        "Name of the Vertex Cost Service to request Vertex Costs from.",
-        m_displayType,
-        SLOT(updateVertexCostService()),
         this
     );
 
@@ -350,7 +339,7 @@ void TexturedMeshDisplay::onInitialize()
     m_tfMeshFilter = new tf::MessageFilter<mesh_msgs::MeshGeometryStamped>(
         *rviz::Display::context_->getTFClient(),
         rviz::Display::fixed_frame_.toStdString(),
-        1,
+        2,
         rviz::Display::update_nh_
     );
     m_tfMeshFilter->connectInput(m_meshSubscriber);
@@ -359,7 +348,7 @@ void TexturedMeshDisplay::onInitialize()
     m_tfVertexColorsFilter = new tf::MessageFilter<mesh_msgs::MeshVertexColorsStamped>(
         *rviz::Display::context_->getTFClient(),
         rviz::Display::fixed_frame_.toStdString(),
-        1,
+        10,
         rviz::Display::update_nh_
     );
     m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
@@ -368,7 +357,7 @@ void TexturedMeshDisplay::onInitialize()
     m_tfVertexCostsFilter = new tf::MessageFilter<mesh_msgs::MeshVertexCostsStamped>(
         *rviz::Display::context_->getTFClient(),
         rviz::Display::fixed_frame_.toStdString(),
-        1,
+        10,
         rviz::Display::update_nh_
     );
     m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
@@ -442,9 +431,9 @@ void TexturedMeshDisplay::subscribe()
     }
 
     try {
-        m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 1);
-        m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
-        m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 1);
+        m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 2);
+        m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 10);
+        m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 10);
         setStatus(rviz::StatusProperty::Ok, "Topic", "OK");
     }
     catch(ros::Exception& e)
@@ -562,6 +551,7 @@ void TexturedMeshDisplay::incomingVertexCosts(const mesh_msgs::MeshVertexCostsSt
     }
 
     cacheVertexCosts(costsStamped);
+    //updateVertexCosts();
 }
 
 void TexturedMeshDisplay::cacheVertexCosts(
@@ -646,7 +636,6 @@ void TexturedMeshDisplay::updateMesh()
     m_vertexColorServiceName->hide();
     m_materialServiceName->hide();
     m_textureServiceName->hide();
-    m_vertexCostServiceName->hide();
     m_vertexColorsTopic->hide();
     m_selectVertexCostMap->hide();
     m_vertexCostsTopic->hide();
@@ -680,12 +669,11 @@ void TexturedMeshDisplay::updateMesh()
         case 3: // Faces with vertex costs
             showFaces = true;
             showVertexCosts = true;
-            m_vertexCostServiceName->show();
             m_selectVertexCostMap->show();
             m_vertexCostsTopic->show();
             m_costColorType->show();
             m_costUseCustomLimits->show();
-            updateVertexCostService();
+            //updateVertexCosts();
             break;
         case 4: // No Faces
             break;
@@ -718,8 +706,6 @@ void TexturedMeshDisplay::initServices()
     m_materialsClient = n.serviceClient<mesh_msgs::GetMaterials>(m_materialServiceName->getStdString());
 
     m_textureClient = n.serviceClient<mesh_msgs::GetTexture>(m_textureServiceName->getStdString());
-
-    m_vertexCostClient = n.serviceClient<mesh_msgs::GetVertexCosts>(m_vertexCostServiceName->getStdString());
 }
 
 void TexturedMeshDisplay::updateVertexColorService()
@@ -785,33 +771,6 @@ void TexturedMeshDisplay::updateMaterialAndTextureServices()
     }
 }
 
-void TexturedMeshDisplay::updateVertexCostService()
-{
-    // Check if the service name is valid
-    std::string error;
-    if(!ros::names::validate(m_vertexCostServiceName->getStdString(), error))
-    {
-        setStatus(rviz::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
-        return;
-    }
-
-    // Update vertex cost service client
-    ros::NodeHandle n;
-    m_vertexCostClient = n.serviceClient<mesh_msgs::GetVertexCosts>(m_vertexCostServiceName->getStdString());
-    if (m_vertexCostClient.exists())
-    {
-        setStatus(rviz::StatusProperty::Ok, "Services", "Vertex Cost Service OK");
-        if (!m_meshVisuals.empty())
-        {
-            requestVertexCosts(m_meshVisuals.back(), m_lastUuid);
-        }
-    }
-    else
-    {
-        setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Vertex Cost Service doesn't exist."));
-    }
-}
-
 boost::shared_ptr<TexturedMeshVisual> TexturedMeshDisplay::getNewVisual()
 {
     boost::shared_ptr<TexturedMeshVisual> visual;
@@ -874,7 +833,6 @@ void TexturedMeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::C
 
     visual->setGeometry(meshMsg);
     requestVertexColors(visual, meshMsg->uuid);
-    requestVertexCosts(visual, meshMsg->uuid);
     requestMaterials(visual, meshMsg->uuid);
     updateMesh();
     visual->setFramePosition(position);
@@ -899,41 +857,6 @@ void TexturedMeshDisplay::requestVertexColors(boost::shared_ptr<TexturedMeshVisu
     }
 }
 
-void TexturedMeshDisplay::requestVertexCosts(boost::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
-{
-    mesh_msgs::GetVertexCosts srv;
-    srv.request.uuid = uuid;
-    if (m_vertexCostClient.call(srv))
-    {
-        ROS_INFO("Successful vertex costs service call!");
-        mesh_msgs::MeshVertexCostsStamped::ConstPtr meshVertexCosts =
-            boost::make_shared<const mesh_msgs::MeshVertexCostsStamped>(srv.response.mesh_vertex_costs_stamped);
-
-        cacheVertexCosts(meshVertexCosts);
-        m_selectVertexCostMap->setStringStd(meshVertexCosts->type);
-
-        if (m_costUseCustomLimits->getBool())
-        {
-            visual->setVertexCosts(
-                meshVertexCosts,
-                m_costColorType->getOptionInt(),
-                m_costLowerLimit->getFloat(),
-                m_costUpperLimit->getFloat()
-            );
-        }
-        else
-        {
-            visual->setVertexCosts(meshVertexCosts, m_costColorType->getOptionInt());
-        }
-
-    }
-    else
-    {
-        ROS_INFO("Failed vertex costs service call!");
-    }
-
-}
-
 void TexturedMeshDisplay::requestMaterials(boost::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
 {
     mesh_msgs::GetMaterials srv;
@@ -948,7 +871,7 @@ void TexturedMeshDisplay::requestMaterials(boost::shared_ptr<TexturedMeshVisual>
 
         visual->setMaterials(meshMaterialsStamped);
 
-        for (mesh_msgs::Material material : meshMaterialsStamped->mesh_materials.materials)
+        for (mesh_msgs::MeshMaterial material : meshMaterialsStamped->mesh_materials.materials)
         {
             if (material.has_texture)
             {
@@ -958,8 +881,8 @@ void TexturedMeshDisplay::requestMaterials(boost::shared_ptr<TexturedMeshVisual>
                 if (m_textureClient.call(texSrv))
                 {
                     ROS_INFO("Successful texture service call with index %d!", material.texture_index);
-                    mesh_msgs::Texture::ConstPtr texture =
-                        boost::make_shared<const mesh_msgs::Texture>(texSrv.response.texture);
+                    mesh_msgs::MeshTexture::ConstPtr texture =
+                        boost::make_shared<const mesh_msgs::MeshTexture>(texSrv.response.texture);
 
                     visual->addTexture(texture);
                 }

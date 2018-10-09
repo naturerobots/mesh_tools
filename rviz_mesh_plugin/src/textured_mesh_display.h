@@ -63,8 +63,8 @@
 #include <mesh_msgs/MeshVertexCosts.h>
 #include <mesh_msgs/MeshMaterialsStamped.h>
 #include <mesh_msgs/MeshMaterials.h>
-#include <mesh_msgs/Material.h>
-#include <mesh_msgs/Texture.h>
+#include <mesh_msgs/MeshMaterial.h>
+#include <mesh_msgs/MeshTexture.h>
 
 #include <sensor_msgs/Image.h>
 
@@ -212,11 +212,6 @@ private Q_SLOTS:
     void updateMaterialAndTextureServices();
 
     /**
-     * @brief Updates the vertex cost service.
-     */
-    void updateVertexCostService();
-
-    /**
      * @brief Updates the topic synchronizer
      */
     void updateSynchronizer();
@@ -258,13 +253,6 @@ private:
      * @param uuid Mesh UUID
      */
     void requestVertexColors(boost::shared_ptr<TexturedMeshVisual> visual, std::string uuid);
-
-    /**
-     * @brief Requests vertex costs from the specified service
-     * @param visual Visual to which the vertex costs will be added
-     * @param uuid Mesh UUID
-     */
-    void requestVertexCosts(boost::shared_ptr<TexturedMeshVisual> visual, std::string uuid);
 
     /**
      * @brief Requests materials from the specified service
@@ -338,9 +326,6 @@ private:
     /// Property to handle service name for textures
     rviz::StringProperty* m_textureServiceName;
 
-    /// Property to handle service name for vertex costs
-    rviz::StringProperty* m_vertexCostServiceName;
-
     /// Property to set meshBufferSize
     rviz::IntProperty* m_meshBufferSize;
 
@@ -388,9 +373,6 @@ private:
 
     /// Client to request the textures
     ros::ServiceClient m_textureClient;
-
-    /// Client to request the vertex costs
-    ros::ServiceClient m_vertexCostClient;
 
     /// Client to request the UUID
     ros::ServiceClient m_uuidClient;

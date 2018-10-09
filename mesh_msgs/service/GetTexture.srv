@@ -1,4 +1,4 @@
 string uuid
 uint32 texture_index
 ---
-mesh_msgs/Texture texture
+mesh_msgs/MeshTexture texture

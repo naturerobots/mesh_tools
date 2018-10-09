@@ -78,7 +78,7 @@ ClusterLabelTool::ClusterLabelTool() : m_displayInitialized(false)
     shortcut_key_ = 'l';
 
     ros::NodeHandle n;
-    m_labelPublisher = n.advertise<mesh_msgs::ClusterLabel>( "/cluster_label", 1, true);
+    m_labelPublisher = n.advertise<mesh_msgs::MeshFaceClusterStamped>( "/cluster_label", 1, true);
 }
 
 ClusterLabelTool::~ClusterLabelTool()

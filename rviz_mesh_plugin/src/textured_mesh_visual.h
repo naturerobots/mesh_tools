@@ -61,8 +61,8 @@
 #include <mesh_msgs/MeshVertexCosts.h>
 #include <mesh_msgs/MeshMaterialsStamped.h>
 #include <mesh_msgs/MeshMaterials.h>
-#include <mesh_msgs/Material.h>
-#include <mesh_msgs/Texture.h>
+#include <mesh_msgs/MeshMaterial.h>
+#include <mesh_msgs/MeshTexture.h>
 
 #include <sensor_msgs/Image.h>
 
@@ -163,7 +163,7 @@ public:
      *
      * @param textureMsg Message containing the texture information
      */
-    bool addTexture(const mesh_msgs::Texture::ConstPtr& textureMsg);
+    bool addTexture(const mesh_msgs::MeshTexture::ConstPtr& textureMsg);
 
    /**
      * @brief Sets the pose of the coordinate frame the message refers to.

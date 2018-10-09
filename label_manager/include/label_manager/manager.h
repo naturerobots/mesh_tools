@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <ros/ros.h>
-#include <mesh_msgs/ClusterLabel.h>
+#include <mesh_msgs/MeshFaceClusterStamped.h>
 #include <mesh_msgs/GetLabeledClusters.h>
 #include <label_manager/GetLabelGroups.h>
 #include <label_manager/GetLabeledClusterGroup.h>
@@ -29,7 +29,7 @@ private:
 
     std::string folderPath;
 
-    void clusterLabelCallback(const mesh_msgs::ClusterLabel::ConstPtr& msg);
+    void clusterLabelCallback(const mesh_msgs::MeshFaceClusterStamped::ConstPtr& msg);
     bool service_getLabeledClusters(
         mesh_msgs::GetLabeledClusters::Request& req,
         mesh_msgs::GetLabeledClusters::Response& res);

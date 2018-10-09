@@ -104,15 +104,15 @@ TriangleMeshDisplay::TriangleMeshDisplay()
 
     // Display type selection dropdown
     m_displayType = new rviz::EnumProperty("Display Type",
-        "Faces with fixed color",
+        "Fixed Color",
         "Select Display Type for Mesh",
         this,
         SLOT(updateMesh()),
         this
     );
-    m_displayType->addOption("Faces with fixed color", 0);
-    m_displayType->addOption("Faces with vertex color", 1);
-    m_displayType->addOption("Faces with textures", 2);
+    m_displayType->addOption("Fixed Color", 0);
+    m_displayType->addOption("Vertex Color", 1);
+    m_displayType->addOption("Textures", 2);
     m_displayType->addOption("Hide Faces", 3);
 
      // face color properties

@@ -46,7 +46,7 @@ hdf5_to_msg::hdf5_to_msg()
         "get_height_difference", &hdf5_to_msg::service_getHeightDifference, this);
 
     sub_cluster_label_ = node_handle.subscribe("cluster_label", 10, &hdf5_to_msg::callback_clusterLabel, this);
-    pub_cluster_label_ = node_handle.advertise<mesh_msgs::Cluster>("new_cluster_label", 1);
+    pub_cluster_label_ = node_handle.advertise<mesh_msgs::MeshFaceCluster>("new_cluster_label", 1);
 
 }
 
@@ -356,7 +356,7 @@ bool hdf5_to_msg::service_getLabeledClusters(
         {
             // copy label
             auto faceIds = io.getFaceIdsOfLabel(groups[i], labelsInGroup[j]);
-            mesh_msgs::Cluster cluster;
+            mesh_msgs::MeshFaceCluster cluster;
             std::stringstream ss;
             ss << groups[i] << "_" << labelsInGroup[j];
             cluster.label = ss.str();
@@ -437,7 +437,7 @@ bool hdf5_to_msg::service_getHeightDifference(
     return true;
 }
 
-void hdf5_to_msg::callback_clusterLabel(const mesh_msgs::ClusterLabel::ConstPtr& msg)
+void hdf5_to_msg::callback_clusterLabel(const mesh_msgs::MeshFaceClusterStamped::ConstPtr& msg)
 {
     if (msg->uuid.compare(mesh_uuid) != 0)
     {

@@ -54,7 +54,7 @@
 #include <rviz/panel.h>
 #include <rviz/tool_manager.h>
 #include <ClusterLabelTool.hpp>
-#include <mesh_msgs/Cluster.h>
+#include <mesh_msgs/MeshFaceCluster.h>
 
 // Forward declarations
 class QLineEdit;
