@@ -8,7 +8,7 @@ find_package(catkin REQUIRED)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS include ext/HighFive/include
   LIBRARIES hdf5_map_io
   DEPENDS HDF5
 )
