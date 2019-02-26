@@ -551,7 +551,7 @@ void TexturedMeshDisplay::incomingVertexCosts(const mesh_msgs::MeshVertexCostsSt
     }
 
     cacheVertexCosts(costsStamped);
-    //updateVertexCosts();
+    updateVertexCosts();
 }
 
 void TexturedMeshDisplay::cacheVertexCosts(
@@ -561,9 +561,20 @@ void TexturedMeshDisplay::cacheVertexCosts(
     ROS_INFO_STREAM("Cache vertex cost map '" << costsStamped->type << "' for UUID " << costsStamped->uuid);
 
     // insert into cache
-    m_costCache.insert(
-        std::pair<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>(costsStamped->type, costsStamped)
-    );
+    std::pair<std::map<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>::iterator, bool> ret =
+        m_costCache.insert(
+            std::pair<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>(costsStamped->type, costsStamped));
+    if(ret.second)
+    {
+        ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been added.");
+    }
+    else
+    {
+        m_costCache.erase(ret.first);
+        m_costCache.insert(
+            std::pair<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>(costsStamped->type, costsStamped));
+        ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been updated.");
+    }
 
     // update dropdown menu
     m_selectVertexCostMap->clearOptions();
@@ -673,7 +684,6 @@ void TexturedMeshDisplay::updateMesh()
             m_vertexCostsTopic->show();
             m_costColorType->show();
             m_costUseCustomLimits->show();
-            //updateVertexCosts();
             break;
         case 4: // No Faces
             break;

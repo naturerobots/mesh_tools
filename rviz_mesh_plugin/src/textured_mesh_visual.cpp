@@ -561,12 +561,12 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(
 {
 
   // Calculate maximum value for vertex costs
-  float maxCost = 0.0f;
+  float maxCost = std::numeric_limits<float>::min();
   float minCost = std::numeric_limits<float>::max();
   for (float cost : vertexCosts.costs)
   {
-    maxCost = cost > maxCost ? cost : maxCost;
-    minCost = cost < minCost ? cost : minCost;
+    if(std::isfinite(cost) && cost > maxCost) maxCost = cost;
+    if(std::isfinite(cost) && cost < minCost) minCost = cost;
   }
 
   enteringTriangleMeshWithVertexCosts(mesh, vertexCosts, costColorType, minCost, maxCost);
@@ -617,7 +617,7 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(
     m_vertexCostsMesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
 
     // write vertex colors that are calculated from the cost values
-    float normalizedCost = (minCost + vertexCosts.costs[i]) / range;
+    float normalizedCost = (vertexCosts.costs[i] - minCost) / range;
     m_vertexCostsMesh->colour(calculateColorFromCost(normalizedCost, costColorType));
 
     // write vertex normals, if enabled
@@ -971,11 +971,6 @@ bool TexturedMeshVisual::setVertexCosts(
     ROS_WARN("Can't add vertex costs, uuids do not match.");
     return false;
   }
-  // check if the vertex costs for this mesh were already set
-  if(m_vertexCostsUuid == vertexCostsMsg->uuid)
-  {
-    ROS_WARN("Already received vertex costs for this mesh. Overwriting previously received vertex costs!");
-  }
 
   const mesh_msgs::MeshVertexCosts vertexCosts = vertexCostsMsg->mesh_vertex_costs;
 
@@ -1010,11 +1005,6 @@ bool TexturedMeshVisual::setVertexCosts(
   {
     ROS_WARN("Can't add vertex costs, uuids do not match.");
     return false;
-  }
-  // check if the vertex costs for this mesh were already set
-  if(m_vertexCostsUuid == vertexCostsMsg->uuid)
-  {
-    ROS_WARN("Already received vertex costs for this mesh. Overwriting previously received vertex costs!");
   }
 
   const mesh_msgs::MeshVertexCosts vertexCosts = vertexCostsMsg->mesh_vertex_costs;
