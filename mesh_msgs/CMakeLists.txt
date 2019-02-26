@@ -15,8 +15,6 @@ add_message_files(
   MeshFaceClusterStamped.msg
   Feature.msg
   MeshMaterial.msg
-  #MeshCostMap.msg
-  #MeshCostMapStamped.msg
   MeshFeatures.msg
   MeshGeometry.msg
   MeshGeometryStamped.msg
@@ -26,15 +24,12 @@ add_message_files(
   MeshVertexColorsStamped.msg
   MeshVertexCosts.msg
   MeshVertexCostsStamped.msg
-  #PolygonIndices.msg
-  #PolygonMesh.msg
-  #PolygonMeshStamped.msg
   MeshTexture.msg
   TriangleIndices.msg
   TriangleMesh.msg
   TriangleMeshStamped.msg
-  Vectorfield.msg
-  VectorfieldStamped.msg
+  VectorField.msg
+  VectorFieldStamped.msg
   MeshVertexTexCoords.msg
 )
 
