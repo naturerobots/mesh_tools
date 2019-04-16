@@ -11,13 +11,14 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <license>3-Clause BSD</license>
-  <url>http://ros.org/wiki/ros_mash_tools/rviz_map_plugin</url>
+  <url>http://ros.org/wiki/mash_tools/rviz_map_plugin</url>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rviz</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>mesh_msgs</build_depend>
   <build_depend>hdf5_map_io</build_depend>
+  <build_depend>ocl-icd-opencl-dev</build_depend>
   <run_depend>libqt5-core</run_depend>
   <run_depend>libqt5-gui</run_depend>
   <run_depend>libqt5-widgets</run_depend>
@@ -26,6 +27,7 @@
   <run_depend>std_msgs</run_depend>
   <run_depend>mesh_msgs</run_depend>
   <run_depend>hdf5_map_io</run_depend>
+  <run_depend>ocl-icd-opencl-dev</run_depend>
 
   <export>
     <rviz plugin="${prefix}/rviz_plugin.xml"/>
