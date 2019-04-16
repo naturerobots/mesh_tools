@@ -151,7 +151,8 @@ void ClusterLabelTool::onInitialize()
 
                 std::string device_info = device.getInfo<CL_DEVICE_VERSION>();
                 // getVersion extracts the version number with major in the upper 16 bits and minor in the lower 16 bits
-                auto version = cl::detail::getVersion(std::vector<char>(device_info.begin(), device_info.end()));
+
+                unsigned int version = cl::detail::getVersion(std::vector<char>(device_info.begin(), device_info.end()));
 
                 // shift 16 to the right to get the number in the upper 16 bits
                 cl_uint majorVersion = version >> 16;
