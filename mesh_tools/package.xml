@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ros_mesh_tools</name>
+  <name>mesh_tools</name>
   <version>0.0.0</version>
   <description>The ros_mesh_tools package</description>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
