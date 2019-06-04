@@ -203,7 +203,7 @@ TexturedMeshDisplay::TexturedMeshDisplay()
     m_materialServiceName = new rviz::StringProperty(
         "Material Service Name",
         "get_materials",
-        "Name of the Material Service to request Materials from.",
+        "Name of the Matrial Service to request Materials from.",
         m_displayType,
         SLOT(updateMaterialAndTextureServices()),
         this
@@ -431,9 +431,9 @@ void TexturedMeshDisplay::subscribe()
     }
 
     try {
-        m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 2);
-        m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 10);
-        m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 10);
+        m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 1);
+        m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
+        m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 1);
         setStatus(rviz::StatusProperty::Ok, "Topic", "OK");
     }
     catch(ros::Exception& e)
@@ -460,7 +460,7 @@ void TexturedMeshDisplay::subscribe()
 
         m_colorsSynchronizer =
             new message_filters::Cache<mesh_msgs::MeshVertexColorsStamped>(
-                m_vertexColorsSubscriber, 10
+                m_vertexColorsSubscriber, 1
             );
         m_colorsSynchronizer->registerCallback(
             boost::bind(&TexturedMeshDisplay::incomingVertexColors, this, _1)
@@ -468,7 +468,7 @@ void TexturedMeshDisplay::subscribe()
 
         m_costsSynchronizer =
             new message_filters::Cache<mesh_msgs::MeshVertexCostsStamped>(
-                m_vertexCostsSubscriber, 10
+                m_vertexCostsSubscriber, 1
             );
         m_costsSynchronizer->registerCallback(
             boost::bind(&TexturedMeshDisplay::incomingVertexCosts, this, _1)
@@ -567,6 +567,7 @@ void TexturedMeshDisplay::cacheVertexCosts(
     if(ret.second)
     {
         ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been added.");
+        m_selectVertexCostMap->addOption(QString::fromStdString(costsStamped->type), m_selectVertexCostMap->numChildren());
     }
     else
     {
@@ -576,13 +577,6 @@ void TexturedMeshDisplay::cacheVertexCosts(
         ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been updated.");
     }
 
-    // update dropdown menu
-    m_selectVertexCostMap->clearOptions();
-    int i = 0;
-    for (const auto &entry : m_costCache)
-    {
-        m_selectVertexCostMap->addOption(QString::fromStdString(entry.first), i++);
-    }
 }
 
 void TexturedMeshDisplay::incomingGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
