@@ -77,10 +77,10 @@ MeshGoalTool::MeshGoalTool()
   msg.pose.position.z = position.z;
   
   // ogreToRos(x,y,z) = (-z,-x,y) 
-  Ogre::Quaternion ros_orientation( 
+  Ogre::Quaternion ros_orientation(
 	-orientation.zAxis(),
-	-orientation.xAxis(),
-	orientation.yAxis()
+	orientation.xAxis(),
+	-orientation.yAxis()
   );	  
   
   msg.pose.orientation.x = ros_orientation.x;
