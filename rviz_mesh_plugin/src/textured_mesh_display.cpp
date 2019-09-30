@@ -433,7 +433,7 @@ void TexturedMeshDisplay::subscribe()
     try {
         m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 1);
         m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
-        m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 1);
+        m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 4);
         setStatus(rviz::StatusProperty::Ok, "Topic", "OK");
     }
     catch(ros::Exception& e)
@@ -567,10 +567,11 @@ void TexturedMeshDisplay::cacheVertexCosts(
     if(ret.second)
     {
         ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been added.");
-        m_selectVertexCostMap->addOption(QString::fromStdString(costsStamped->type), m_selectVertexCostMap->numChildren());
+        m_selectVertexCostMap->addOptionStd(costsStamped->type, m_selectVertexCostMap->numChildren());
     }
     else
     {
+        //m_selectVertexCostMap->addOptionStd(costsStamped->type, m_selectVertexCostMap->numChildren());
         m_costCache.erase(ret.first);
         m_costCache.insert(
             std::pair<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>(costsStamped->type, costsStamped));
