@@ -1,0 +1,3 @@
+[submodule "hdf5_map_io/ext/HighFive"]
+	path = hdf5_map_io/ext/HighFive
+	url = https://github.com/BlueBrain/HighFive.git
