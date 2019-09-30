@@ -1,4 +1,4 @@
-# ROS Mesh Tools
+# Mesh Tools
 
 We introduce a set of tools to make 3D environment mesh representations
 accessible and manageable in ROS. We provide RViz tools to visualize and 
