@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>mesh_tools</name>
-  <version>0.0.0</version>
-  <description>The ros_mesh_tools package</description>
+  <version>0.1.0</version>
+  <description>The mesh_tools package</description>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
-  <license>3-Clause BSD</license>
-  <url type="website">http://wiki.ros.org/ros_mesh_tools</url>
+  <license>BSD 3-Clause</license>
+  <url type="website">http://wiki.ros.org/mesh_tools</url>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
 
   <exec_depend>hdf5_map_io</exec_depend>
