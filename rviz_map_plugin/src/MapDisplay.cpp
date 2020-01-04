@@ -380,7 +380,7 @@ void MapDisplay::saveLabel(Cluster cluster)
         }
 
         // Open IO
-        lvr2::PlutoMapIO map_io(m_mapFilePath->getStdString());
+        hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getStdString());
 
         // Add label with faces list
         map_io.addLabel(results[0], results[1], faces);

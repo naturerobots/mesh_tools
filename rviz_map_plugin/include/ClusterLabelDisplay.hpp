@@ -93,8 +93,6 @@
 #include <mesh_msgs/GetUUID.h>
 #include <mesh_msgs/GetLabeledClusters.h>
 
-#include <lvr2/io/PlutoMapIO.hpp>
-
 #ifndef Q_MOC_RUN
 #include <rviz/mesh_loader.h>
 
