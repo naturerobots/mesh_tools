@@ -84,7 +84,7 @@ target_link_libraries(${PROJECT_NAME}
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
   ${OpenCL_LIBRARIES}
-  ${MPI_LIBRARIES}
+  ${MPI_C_LIBRARIES}
 )
 
 add_dependencies(${PROJECT_NAME}
