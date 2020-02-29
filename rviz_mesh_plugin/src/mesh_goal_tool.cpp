@@ -51,12 +51,16 @@ PLUGINLIB_EXPORT_CLASS( rviz_mesh_plugin::MeshGoalTool, rviz::Tool )
 namespace rviz_mesh_plugin{
 MeshGoalTool::MeshGoalTool()
 {
-   shortcut_key_ = 'm'; 
-     topic_property_ = new rviz::StringProperty( "Topic", "goal",
-     "The topic on which to publish the mesh navigation goals.",
-     getPropertyContainer(), SLOT( updateTopic() ), this );
-	 //pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("goal", 1);
- }
+  shortcut_key_ = 'm';
+  topic_property_ = new rviz::StringProperty( "Topic", "goal",
+                                              "The topic on which to publish the mesh navigation goals.",
+                                              getPropertyContainer(), SLOT(updateTopic()), this);
+
+  switch_bottom_top_ = new rviz::BoolProperty("Switch Bottom/Top",
+      false, "Enable to stwich the bottom and top.",
+      getPropertyContainer());
+
+}
  
  void MeshGoalTool::onInitialize()
  {
@@ -64,7 +68,7 @@ MeshGoalTool::MeshGoalTool()
    setName( "Mesh Goal" );
    updateTopic();
  }
- 
+
  void MeshGoalTool::updateTopic()
  {
    pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>( topic_property_->getStdString(), 1 );
@@ -77,12 +81,26 @@ MeshGoalTool::MeshGoalTool()
   msg.pose.position.z = position.z;
   
   // ogreToRos(x,y,z) = (-z,-x,y) 
-  Ogre::Quaternion ros_orientation(
-	-orientation.zAxis(),
-	-orientation.xAxis(),
-	orientation.yAxis()
-  );	  
-  
+
+  Ogre::Quaternion ros_orientation;
+
+  if(switch_bottom_top_->getBool())
+  {
+    ros_orientation.FromAxes(
+        -orientation.zAxis(),
+        orientation.xAxis(),
+        -orientation.yAxis()
+    );
+  }
+  else
+  {
+    ros_orientation.FromAxes(
+        -orientation.zAxis(),
+        -orientation.xAxis(),
+        orientation.yAxis()
+    );
+  }
+
   msg.pose.orientation.x = ros_orientation.x;
   msg.pose.orientation.y = ros_orientation.y;
   msg.pose.orientation.z = ros_orientation.z;

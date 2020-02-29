@@ -47,6 +47,7 @@
 
 #include "mesh_pose_tool.h"
 #include <geometry_msgs/PoseStamped.h>
+#include <rviz/properties/bool_property.h>
 #include <rviz/properties/string_property.h>
 #include <rviz/display_context.h>
 
@@ -92,6 +93,8 @@ protected:
 
     /// Property for the topic
     rviz::StringProperty* topic_property_;
+    /// Switch bottom / top for selection
+    rviz::BoolProperty* switch_bottom_top_;
     /// Publisher
     ros::Publisher pose_pub_;
     /// Node handle
