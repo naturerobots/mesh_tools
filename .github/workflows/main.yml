@@ -11,6 +11,8 @@ jobs:
           - {ROS_DISTRO: melodic, ROS_REPO: main}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: 'ros-industrial/industrial_ci@master'
         env: ${{matrix.env}}
