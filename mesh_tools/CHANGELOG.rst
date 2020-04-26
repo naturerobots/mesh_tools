@@ -2,6 +2,6 @@
 Changelog for package ros_mesh_tools
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2020-04-26)
+------------------
 * release version 1.0.0

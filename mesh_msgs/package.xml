@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>mesh_msgs</name>
-  <version>0.1.0</version>
+  <version>1.0.0</version>
   <description>Various Message Types for Mesh Data.</description>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
