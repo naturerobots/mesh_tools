@@ -5,7 +5,7 @@
   <description>Read and write mesh_msgs to and from hdf5</description>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
   <url type="website">http://wiki.ros.org/ros_mesh_tools/mesh_msgs_hdf5</url>
-  <license>BSD 3-Clause</license>
+  <license>BSD-3</license>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
 
   <build_depend>mesh_msgs</build_depend>

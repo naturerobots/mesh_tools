@@ -4,7 +4,7 @@
   <version>0.1.0</version>
   <description>The mesh_tools package</description>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
-  <license>BSD 3-Clause</license>
+  <license>BSD-3</license>
   <url type="website">http://wiki.ros.org/mesh_tools</url>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
 

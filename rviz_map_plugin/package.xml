@@ -10,7 +10,7 @@
   <author email="jvogtherr@uos.de">Jan Philipp Vogtherr</author>
   <buildtool_depend>catkin</buildtool_depend>
 
-  <license>3-Clause BSD</license>
+  <license>BSD-3</license>
   <url>http://ros.org/wiki/mash_tools/rviz_map_plugin</url>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>roscpp</build_depend>

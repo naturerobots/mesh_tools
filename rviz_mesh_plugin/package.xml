@@ -12,7 +12,7 @@
   <author email="jvogtherr@uos.de">Jan Philipp Vogtherr</author>
   <buildtool_depend>catkin</buildtool_depend>
 
-  <license>3-Clause BSD</license>
+  <license>BSD-3</license>
   <url>http://wiki.ros.org/ros_mesh_tools/rviz_mesh_plugin</url>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>roscpp</build_depend>
