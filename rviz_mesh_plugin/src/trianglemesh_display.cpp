@@ -217,8 +217,8 @@ TriangleMeshDisplay::~TriangleMeshDisplay()
 
 void TriangleMeshDisplay::onInitialize()
 {
-    m_tfMeshFilter = new tf::MessageFilter<mesh_msgs::TriangleMeshStamped>(
-        *rviz::Display::context_->getTFClient(),
+    m_tfMeshFilter = new tf2_ros::MessageFilter<mesh_msgs::TriangleMeshStamped>(
+        *rviz::Display::context_->getTF2BufferPtr(),
         rviz::Display::fixed_frame_.toStdString(),
         1,
         rviz::Display::update_nh_

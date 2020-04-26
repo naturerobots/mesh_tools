@@ -75,7 +75,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/cache.h>
 
-#include <tf/message_filter.h>
+#include <tf2_ros/message_filter.h>
 
 #include <boost/circular_buffer.hpp>
 
@@ -276,13 +276,13 @@ private:
     message_filters::Subscriber<mesh_msgs::MeshVertexCostsStamped> m_vertexCostsSubscriber;
 
     /// Messagefilter for meshMsg
-    tf::MessageFilter<mesh_msgs::MeshGeometryStamped>* m_tfMeshFilter;
+    tf2_ros::MessageFilter<mesh_msgs::MeshGeometryStamped>* m_tfMeshFilter;
 
     /// Messagefilter for vertex colors
-    tf::MessageFilter<mesh_msgs::MeshVertexColorsStamped>* m_tfVertexColorsFilter;
+    tf2_ros::MessageFilter<mesh_msgs::MeshVertexColorsStamped>* m_tfVertexColorsFilter;
 
     /// Messagefilter for vertex costs
-    tf::MessageFilter<mesh_msgs::MeshVertexCostsStamped>* m_tfVertexCostsFilter;
+    tf2_ros::MessageFilter<mesh_msgs::MeshVertexCostsStamped>* m_tfVertexCostsFilter;
 
     /// Synchronizer for meshMsgs
     message_filters::Cache<mesh_msgs::MeshGeometryStamped>* m_meshSynchronizer;

@@ -336,8 +336,8 @@ TexturedMeshDisplay::~TexturedMeshDisplay()
 
 void TexturedMeshDisplay::onInitialize()
 {
-    m_tfMeshFilter = new tf::MessageFilter<mesh_msgs::MeshGeometryStamped>(
-        *rviz::Display::context_->getTFClient(),
+    m_tfMeshFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshGeometryStamped>(
+        *rviz::Display::context_->getTF2BufferPtr(),
         rviz::Display::fixed_frame_.toStdString(),
         2,
         rviz::Display::update_nh_
@@ -345,8 +345,8 @@ void TexturedMeshDisplay::onInitialize()
     m_tfMeshFilter->connectInput(m_meshSubscriber);
     context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfMeshFilter, this);
 
-    m_tfVertexColorsFilter = new tf::MessageFilter<mesh_msgs::MeshVertexColorsStamped>(
-        *rviz::Display::context_->getTFClient(),
+    m_tfVertexColorsFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshVertexColorsStamped>(
+        *rviz::Display::context_->getTF2BufferPtr(),
         rviz::Display::fixed_frame_.toStdString(),
         10,
         rviz::Display::update_nh_
@@ -354,8 +354,8 @@ void TexturedMeshDisplay::onInitialize()
     m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
     context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexColorsFilter, this);
 
-    m_tfVertexCostsFilter = new tf::MessageFilter<mesh_msgs::MeshVertexCostsStamped>(
-        *rviz::Display::context_->getTFClient(),
+    m_tfVertexCostsFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshVertexCostsStamped>(
+        *rviz::Display::context_->getTF2BufferPtr(),
         rviz::Display::fixed_frame_.toStdString(),
         10,
         rviz::Display::update_nh_

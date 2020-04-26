@@ -57,7 +57,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/cache.h>
-#include <tf/message_filter.h>
+#include <tf2_ros/message_filter.h>
 #include <boost/circular_buffer.hpp>
 #include "trianglemesh_visual.h"
 #endif
@@ -182,7 +182,7 @@ private:
     message_filters::Subscriber<mesh_msgs::TriangleMeshStamped> m_meshSubscriber;
 
     /// Messagefilter for meshMsg
-    tf::MessageFilter<mesh_msgs::TriangleMeshStamped>* m_tfMeshFilter;
+    tf2_ros::MessageFilter<mesh_msgs::TriangleMeshStamped>* m_tfMeshFilter;
 
     /// Synchronizer for meshMsgs
     message_filters::Cache<mesh_msgs::TriangleMeshStamped>* m_synchronizer;
