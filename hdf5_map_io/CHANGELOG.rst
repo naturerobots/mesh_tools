@@ -2,6 +2,6 @@
 Changelog for package hdf5_map_io
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2020-04-26)
+------------------
 * release version 1.0.0

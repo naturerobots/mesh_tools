@@ -2,6 +2,6 @@
 Changelog for package rviz_map_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.0.0 (2020-04-26)
+------------------
 * release version 1.0.0
