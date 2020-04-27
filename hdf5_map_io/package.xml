@@ -9,6 +9,7 @@
   <author email="spuetz@uos.de">Sebastian Pütz</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <depend>boost</depend>
   <depend>libhdf5-dev</depend>
 
 </package>
