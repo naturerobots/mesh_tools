@@ -10,6 +10,6 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>boost</depend>
-  <depend>ros-melodic-lvr2</depend>
+  <depend>lvr2</depend>
 
 </package>
