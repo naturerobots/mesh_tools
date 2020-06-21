@@ -18,25 +18,25 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(MPI REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
-find_package(LVR2 REQUIRED)
+find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 find_package(OpenCL 2 REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS ${THIS_PACKAGE_ROS_DEPS}
-  DEPENDS Boost OpenCL LVR2 OpenCL MPI
+  DEPENDS Boost OpenCL HDF5 OpenCL MPI
 )
 
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
-  ${LVR2_INCLUDE_DIRS}
+  ${HDF5_INCLUDE_DIRS}
   ${OpenCL_INCLUDE_DIRS}
   ${MPI_INCLUDE_PATH}
   /usr/include
 )
 
-link_directories(${LVR2_LIBRARIES})
+link_directories(${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
@@ -76,19 +76,21 @@ set(HEADER_FILES
   include/CLUtil.hpp
 )
 
-add_library(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+add_library(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME}
   ${QT_LIBRARIES}
   ${catkin_LIBRARIES}
-  ${LVR2_LIBRARIES}
+  ${HDF5_LIBRARIES}
+  ${HDF5_HL_LIBRARIES}
   ${OpenCL_LIBRARIES}
   ${MPI_C_LIBRARIES}
 )
 
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
-  ${LVR2_LIBRARIES}
+  ${HDF5_LIBRARIES}
+  ${HDF5_HL_LIBRARIES}
   ${OpenCL_LIBRARIES}
 )
 
