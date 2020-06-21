@@ -9,7 +9,7 @@ set(PACKAGE_DEPENDENCIES
 )
 
 find_package(catkin REQUIRED COMPONENTS ${PACKAGE_DEPENDENCIES})
-find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
+find_package(LVR2 REQUIRED)
 
 ### compile with c++11
 if ("${CMAKE_VERSION}" VERSION_LESS "3.1")
@@ -26,13 +26,13 @@ include_directories(
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${HDF5_INCLUDE_DIRS}
+  ${LVR2_INCLUDE_DIRS}
 )
 
 catkin_package(
   CATKIN_DEPENDS ${PACKAGE_DEPENDENCIES}
   INCLUDE_DIRS include
-  DEPENDS HDF5
+  DEPENDS LVR2
   LIBRARIES ${PROJECT_NAME}
 )
 
@@ -40,7 +40,7 @@ add_library(${PROJECT_NAME}
   src/mesh_msgs_hdf5.cpp
 )
 
-link_directories(${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+link_directories(${LVR2_LIBRARIES})
 
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 

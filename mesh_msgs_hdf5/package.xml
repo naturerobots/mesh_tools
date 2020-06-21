@@ -11,10 +11,12 @@
   <build_depend>mesh_msgs</build_depend>
   <build_depend>hdf5_map_io</build_depend>
   <build_depend>label_manager</build_depend>
+  <build_depend>lvr2</build_depend>
 
   <run_depend>mesh_msgs</run_depend>
   <run_depend>hdf5_map_io</run_depend>
   <run_depend>label_manager</run_depend>
+  <run_depend>lvr2</run_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
 
