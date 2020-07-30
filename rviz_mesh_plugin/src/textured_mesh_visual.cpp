@@ -1104,6 +1104,8 @@ bool TexturedMeshVisual::addTexture(const mesh_msgs::MeshTexture::ConstPtr& text
   image.loadDynamicImage(imageData, width, height, 1, pixelFormat, false);
   m_images.insert(m_images.begin() + textureIndex, image);
 
+  delete imageData;
+
   if (m_textureMaterials.size() >= textureIndex + 1)
   {
     loadImageIntoTextureMaterial(textureIndex);
