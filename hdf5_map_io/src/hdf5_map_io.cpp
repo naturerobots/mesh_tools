@@ -1,27 +1,37 @@
 #include "hdf5_map_io/hdf5_map_io.h"
 #include <hdf5_hl.h>
-
+#include <unistd.h>
 
 namespace hdf5_map_io
 {
 
+void HDF5MapIO::creatOrGetGroups()
+{
+  if (!m_file.exist(CHANNELS_GROUP))
+    m_channelsGroup = m_file.createGroup(CHANNELS_GROUP);
+  else
+    m_channelsGroup = m_file.getGroup(CHANNELS_GROUP);
+
+  if(!m_file.exist(CLUSTERSETS_GROUP))
+    m_clusterSetsGroup = m_file.createGroup(CLUSTERSETS_GROUP);
+  else
+    m_clusterSetsGroup = m_file.getGroup(CLUSTERSETS_GROUP);
+
+  if(!m_file.exist(TEXTURES_GROUP))
+    m_texturesGroup = m_file.createGroup(TEXTURES_GROUP);
+  else
+    m_texturesGroup = m_file.getGroup(TEXTURES_GROUP);
+
+  if(!m_file.exist(LABELS_GROUP))
+    m_labelsGroup = m_file.createGroup(LABELS_GROUP);
+  else
+    m_labelsGroup = m_file.getGroup(LABELS_GROUP);
+}
+
 HDF5MapIO::HDF5MapIO(std::string filename)
     : m_file(filename, hf::File::ReadWrite)
 {
-    if (!m_file.exist(GEOMETRY_GROUP) ||
-        !m_file.exist(ATTRIBUTES_GROUP) ||
-        !m_file.exist(CLUSTERSETS_GROUP) ||
-        !m_file.exist(TEXTURES_GROUP) ||
-        !m_file.exist(LABELS_GROUP))
-    {
-        throw "No valid map h5 file";
-    }
-
-    m_geometryGroup = m_file.getGroup(GEOMETRY_GROUP);
-    m_attributesGroup = m_file.getGroup(ATTRIBUTES_GROUP);
-    m_clusterSetsGroup = m_file.getGroup(CLUSTERSETS_GROUP);
-    m_texturesGroup = m_file.getGroup(TEXTURES_GROUP);
-    m_labelsGroup = m_file.getGroup(LABELS_GROUP);
+  creatOrGetGroups();
 }
 
 HDF5MapIO::HDF5MapIO(
@@ -33,23 +43,16 @@ HDF5MapIO::HDF5MapIO(
 {
 
     if (!m_file.isValid())
-    {
-        throw "Could not open file.";
-    }
+      throw "Could not open file.";
 
-    // Create top level groups
-    m_geometryGroup = m_file.createGroup(GEOMETRY_GROUP);
-    m_attributesGroup = m_file.createGroup(ATTRIBUTES_GROUP);
-    m_clusterSetsGroup = m_file.createGroup(CLUSTERSETS_GROUP);
-    m_texturesGroup = m_file.createGroup(TEXTURES_GROUP);
-    m_labelsGroup = m_file.createGroup(LABELS_GROUP);
+    creatOrGetGroups();
 
     // Create geometry data sets
-    m_geometryGroup
+    m_channelsGroup
         .createDataSet<float>("vertices", hf::DataSpace::From(vertices))
         .write(vertices);
-    m_geometryGroup
-        .createDataSet<uint32_t>("faces", hf::DataSpace::From(face_ids))
+    m_channelsGroup
+        .createDataSet<uint32_t>("face_indices", hf::DataSpace::From(face_ids))
         .write(face_ids);
 }
 
@@ -61,80 +64,67 @@ HDF5MapIO::~HDF5MapIO()
         return;
     }
 
-    H5Gclose(m_geometryGroup.getId());
-    H5Gclose(m_attributesGroup.getId());
+    H5Gclose(m_channelsGroup.getId());
     H5Gclose(m_clusterSetsGroup.getId());
     H5Gclose(m_texturesGroup.getId());
     H5Gclose(m_labelsGroup.getId());
-
     H5Fclose(m_file.getId());
 }
 
+size_t HDF5MapIO::getSize(hf::DataSet& data_set)
+{
+  auto dimensions = data_set.getSpace().getDimensions();
+  return dimensions[0] * dimensions[1];
+}
 
 std::vector<float> HDF5MapIO::getVertices()
 {
     std::vector<float> vertices;
-
-    if (!m_geometryGroup.exist("vertices"))
-    {
+    if (!m_channelsGroup.exist("vertices"))
         return vertices;
-    }
-
-    m_geometryGroup.getDataSet("vertices")
-        .read(vertices);
-
+    auto dataset = m_channelsGroup.getDataSet("vertices");
+    vertices.resize(getSize(dataset));
+    dataset.read(vertices.data());
     return vertices;
 }
 
 std::vector<uint32_t> HDF5MapIO::getFaceIds()
 {
-    std::vector<uint32_t> faceIds;
-
-    if (!m_geometryGroup.exist("faces"))
-    {
-        return faceIds;
-    }
-
-    m_geometryGroup.getDataSet("faces")
-        .read(faceIds);
-
-    return faceIds;
+    std::vector<uint32_t> indices;
+    if (!m_channelsGroup.exist("face_indices"))
+        return indices;
+    auto dataset = m_channelsGroup.getDataSet("face_indices");
+    indices.resize(getSize(dataset));
+    dataset.read(indices.data());
+    return indices;
 }
 
 std::vector<float> HDF5MapIO::getVertexNormals()
 {
     std::vector<float> normals;
-
-    if (!m_attributesGroup.exist("normals"))
-    {
+    if (!m_channelsGroup.exist("vertex_normals"))
         return normals;
-    }
-
-    m_attributesGroup.getDataSet("normals")
-        .read(normals);
-
+    auto dataset = m_channelsGroup.getDataSet("vertex_normals");
+    normals.resize(getSize(dataset));
+    dataset.read(normals.data());
     return normals;
 }
 
 std::vector<uint8_t> HDF5MapIO::getVertexColors()
 {
-    std::vector<uint8_t> rgbColors;
+    std::vector<uint8_t> colors;
+    if (!m_channelsGroup.exist("vertex_colors"))
+        return colors;
 
-    if (!m_attributesGroup.exist("rgb_colors"))
-    {
-        return rgbColors;
-    }
-
-    m_attributesGroup.getDataSet("rgb_colors")
-        .read(rgbColors);
-
-    return rgbColors;
+    auto dataset = m_channelsGroup.getDataSet("vertex_colors");
+    colors.resize(getSize(dataset));
+    dataset.read(colors.data());
+    return colors;
 }
 
 std::vector<MapImage> HDF5MapIO::getTextures()
 {
     std::vector<MapImage> textures;
-
     if (!m_texturesGroup.exist("images"))
     {
         return textures;
@@ -153,12 +143,12 @@ std::unordered_map<MapVertex, std::vector<float>> HDF5MapIO::getFeatures()
 {
     std::unordered_map<MapVertex, std::vector<float>> features;
 
-    if (!m_attributesGroup.exist("texture_features"))
+    if (!m_channelsGroup.exist("texture_features"))
     {
         return features;
     }
 
-    const auto& featuresGroup = m_attributesGroup.getGroup("texture_features");
+    const auto& featuresGroup = m_channelsGroup.getGroup("texture_features");
     features.reserve(featuresGroup.getNumberObjects());
 
     for (auto name : featuresGroup.listObjectNames())
@@ -269,12 +259,12 @@ std::vector<float> HDF5MapIO::getRoughness()
 {
     std::vector<float> roughness;
 
-    if (!m_attributesGroup.exist("roughness"))
+    if (!m_channelsGroup.exist("roughness"))
     {
         return roughness;
     }
 
-    m_attributesGroup.getDataSet("roughness")
+    m_channelsGroup.getDataSet("roughness")
         .read(roughness);
 
     return roughness;
@@ -284,12 +274,12 @@ std::vector<float> HDF5MapIO::getHeightDifference()
 {
     std::vector<float> diff;
 
-    if (!m_attributesGroup.exist("height_difference"))
+    if (!m_channelsGroup.exist("height_diff"))
     {
         return diff;
     }
 
-    m_attributesGroup.getDataSet("height_difference")
+    m_channelsGroup.getDataSet("height_diff")
         .read(diff);
 
     return diff;
@@ -329,7 +319,7 @@ MapImage HDF5MapIO::getImage(hf::Group group, std::string name)
 hf::DataSet HDF5MapIO::addVertexNormals(std::vector<float>& normals)
 {
     // TODO make more versatile to add and/or overwrite normals in file
-    auto dataSet = m_attributesGroup.createDataSet<float>("normals", hf::DataSpace::From(normals));
+    auto dataSet = m_channelsGroup.createDataSet<float>("vertex_normals", hf::DataSpace::From(normals));
     dataSet.write(normals);
 
     return dataSet;
@@ -337,7 +327,7 @@ hf::DataSet HDF5MapIO::addVertexNormals(std::vector<float>& normals)
 
 hf::DataSet HDF5MapIO::addVertexColors(std::vector<uint8_t>& colors)
 {
-    auto dataSet = m_attributesGroup.createDataSet<uint8_t>("rgb_colors", hf::DataSpace::From(colors));
+    auto dataSet = m_channelsGroup.createDataSet<uint8_t>("vertex_colors", hf::DataSpace::From(colors));
     dataSet.write(colors);
 
     return dataSet;
@@ -393,12 +383,12 @@ void HDF5MapIO::addLabel(std::string groupName, std::string labelName, std::vect
 
 void HDF5MapIO::addTextureKeypointsMap(std::unordered_map<MapVertex, std::vector<float>>& keypoints_map)
 {
-    if (!m_attributesGroup.exist("texture_features"))
+    if (!m_channelsGroup.exist("texture_features"))
     {
-        m_attributesGroup.createGroup("texture_features");
+        m_channelsGroup.createGroup("texture_features");
     }
 
-    auto tf = m_attributesGroup.getGroup("texture_features");
+    auto tf = m_channelsGroup.getGroup("texture_features");
 
     size_t i = 0;
     for (const auto& keypoint_features : keypoints_map)
@@ -416,13 +406,13 @@ void HDF5MapIO::addTextureKeypointsMap(std::unordered_map<MapVertex, std::vector
 
 void HDF5MapIO::addRoughness(std::vector<float>& roughness)
 {
-    m_attributesGroup.createDataSet<float>("roughness", hf::DataSpace::From(roughness))
+    m_channelsGroup.createDataSet<float>("roughness", hf::DataSpace::From(roughness))
         .write(roughness);
 }
 
 void HDF5MapIO::addHeightDifference(std::vector<float>& diff)
 {
-    m_attributesGroup.createDataSet<float>("height_difference", hf::DataSpace::From(diff))
+    m_channelsGroup.createDataSet<float>("height_diff", hf::DataSpace::From(diff))
         .write(diff);
 }
 

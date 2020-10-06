@@ -344,8 +344,8 @@ bool MapDisplay::loadData()
     }
     catch (...)
     {
-        ROS_ERROR_STREAM("An unexpected error occured while using Pluto Map IO");
-        setStatus(rviz::StatusProperty::Error, "IO", "An unexpected error occured while using Pluto Map IO");
+        ROS_ERROR_STREAM("An unexpected error occurred while using Pluto Map IO");
+        setStatus(rviz::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
         return false;
     }
 
