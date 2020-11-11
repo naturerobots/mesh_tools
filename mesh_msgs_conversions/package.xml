@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mesh_msgs_conversions</name>
+  <version>1.0.0</version>
+  <description>converts point clouds and attributes into meshes and mesh attributes</description>
+
+  <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
+
+  <license>BSD 3-Clause</license>
+  <author email="spuetz@uos.de">Sebastian Pütz</author>
+  <author email="hdeeken@uos.de">Henning Deeken</author>
+
+  <depend>lvr2</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>mesh_msgs</depend>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
