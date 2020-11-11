@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 find_package(catkin REQUIRED)
 find_package(LVR2 REQUIRED)
+find_package(PkgConfig REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -26,8 +27,10 @@ add_library(${PROJECT_NAME}
   src/hdf5_map_io.cpp
 )
 
-link_libraries(${PROJECT_NAME}
-  ${LVR2_LIBRARIES}
+find_library(LVR2_LIBRARY NAMES lvr2)
+
+target_link_libraries(${PROJECT_NAME}
+  ${LVR2_LIBRARY}
 )
 
 install(TARGETS ${PROJECT_NAME}
