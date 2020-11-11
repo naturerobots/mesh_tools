@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS ${PACKAGE_DEPENDENCIES})
 find_package(LVR2 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(MPI REQUIRED)
+find_package(PkgConfig REQUIRED)
 
 add_definitions(${LVR2_DEFINITIONS} ${OpenCV_DEFINITIONS})
 
@@ -45,9 +46,11 @@ add_library(${PROJECT_NAME}
   src/conversions.cpp
 )
 
+find_library(LVR2_LIBRARY NAMES lvr2)
+
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}
-  ${LVR2_LIBRARIES}
+  ${LVR2_LIBRARY}
   ${OpenCV_LIBRARIES}
 )
 
