@@ -2,6 +2,9 @@
 Changelog for package mesh_msgs_hdf5
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 1.0.0 (2020-04-26)
 ------------------
 * release version 1.0.0
