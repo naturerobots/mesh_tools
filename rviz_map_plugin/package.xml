@@ -3,7 +3,7 @@
   <description>
     RViz display types and tools for the mesh_msgs package.
   </description>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
   <author email="krschmidt@uos.de">Kristin Schmidt</author>
