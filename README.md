@@ -79,3 +79,10 @@ This Video shows a textured dataset of the botanical garden of Osnabrück includ
 This video shows the labeling tool, which is used to cluster faces to an object or a union, (in the example a door) using a mesh inside a building
 
 [![Label Tool](http://img.youtube.com/vi/3IV2yo0D_CU/0.jpg)](http://www.youtube.com/watch?v=3IV2yo0D_CU)
+
+## Build Status
+
+| ROS Distro  | GitHub CI | Develop | Documentation | Source Deb | Binary Deb |
+|-------------|-----------|---------|---------------|------------|------------|
+| **Melodic** | ![CI](https://github.com/uos/mesh_tools/workflows/CI/badge.svg) | [![Build Dev Status](http://build.ros.org/buildStatus/icon?job=Mdev__mesh_tools__ubuntu_bionic_amd64)](http://build.ros.org/job/Mdev__mesh_tools__ubuntu_bionic_amd64) | [![Build Doc Status](http://build.ros.org/buildStatus/icon?job=Mdoc__mesh_tools__ubuntu_bionic_amd64)](http://build.ros.org/job/Mdoc__mesh_tools__ubuntu_bionic_amd64) | [![Build Src Status](http://build.ros.org/buildStatus/icon?job=Msrc_uB__mesh_tools__ubuntu_bionic__source)](http://build.ros.org/job/Msrc_uB__mesh_tools__ubuntu_bionic__source) | [![Build Bin Status](http://build.ros.org/buildStatus/icon?job=Mbin_uB64__mesh_tools__ubuntu_bionic_amd64__binary)](http://build.ros.org/job/Mbin_uB64__mesh_tools__ubuntu_bionic_amd64__binary) |
+| **Noetic**  |           | [![Build Dev Status](http://build.ros.org/buildStatus/icon?job=Ndev__mesh_tools__ubuntu_focal_amd64)](http://build.ros.org/job/Ndev__mesh_tools__ubuntu_focal_amd64) | [![Build Doc Status](http://build.ros.org/buildStatus/icon?job=Ndoc__mesh_tools__ubuntu_focal_amd64)](http://build.ros.org/job/Ndoc__mesh_tools__ubuntu_focal_amd64) | [![Build Src Status](http://build.ros.org/buildStatus/icon?job=Nsrc_uF__mesh_tools__ubuntu_focal__source)](http://build.ros.org/job/Nsrc_uF__mesh_tools__ubuntu_focal__source) | [![Build Bin Status](http://build.ros.org/buildStatus/icon?job=Nbin_uF64__mesh_tools__ubuntu_focal_amd64__binary)](http://build.ros.org/job/Nbin_uF64__mesh_tools__ubuntu_focal_amd64__binary) | 
