@@ -187,6 +187,12 @@ public:
     void addLabel(std::string groupName, std::string labelName, std::vector<uint32_t>& faceIds);
 
     /**
+     * @brief Adds or updates the label (labelName) to the label group with the given faces.
+     * E.g.: tree_1 -> groupName=tree; labelName=1; separated by the '_'
+     */
+    void addOrUpdateLabel(std::string groupName, std::string labelName, std::vector<uint32_t>& faceIds);
+
+    /**
      * @brief Adds the keypoints with their corresponding positions to the attributes_group. The position
      * is saved to the entry via an attribute called 'vector'.
      */

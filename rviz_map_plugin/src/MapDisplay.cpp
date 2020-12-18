@@ -383,11 +383,10 @@ void MapDisplay::saveLabel(Cluster cluster)
         hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getStdString());
 
         // Add label with faces list
-        map_io.addLabel(results[0], results[1], faces);
+        map_io.addOrUpdateLabel(results[0], results[1], faces);
 
         // Add to cluster list
         m_clusterList.push_back(Cluster(label, faces));
-
 
         setStatus(rviz::StatusProperty::Ok, "Label", "Successfully saved label");
         ROS_INFO_STREAM("Map Display: Successfully added label to map.");

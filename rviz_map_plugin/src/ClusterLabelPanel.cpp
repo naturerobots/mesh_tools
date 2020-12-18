@@ -70,9 +70,9 @@ ClusterLabelPanel::ClusterLabelPanel(QWidget* parent)
     m_clusterNameEditor = new QLineEdit();
     clusterNameLayout->addWidget(m_clusterNameEditor);
 
-    m_createClusterButton = new QPushButton("Create and Label Cluster");
+    m_createClusterButton = new QPushButton("Label Cluster");
 
-    m_resetFacesButton = new QPushButton("Reset selected Faces");
+    m_resetFacesButton = new QPushButton("Reset Faces");
 
     QVBoxLayout* layout = new QVBoxLayout();
     layout->addLayout(clusterNameLayout);

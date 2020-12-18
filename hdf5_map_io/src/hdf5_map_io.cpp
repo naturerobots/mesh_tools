@@ -369,6 +369,29 @@ void HDF5MapIO::addVertexTextureCoords(std::vector<float>& coords)
         .write(coords);
 }
 
+void HDF5MapIO::addOrUpdateLabel(std::string groupName, std::string labelName, std::vector<uint32_t>& faceIds)
+{
+    std::cout << "Add or update label" << std::endl;
+    if (!m_labelsGroup.exist(groupName))
+    {
+        m_labelsGroup.createGroup(groupName);
+    }
+
+    auto group = m_labelsGroup.getGroup(groupName);
+    if(group.exist(labelName))
+    {
+      std::cout << "write to existing label" << std::endl;
+      auto dataset = group.getDataSet(labelName);
+      dataset.write(faceIds);
+    }
+    else
+    {
+      std::cout << "write to new label" << std::endl;
+      auto dataset = group.createDataSet<uint32_t>(labelName, hf::DataSpace::From(faceIds));
+      dataset.write(faceIds);
+    }
+}
+
 void HDF5MapIO::addLabel(std::string groupName, std::string labelName, std::vector<uint32_t>& faceIds)
 {
     if (!m_labelsGroup.exist(groupName))
