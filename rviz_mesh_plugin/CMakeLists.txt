@@ -2,14 +2,13 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rviz_mesh_plugin)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 
 set(THIS_PACKAGE_ROS_DEPS
   roscpp
   rviz
   std_msgs
   mesh_msgs
+  tf2_ros
 )
 
 find_package(catkin REQUIRED COMPONENTS
@@ -17,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  CATKIN_DEPENDS std_msgs mesh_msgs
+  CATKIN_DEPENDS roscpp rviz std_msgs mesh_msgs tf2_ros
 )
 
 include_directories(${catkin_INCLUDE_DIRS})

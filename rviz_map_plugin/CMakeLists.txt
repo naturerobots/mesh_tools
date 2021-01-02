@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rviz_map_plugin)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-
 set(THIS_PACKAGE_ROS_DEPS
   roscpp
   rviz
@@ -33,10 +30,7 @@ include_directories(
   ${HDF5_INCLUDE_DIRS}
   ${OpenCL_INCLUDE_DIRS}
   ${MPI_INCLUDE_PATH}
-  /usr/include
 )
-
-link_directories(${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
@@ -89,9 +83,6 @@ target_link_libraries(${PROJECT_NAME}
 
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
-  ${HDF5_LIBRARIES}
-  ${HDF5_HL_LIBRARIES}
-  ${OpenCL_LIBRARIES}
 )
 
 install(TARGETS ${PROJECT_NAME}

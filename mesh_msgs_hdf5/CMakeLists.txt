@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.4.6)
+cmake_minimum_required(VERSION 3.1)
 
 project(mesh_msgs_hdf5)
 
@@ -11,14 +11,8 @@ set(PACKAGE_DEPENDENCIES
 find_package(catkin REQUIRED COMPONENTS ${PACKAGE_DEPENDENCIES})
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 
-### compile with c++11
-if ("${CMAKE_VERSION}" VERSION_LESS "3.1")
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "--std=gnu++14 ${CMAKE_CXX_FLAGS}")
-  endif ()
-else ()
-  set(CMAKE_CXX_STANDARD 14)
-endif ()
+### compile with c++14
+set(CMAKE_CXX_STANDARD 14)
 
 include_directories(
   include
@@ -40,7 +34,10 @@ add_library(${PROJECT_NAME}
   src/mesh_msgs_hdf5.cpp
 )
 
-link_directories(${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} 
+    ${HDF5_LIBRARIES}
+    ${HDF5_HL_LIBRARIES}
+)
 
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 

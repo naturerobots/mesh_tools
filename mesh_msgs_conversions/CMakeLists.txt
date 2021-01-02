@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.4.6)
+cmake_minimum_required(VERSION 3.1)
 
 project(mesh_msgs_conversions)
 
@@ -16,17 +16,11 @@ find_package(PkgConfig REQUIRED)
 
 add_definitions(${LVR2_DEFINITIONS} ${OpenCV_DEFINITIONS})
 
-### compile with c++11
-if ("${CMAKE_VERSION}" VERSION_LESS "3.1")
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set (CMAKE_CXX_FLAGS "--std=gnu++14 ${CMAKE_CXX_FLAGS}")
-  endif ()
-else ()
-  set (CMAKE_CXX_STANDARD 14)
-endif ()
+### compile with c++14
+set (CMAKE_CXX_STANDARD 14)
 
 # enable openmp support
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 
 include_directories(
   include
