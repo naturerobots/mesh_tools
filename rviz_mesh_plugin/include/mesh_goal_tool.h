@@ -55,51 +55,49 @@
 #include <QObject>
 #endif
 
-namespace rviz_mesh_plugin{
-
+namespace rviz_mesh_plugin
+{
 /**
  * @class MeshGoalTool
  * @brief Tool for publishing a goal within a mesh
  */
-class MeshGoalTool : public MeshPoseTool{
-Q_OBJECT
+class MeshGoalTool : public MeshPoseTool
+{
+  Q_OBJECT
 public:
+  /**
+   * @brief Constructor
+   */
+  MeshGoalTool();
 
-    /**
-     * @brief Constructor
-     */
-    MeshGoalTool();
-
-    /**
-     * @brief Callback that is executed when tool is initialized
-     */
-    virtual void onInitialize();
+  /**
+   * @brief Callback that is executed when tool is initialized
+   */
+  virtual void onInitialize();
 
 private Q_SLOTS:
 
-    /**
-     * @brief Updates the topic on which the goal will be published
-     */
-    void updateTopic();
+  /**
+   * @brief Updates the topic on which the goal will be published
+   */
+  void updateTopic();
 
 protected:
+  /**
+   * @brief When goal is set, publish result
+   * @param position Position
+   * @param orientation Orientation
+   */
+  virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation);
 
-    /**
-     * @brief When goal is set, publish result
-     * @param position Position
-     * @param orientation Orientation
-     */
-    virtual void onPoseSet( const Ogre::Vector3& position, const Ogre::Quaternion& orientation );
-
-    /// Property for the topic
-    rviz::StringProperty* topic_property_;
-    /// Switch bottom / top for selection
-    rviz::BoolProperty* switch_bottom_top_;
-    /// Publisher
-    ros::Publisher pose_pub_;
-    /// Node handle
-    ros::NodeHandle nh_;
-
+  /// Property for the topic
+  rviz::StringProperty* topic_property_;
+  /// Switch bottom / top for selection
+  rviz::BoolProperty* switch_bottom_top_;
+  /// Publisher
+  ros::Publisher pose_pub_;
+  /// Node handle
+  ros::NodeHandle nh_;
 };
 
 } /* namespace rviz_mesh_plugin */

@@ -16,10 +16,14 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
+  INCLUDE_DIRS include
   CATKIN_DEPENDS roscpp rviz std_msgs mesh_msgs tf2_ros
 )
 
-include_directories(${catkin_INCLUDE_DIRS})
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 set(CMAKE_AUTOMOC ON)
@@ -48,7 +52,17 @@ set(SOURCE_FILES
   src/mesh_goal_tool.cpp
 )
 
-add_library(rviz_mesh_plugin ${SOURCE_FILES})
+set(HEADER_FILES
+  include/trianglemesh_display.h
+  include/trianglemesh_visual.h
+  include/textured_mesh_display.h
+  include/textured_mesh_visual.h
+  include/face_selection_tool.h
+  include/mesh_pose_tool.h
+  include/mesh_goal_tool.h
+)
+
+add_library(rviz_mesh_plugin ${SOURCE_FILES} ${HEADER_FILES})
 target_link_libraries(rviz_mesh_plugin ${QT_LIBRARIES} ${catkin_LIBRARIES})
 add_dependencies(rviz_mesh_plugin ${catkin_EXPORTED_TARGETS})
 
@@ -57,9 +71,18 @@ install(TARGETS rviz_mesh_plugin
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
 install(FILES
   rviz_plugin.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 install(DIRECTORY icons/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons)
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons
+)
+
+install(DIRECTORY include/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)

@@ -9,11 +9,11 @@
  *  modification, are permitted provided that the following conditions
  *  are met:
  *
- *   1. Redistributions of source code must retain the above 
+ *   1. Redistributions of source code must retain the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer.
  *
- *   2. Redistributions in binary form must reproduce the above 
+ *   2. Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials provided
  *      with the distribution.
@@ -32,7 +32,7 @@
  *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
  *  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  *  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+ *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  *  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
@@ -90,8 +90,9 @@
 
 #endif
 
-namespace rviz{
-  class RosTopicProperty;
+namespace rviz
+{
+class RosTopicProperty;
 }
 
 /**
@@ -111,15 +112,14 @@ namespace Ogre
 {
 class SceneNode;
 class Vector3;
-}
+}  // namespace Ogre
 
 namespace rviz_mesh_plugin
 {
-class FaceSelectionTool: public rviz::Tool
+class FaceSelectionTool : public rviz::Tool
 {
-Q_OBJECT
+  Q_OBJECT
 public:
-
   FaceSelectionTool();
   ~FaceSelectionTool();
   virtual void onInitialize();
@@ -135,75 +135,65 @@ public:
   void clearSelection();
 
   bool areFacesSelected();
-  void getSelectedFaces(size_t goalSection, std::string regionLabel, mesh_msgs::TriangleMesh &meshMsg);
-
+  void getSelectedFaces(size_t goalSection, std::string regionLabel, mesh_msgs::TriangleMesh& meshMsg);
 
 private Q_SLOTS:
-    void updateTopic();
+  void updateTopic();
 
 private:
+  void initNode();
+  void initOgre();
 
-    void initNode();
-    void initOgre();
+  void updateSelectionMesh();
 
-    void updateSelectionMesh();
+  void meshCb(const mesh_msgs::TriangleMeshStamped::ConstPtr& mesh);
 
-    void meshCb(const mesh_msgs::TriangleMeshStamped::ConstPtr& mesh);
+  void setTransform(const mesh_msgs::TriangleMeshStamped& mesh);
+  void setReferenceMesh(mesh_msgs::TriangleMesh mesh);
+  void getSegmentMesh(mesh_msgs::TriangleMesh& mesh);
 
-    void setTransform(const mesh_msgs::TriangleMeshStamped &mesh);
-    void setReferenceMesh( mesh_msgs::TriangleMesh mesh);
-    void getSegmentMesh( mesh_msgs::TriangleMesh& mesh);
+  void selectSingleFace(rviz::ViewportMouseEvent& event);
+  void deselectSingleFace(rviz::ViewportMouseEvent& event);
 
-    void selectSingleFace(rviz::ViewportMouseEvent& event);
-    void deselectSingleFace(rviz::ViewportMouseEvent& event);
+  bool singleRayQuery(rviz::ViewportMouseEvent& event, int num_results, Ogre::Ray& ray);
 
-    bool singleRayQuery(rviz::ViewportMouseEvent& event, int num_results, Ogre::Ray& ray);
+  void getIdentityOfSingleFace(Ogre::ManualObject* mesh, Ogre::Ray& ray, size_t& goalSection, size_t& goalIndex,
+                               Ogre::Real& dist);
 
-    void getIdentityOfSingleFace(Ogre::ManualObject* mesh,
-                                 Ogre::Ray &ray,
-                                 size_t &goalSection,
-                                 size_t &goalIndex,
-                                 Ogre::Real& dist);
+  void getRawManualObjectData(Ogre::ManualObject* mesh, size_t sectionNumber, size_t& vertexCount,
+                              Ogre::Vector3*& vertices, size_t& indexCount, unsigned long*& indices);
 
-    void getRawManualObjectData(Ogre::ManualObject *mesh,
-                                size_t sectionNumber,
-                                size_t &vertexCount,
-                                Ogre::Vector3* &vertices,
-                                size_t &indexCount,
-                                unsigned long* &indices);
+  Ogre::SceneManager* scene_manager;
+  Ogre::ManualObject* reference_mesh;
+  Ogre::MaterialPtr reference_mesh_material;
+  Ogre::ManualObject* segment_mesh;
+  Ogre::MaterialPtr segment_mesh_material;
+  Ogre::SceneNode* scene_node;
 
-    Ogre::SceneManager* scene_manager;
-    Ogre::ManualObject* reference_mesh;
-    Ogre::MaterialPtr reference_mesh_material;
-    Ogre::ManualObject* segment_mesh;
-    Ogre::MaterialPtr segment_mesh_material;
-    Ogre::SceneNode* scene_node;
+  rviz::RosTopicProperty* mesh_topic;
 
-    rviz::RosTopicProperty* mesh_topic;
+  std::map<size_t, std::vector<size_t> > m_goalFaces;
 
-    std::map<size_t, std::vector<size_t> > m_goalFaces;
+  bool m_singleSelect;
+  bool m_singleDeselect;
 
-    bool m_singleSelect;
-    bool m_singleDeselect;
+  ros::NodeHandle n;
+  ros::Subscriber mesh_sub;
+  ros::Publisher mesh_pub;
+  ros::Publisher id_pub;
+  ros::Publisher goal_pub;
+  int num_results;
+  bool has_mesh;
 
-    ros::NodeHandle n;
-    ros::Subscriber mesh_sub;
-    ros::Publisher mesh_pub;
-    ros::Publisher id_pub;
-    ros::Publisher goal_pub;
-    int num_results;
-    bool has_mesh;
+  int reference_color_r = 0;
+  int reference_color_g = 155;
+  int reference_color_b = 155;
+  float reference_color_a = 0.5;
 
-    int reference_color_r = 0;
-    int reference_color_g = 155;
-    int reference_color_b = 155;
-    float reference_color_a = 0.5;
-  
-    int segment_color_r = 0;
-    int segment_color_g = 0;
-    int segment_color_b = 255;
-    float segment_color_a = 0.75;
-
+  int segment_color_r = 0;
+  int segment_color_g = 0;
+  int segment_color_b = 255;
+  float segment_color_a = 0.75;
 };
-}
+}  // namespace rviz_mesh_plugin
 #endif
