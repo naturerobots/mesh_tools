@@ -241,7 +241,7 @@ namespace rviz_mesh_plugin
     if (wireframeAlpha < 1.0)
     {
       pass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
-      pass->setDepthWriteEnabled(false);
+      pass->setDepthWriteEnabled(true);
     }
     pass->setPolygonMode(Ogre::PM_WIREFRAME);
     pass->setCullingMode(Ogre::CULL_NONE);
@@ -274,7 +274,7 @@ namespace rviz_mesh_plugin
     if (facesAlpha < 1.0)
     {
       pass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
-      pass->setDepthWriteEnabled(false);
+      pass->setDepthWriteEnabled(true);
     }
     pass->setPolygonMode(Ogre::PM_SOLID);
     pass->setCullingMode(Ogre::CULL_NONE);
@@ -299,7 +299,7 @@ namespace rviz_mesh_plugin
     if (normalsAlpha < 1.0)
     {
       pass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
-      pass->setDepthWriteEnabled(false);
+      pass->setDepthWriteEnabled(true);
     }
     pass->setPolygonMode(Ogre::PM_SOLID);
     pass->setCullingMode(Ogre::CULL_NONE);
@@ -438,7 +438,6 @@ void TexturedMeshVisual::updateNormals(float ScalingFactor)
 
 void TexturedMeshVisual::enteringGeneralTriangleMesh(const mesh_msgs::MeshGeometry& mesh)
 {
-
   std::stringstream sstm;
 
   sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
@@ -495,7 +494,6 @@ void TexturedMeshVisual::enteringColoredTriangleMesh(
   const mesh_msgs::MeshGeometry& mesh,
   const mesh_msgs::MeshVertexColors& vertexColors)
 {
-
   if (m_meshGeneralMaterial.isNull())
   {
     std::stringstream sstm;
@@ -507,16 +505,11 @@ void TexturedMeshVisual::enteringColoredTriangleMesh(
         Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
         true
       );
+  }
 
-    // start entering data
-    m_mesh->clear();
-    m_mesh->begin(m_meshGeneralMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-  }
-  else
-  {
-    // start updating data
-    m_mesh->beginUpdate(0);
-  }
+  // start entering data
+  m_mesh->clear();
+  m_mesh->begin(m_meshGeneralMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
   // write vertices
   // write vertex colors
