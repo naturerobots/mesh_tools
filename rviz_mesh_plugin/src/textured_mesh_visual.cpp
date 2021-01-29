@@ -269,12 +269,12 @@ namespace rviz_mesh_plugin
     if (useVertexColors)
     {
       pass->setLightingEnabled(false);
+      pass->setDepthWriteEnabled(true);
     }
-
-    if (facesAlpha < 1.0)
+    else if (facesAlpha < 1.0)
     {
       pass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
-      pass->setDepthWriteEnabled(true);
+      pass->setDepthWriteEnabled(false);
     }
     pass->setPolygonMode(Ogre::PM_SOLID);
     pass->setCullingMode(Ogre::CULL_NONE);
