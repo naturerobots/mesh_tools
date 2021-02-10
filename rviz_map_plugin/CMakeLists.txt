@@ -13,14 +13,13 @@ find_package(catkin REQUIRED COMPONENTS
   ${THIS_PACKAGE_ROS_DEPS}
 )
 
-find_package(MPI REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 find_package(OpenCL 2 REQUIRED)
 
 catkin_package(
   CATKIN_DEPENDS ${THIS_PACKAGE_ROS_DEPS}
-  DEPENDS Boost OpenCL HDF5 OpenCL MPI
+  DEPENDS Boost OpenCL HDF5 OpenCL
 )
 
 include_directories(
@@ -29,7 +28,6 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${HDF5_INCLUDE_DIRS}
   ${OpenCL_INCLUDE_DIRS}
-  ${MPI_INCLUDE_PATH}
 )
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
@@ -78,7 +76,6 @@ target_link_libraries(${PROJECT_NAME}
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
   ${OpenCL_LIBRARIES}
-  ${MPI_C_LIBRARIES}
 )
 
 add_dependencies(${PROJECT_NAME}

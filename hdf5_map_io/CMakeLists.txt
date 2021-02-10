@@ -5,12 +5,13 @@ set(CMAKE_CXX_STANDARD 14)
 
 find_package(catkin REQUIRED)
 find_package(LVR2 REQUIRED)
+find_package(MPI)
 find_package(PkgConfig REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES hdf5_map_io
-  DEPENDS LVR2
+  DEPENDS LVR2 MPI
 )
 
 # HighFive
@@ -30,6 +31,7 @@ find_library(LVR2_LIBRARY NAMES lvr2)
 
 target_link_libraries(${PROJECT_NAME}
   ${LVR2_LIBRARY}
+  ${MPI_CXX_LIBRARIES}
 )
 
 install(TARGETS ${PROJECT_NAME}
