@@ -553,12 +553,6 @@ void TexturedMeshVisual::enteringGeneralTriangleMesh(const mesh_msgs::MeshGeomet
   {
     // write vertices
     m_mesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-
-    // write vertex normals, if enabled
-    if (m_vertex_normals_enabled)
-    {
-      m_mesh->normal(mesh.vertex_normals[i].x, mesh.vertex_normals[i].y, mesh.vertex_normals[i].z);
-    }
   }
 
   // write triangles
@@ -635,12 +629,6 @@ void TexturedMeshVisual::enteringColoredTriangleMesh(const mesh_msgs::MeshGeomet
     // write vertex colors
     m_mesh->colour(vertexColors.vertex_colors[i].r, vertexColors.vertex_colors[i].g, vertexColors.vertex_colors[i].b,
                    vertexColors.vertex_colors[i].a);
-
-    // write vertex normals, if enabled
-    if (m_vertex_normals_enabled)
-    {
-      m_mesh->normal(mesh.vertex_normals[i].x, mesh.vertex_normals[i].y, mesh.vertex_normals[i].z);
-    }
   }
 
   // write triangles
@@ -763,12 +751,6 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const mesh_msgs::Me
     // write vertex colors that are calculated from the cost values
     float normalizedCost = (vertexCosts.costs[i] - minCost) / range;
     m_vertexCostsMesh->colour(calculateColorFromCost(normalizedCost, costColorType));
-
-    // write vertex normals, if enabled
-    if (m_vertex_normals_enabled)
-    {
-      m_vertexCostsMesh->normal(mesh.vertex_normals[i].x, mesh.vertex_normals[i].y, mesh.vertex_normals[i].z);
-    }
   }
 
   // write triangles
@@ -978,13 +960,6 @@ void TexturedMeshVisual::enteringTexturedTriangleMesh(const mesh_msgs::MeshGeome
           // write texture coordinates
           m_texturedMesh->textureCoord(meshMaterials.vertex_tex_coords[vertexIndex].u,
                                        1 - meshMaterials.vertex_tex_coords[vertexIndex].v);
-
-          // write vertex normals, if enabled
-          if (m_vertex_normals_enabled)
-          {
-            m_texturedMesh->normal(mesh.vertex_normals[vertexIndex].x, mesh.vertex_normals[vertexIndex].y,
-                                   mesh.vertex_normals[vertexIndex].z);
-          }
         }
         // write the three triangle vertex indices
         m_texturedMesh->triangle(triangleVertexCount, triangleVertexCount + 1, triangleVertexCount + 2);
@@ -1014,13 +989,6 @@ void TexturedMeshVisual::enteringTexturedTriangleMesh(const mesh_msgs::MeshGeome
 
           // write triangle colors
           m_noTexCluMesh->colour(material.color.r, material.color.g, material.color.b, material.color.a);
-
-          // write vertex normals, if enabled
-          if (m_vertex_normals_enabled)
-          {
-            m_noTexCluMesh->normal(mesh.vertex_normals[vertexIndex].x, mesh.vertex_normals[vertexIndex].y,
-                                   mesh.vertex_normals[vertexIndex].z);
-          }
         }
         // write the three triangle vertex indices
         m_noTexCluMesh->triangle(noTexCluVertexCount, noTexCluVertexCount + 1, noTexCluVertexCount + 2);
