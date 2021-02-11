@@ -231,7 +231,7 @@ private:
    * @brief Cache function for vertex cost messages.
    * @param costsStamped The vertex cost message
    */
-  void cacheVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr costsStamped);
+  void cacheVertexCosts(std::string layer, const std::vector<float>& costs);
 
   /**
    * @brief Sets data for trianglemesh_visual and updates the mesh.
@@ -391,7 +391,7 @@ private:
   rviz::FloatProperty* m_costUpperLimit;
 
   /// Cache for received vertex cost messages
-  std::map<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr> m_costCache;
+  std::map<std::string, std::vector<float>> m_costCache;
 };
 }  // End namespace rviz_map_plugin
 

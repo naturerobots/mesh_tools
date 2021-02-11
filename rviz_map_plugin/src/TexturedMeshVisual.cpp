@@ -199,11 +199,6 @@ void TexturedMeshVisual::reset()
 
   m_images.clear();
 
-  m_meshUuid = "";
-  m_vertexColorsUuid = "";
-  m_vertexCostsUuid = "";
-  m_materialsUuid = "";
-
   m_vertex_colors_enabled = false;
   m_materials_enabled = false;
   m_texture_coords_enabled = false;
@@ -534,37 +529,6 @@ void TexturedMeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
   m_mesh->end();
 }
 
-void TexturedMeshVisual::enteringGeneralTriangleMesh(const mesh_msgs::MeshGeometry& mesh)
-{
-  std::stringstream sstm;
-
-  sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
-
-  m_meshGeneralMaterial = Ogre::MaterialManager::getSingleton().create(
-      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-  // start entering data
-  m_mesh->clear();
-  m_mesh->begin(sstm.str(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
-  // write vertices
-  // write vertex normals(if enabled)
-  for (size_t i = 0; i < mesh.vertices.size(); i++)
-  {
-    // write vertices
-    m_mesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-  }
-
-  // write triangles
-  for (size_t i = 0; i < mesh.faces.size(); i++)
-  {
-    m_mesh->triangle(mesh.faces[i].vertex_indices[0], mesh.faces[i].vertex_indices[1], mesh.faces[i].vertex_indices[2]);
-  }
-
-  // finish entering data
-  m_mesh->end();
-}
-
 void TexturedMeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors)
 {
   if (m_meshGeneralMaterial.isNull())
@@ -641,62 +605,13 @@ void TexturedMeshVisual::enteringColoredTriangleMesh(const mesh_msgs::MeshGeomet
   m_mesh->end();
 }
 
-void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts)
-{
-  // Calculate maximum value for vertex costs
-  float maxCost = 0.0f;
-  for (float cost : vertexCosts)
-  {
-    maxCost = cost > maxCost ? cost : maxCost;
-  }
-
-  if (m_vertexCostMaterial.isNull())
-  {
-    std::stringstream sstm;
-    sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "VertexCostMaterial_";
-
-    m_vertexCostMaterial = Ogre::MaterialManager::getSingleton().create(
-        sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-    Ogre::Pass* pass = m_vertexCostMaterial->getTechnique(0)->getPass(0);
-    pass->setCullingMode(Ogre::CULL_NONE);
-    pass->setLightingEnabled(false);
-  }
-  m_vertexCostsMesh->setVisible(false);
-
-  // start entering data
-  m_vertexCostsMesh->begin(m_vertexCostMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
-  // write vertices
-  // write vertex colors
-  for (size_t i = 0; i < mesh.vertices.size(); i++)
-  {
-    // write vertices
-    m_vertexCostsMesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-
-    // write vertex colors that are calculated from the cost values
-    m_vertexCostsMesh->colour(calculateColorFromCost(vertexCosts[i] / maxCost, 0));
-  }
-
-  // write triangles
-  for (size_t i = 0; i < mesh.faces.size(); i++)
-  {
-    m_vertexCostsMesh->triangle(mesh.faces[i].vertexIndices[0], mesh.faces[i].vertexIndices[1],
-                                mesh.faces[i].vertexIndices[2]);
-  }
-
-  // finish entering data
-  m_vertexCostsMesh->end();
-}
-
-void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const mesh_msgs::MeshGeometry& mesh,
-                                                             const mesh_msgs::MeshVertexCosts& vertexCosts,
+void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
                                                              int costColorType)
 {
   // Calculate maximum value for vertex costs
   float maxCost = std::numeric_limits<float>::min();
   float minCost = std::numeric_limits<float>::max();
-  for (float cost : vertexCosts.costs)
+  for (float cost : vertexCosts)
   {
     if (std::isfinite(cost) && cost > maxCost)
       maxCost = cost;
@@ -707,8 +622,7 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const mesh_msgs::Me
   enteringTriangleMeshWithVertexCosts(mesh, vertexCosts, costColorType, minCost, maxCost);
 }
 
-void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const mesh_msgs::MeshGeometry& mesh,
-                                                             const mesh_msgs::MeshVertexCosts& vertexCosts,
+void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
                                                              int costColorType, float minCost, float maxCost)
 {
   float range = maxCost - minCost;
@@ -749,15 +663,17 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const mesh_msgs::Me
     m_vertexCostsMesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
 
     // write vertex colors that are calculated from the cost values
-    float normalizedCost = (vertexCosts.costs[i] - minCost) / range;
+    float normalizedCost = (vertexCosts[i] - minCost) / range;
+    normalizedCost = std::max(0.0f, normalizedCost);
+    normalizedCost = std::min(1.0f, normalizedCost);
     m_vertexCostsMesh->colour(calculateColorFromCost(normalizedCost, costColorType));
   }
 
   // write triangles
   for (size_t i = 0; i < mesh.faces.size(); i++)
   {
-    m_vertexCostsMesh->triangle(mesh.faces[i].vertex_indices[0], mesh.faces[i].vertex_indices[1],
-                                mesh.faces[i].vertex_indices[2]);
+    m_vertexCostsMesh->triangle(mesh.faces[i].vertexIndices[0], mesh.faces[i].vertexIndices[1],
+                                mesh.faces[i].vertexIndices[2]);
   }
 
   // finish entering data
@@ -1030,36 +946,6 @@ void TexturedMeshVisual::enteringNormals(const Geometry& mesh, const vector<Norm
   m_normals->end();
 }
 
-void TexturedMeshVisual::enteringNormals(const mesh_msgs::MeshGeometry& mesh)
-{
-  if (!m_vertex_normals_enabled)
-  {
-    return;
-  }
-
-  std::stringstream sstm;
-  sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
-  m_normalMaterial = Ogre::MaterialManager::getSingleton().create(
-      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-  // Create pointNormals
-  m_normals->clear();
-  m_normals->begin(sstm.str(), Ogre::RenderOperation::OT_LINE_LIST);
-
-  // Vertices
-  for (size_t i = 0; i < mesh.vertex_normals.size(); i++)
-  {
-    m_normals->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-    m_normals->position(mesh.vertices[i].x + m_normalsScalingFactor * mesh.vertex_normals[i].x,
-                        mesh.vertices[i].y + m_normalsScalingFactor * mesh.vertex_normals[i].y,
-                        mesh.vertices[i].z + m_normalsScalingFactor * mesh.vertex_normals[i].z);
-    // add line to index buffer
-    m_normals->index(2 * i);
-    m_normals->index(2 * i + 1);
-  }
-  m_normals->end();
-}
-
 bool TexturedMeshVisual::setGeometry(const Geometry& mesh)
 {
   reset();
@@ -1096,71 +982,6 @@ bool TexturedMeshVisual::setGeometry(const Geometry& mesh)
 
   // entering a general triangle mesh into the internal buffer
   enteringGeneralTriangleMesh(mesh);
-
-  return true;
-}
-
-bool TexturedMeshVisual::setGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
-{
-  reset();
-
-  // for a better legibility of the code
-  const mesh_msgs::MeshGeometry& mesh = meshMsg->mesh_geometry;
-  m_meshMsg = meshMsg->mesh_geometry;
-  m_meshUuid = meshMsg->uuid;
-
-  // default: vertex colors are optional and therefore disabled
-  m_vertex_colors_enabled = false;
-
-  // default: textures and texture_coords are optional and therefore disabled
-  m_textures_enabled = false;
-  m_texture_coords_enabled = false;
-
-  // default: vertex normals are optional and therefore disabled
-  m_vertex_normals_enabled = false;
-
-  // default: vertex costs are optional and therefore disabled
-  m_vertex_costs_enabled = false;
-
-  // check if there are enough vertices given
-  if (mesh.vertices.size() < 3)
-  {
-    ROS_WARN("Received not enough vertices, can't create mesh!");
-    return false;
-  }
-
-  // defines the buffer sizes
-  int vertex_count = mesh.vertices.size();
-  int index_count = mesh.faces.size() * 3;
-
-  // vertex normals
-  // check if there are vertex normals for each vertex
-  if (mesh.vertex_normals.size() == mesh.vertices.size())
-  {
-    ROS_INFO("Received %lu vertex normals.", mesh.vertex_normals.size());
-    m_vertex_normals_enabled = true;
-  }
-  else if (mesh.vertex_normals.size() > 0)
-  {
-    ROS_WARN("Received not as much vertex normals as vertices, ignoring vertex normals!");
-  }
-
-  // avoid memory reallocation
-  m_mesh->estimateVertexCount(vertex_count);
-  m_mesh->estimateIndexCount(index_count);
-  m_normals->estimateVertexCount(mesh.vertices.size() * 2);
-  m_normals->estimateIndexCount(mesh.vertices.size() * 2);
-  // m_texturedMesh->estimateVertexCount(vertex_count * 3);
-  // m_texturedMesh->estimateIndexCount(index_count);
-
-  // entering a general triangle mesh into the internal buffer
-  enteringGeneralTriangleMesh(mesh);
-
-  // entering the normals into the internal buffer
-  if (m_vertex_normals_enabled)
-  {
-    enteringNormals(mesh);
-  }
 
   return true;
 }
@@ -1212,44 +1033,21 @@ bool TexturedMeshVisual::setVertexColors(const vector<Color>& vertexColors)
   return true;
 }
 
-bool TexturedMeshVisual::setVertexColors(const mesh_msgs::MeshVertexColorsStamped::ConstPtr& vertexColorsMsg)
-{
-  // check if these MeshVertexColors belong to the current mesh and were not already loaded
-  if (m_meshUuid != vertexColorsMsg->uuid)
-  {
-    ROS_WARN("Can't add vertex colors, uuids do not match.");
-    return false;
-  }
-  // check if the vertex colors for this mesh were already set
-  if (m_vertexColorsUuid == vertexColorsMsg->uuid)
-  {
-    ROS_WARN("Can't add vertex colors, already received vertex colors for this mesh.");
-    return false;
-  }
-
-  const mesh_msgs::MeshVertexColors vertexColors = vertexColorsMsg->mesh_vertex_colors;
-
-  // check if there are vertex colors for each vertex
-  if (vertexColors.vertex_colors.size() == m_meshMsg.vertices.size())
-  {
-    ROS_INFO("Received %lu vertex colors.", vertexColors.vertex_colors.size());
-    m_vertex_colors_enabled = true;
-  }
-  else
-  {
-    ROS_WARN("Received not as much vertex colors as vertices, ignoring the vertex colors!");
-    return false;
-  }
-
-  enteringColoredTriangleMesh(m_meshMsg, vertexColors);
-
-  m_vertexColorsUuid = vertexColorsMsg->uuid;
-
-  return true;
-}
-
 bool TexturedMeshVisual::setVertexCosts(const vector<float>& vertexCosts)
 {
+  return setVertexCosts(vertexCosts, 0);
+}
+
+bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts,
+                                        int costColorType)
+{
+//   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
+//   if (m_meshUuid != vertexCostsMsg->uuid)
+//   {
+//     ROS_WARN("Can't add vertex costs, uuids do not match.");
+//     return false;
+//   }
+
   // check if there are vertex costs for each vertex
   if (vertexCosts.size() == m_geometry.vertices.size())
   {
@@ -1262,58 +1060,27 @@ bool TexturedMeshVisual::setVertexCosts(const vector<float>& vertexCosts)
     return false;
   }
 
-  enteringTriangleMeshWithVertexCosts(m_geometry, vertexCosts);
+  enteringTriangleMeshWithVertexCosts(m_geometry, vertexCosts, costColorType);
+
+//   m_vertexCostsUuid = vertexCostsMsg->uuid;
 
   return true;
 }
 
-bool TexturedMeshVisual::setVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& vertexCostsMsg,
-                                        int costColorType)
-{
-  // check if these MeshVertexCosts belong to the current mesh and were not already loaded
-  if (m_meshUuid != vertexCostsMsg->uuid)
-  {
-    ROS_WARN("Can't add vertex costs, uuids do not match.");
-    return false;
-  }
-
-  const mesh_msgs::MeshVertexCosts vertexCosts = vertexCostsMsg->mesh_vertex_costs;
-
-  // check if there are vertex costs for each vertex
-  if (vertexCosts.costs.size() == m_meshMsg.vertices.size())
-  {
-    ROS_INFO("Received %lu vertex costs.", vertexCosts.costs.size());
-    m_vertex_costs_enabled = true;
-  }
-  else
-  {
-    ROS_WARN("Received not as much vertex costs as vertices, ignoring the vertex costs!");
-    return false;
-  }
-
-  enteringTriangleMeshWithVertexCosts(m_meshMsg, vertexCosts, costColorType);
-
-  m_vertexCostsUuid = vertexCostsMsg->uuid;
-
-  return true;
-}
-
-bool TexturedMeshVisual::setVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& vertexCostsMsg,
+bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts,
                                         int costColorType, float minCost, float maxCost)
 {
-  // check if these MeshVertexCosts belong to the current mesh and were not already loaded
-  if (m_meshUuid != vertexCostsMsg->uuid)
-  {
-    ROS_WARN("Can't add vertex costs, uuids do not match.");
-    return false;
-  }
-
-  const mesh_msgs::MeshVertexCosts vertexCosts = vertexCostsMsg->mesh_vertex_costs;
+//   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
+//   if (m_meshUuid != vertexCostsMsg->uuid)
+//   {
+//     ROS_WARN("Can't add vertex costs, uuids do not match.");
+//     return false;
+//   }
 
   // check if there are vertex costs for each vertex
-  if (vertexCosts.costs.size() == m_meshMsg.vertices.size())
+  if (vertexCosts.size() == m_geometry.vertices.size())
   {
-    ROS_INFO("Received %lu vertex costs.", vertexCosts.costs.size());
+    ROS_DEBUG("Received %lu vertex costs.", vertexCosts.size());
     m_vertex_costs_enabled = true;
   }
   else
@@ -1322,9 +1089,9 @@ bool TexturedMeshVisual::setVertexCosts(const mesh_msgs::MeshVertexCostsStamped:
     return false;
   }
 
-  enteringTriangleMeshWithVertexCosts(m_meshMsg, vertexCosts, costColorType, minCost, maxCost);
+  enteringTriangleMeshWithVertexCosts(m_geometry, vertexCosts, costColorType, minCost, maxCost);
 
-  m_vertexCostsUuid = vertexCostsMsg->uuid;
+//   m_vertexCostsUuid = vertexCostsMsg->uuid;
 
   return true;
 }
@@ -1363,49 +1130,7 @@ bool TexturedMeshVisual::setMaterials(const vector<Material>& materials, const v
 
 bool TexturedMeshVisual::setMaterials(const mesh_msgs::MeshMaterialsStamped::ConstPtr& materialMsg)
 {
-  // check if these MeshMaterials belong to the current mesh and were not already loaded
-  if (m_meshUuid != materialMsg->uuid)
-  {
-    ROS_WARN("Can't add materials, uuids do not match.");
-    return false;
-  }
-  // check if the MeshMaterials were already set for this mesh
-  if (m_materialsUuid == materialMsg->uuid)
-  {
-    ROS_WARN("Can't add materials, already received materials for this mesh.");
-    return false;
-  }
-
-  mesh_msgs::MeshMaterials meshMaterials = materialMsg->mesh_materials;
-
-  // check if there is a material index for each cluster
-  if (meshMaterials.clusters.size() == meshMaterials.cluster_materials.size())
-  {
-    ROS_INFO("Received %lu clusters.", meshMaterials.clusters.size());
-    m_materials_enabled = true;  // enable textures
-  }
-  else
-  {
-    ROS_WARN("Received unmatching numbers of clusters and material indices, ignoring materials!");
-    return false;
-  }
-
-  // texture coords
-  // check if there are texture coords for each vertex
-  if (meshMaterials.vertex_tex_coords.size() == m_meshMsg.vertices.size())
-  {
-    ROS_INFO("Received %lu texture coords.", meshMaterials.vertex_tex_coords.size());
-    m_texture_coords_enabled = true;  // enable texture coords
-    m_textures_enabled = true;
-  }
-  else if (meshMaterials.vertex_tex_coords.size() > 0)
-  {
-    ROS_WARN("Received not as much texture coords as vertices, ignoring texture coords!");
-  }
-
-  enteringTexturedTriangleMesh(m_meshMsg, meshMaterials);
-
-  m_materialsUuid = materialMsg->uuid;
+  //enteringTexturedTriangleMesh(m_meshMsg, meshMaterials);
 
   return true;
 }
@@ -1438,11 +1163,11 @@ bool TexturedMeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
 
 bool TexturedMeshVisual::addTexture(const mesh_msgs::MeshTexture::ConstPtr& textureMsg)
 {
-  if (m_meshUuid != textureMsg->uuid || m_materialsUuid != textureMsg->uuid)
-  {
-    ROS_WARN("Can't add texture, uuids do not match.");
-    return false;
-  }
+//   if (m_meshUuid != textureMsg->uuid || m_materialsUuid != textureMsg->uuid)
+//   {
+//     ROS_WARN("Can't add texture, uuids do not match.");
+//     return false;
+//   }
 
   size_t textureIndex = textureMsg->texture_index;
 

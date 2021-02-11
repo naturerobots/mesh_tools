@@ -81,6 +81,8 @@
 
 #include <ros/callback_queue.h>
 
+#include "Types.hpp"
+
 namespace rviz_map_plugin
 {
 
@@ -532,7 +534,13 @@ void TexturedMeshDisplay::incomingVertexColors(const mesh_msgs::MeshVertexColors
         return;
     }
 
-    getCurrentVisual()->setVertexColors(colorsStamped);
+    std::vector<Color> vertexColors;
+    for (const std_msgs::ColorRGBA c : colorsStamped->mesh_vertex_colors.vertex_colors) {
+        Color color(c.r, c.g, c.b, c.a);
+        vertexColors.push_back(color);
+    }
+
+    getCurrentVisual()->setVertexColors(vertexColors);
 
     updateMesh();
 }
@@ -550,33 +558,28 @@ void TexturedMeshDisplay::incomingVertexCosts(const mesh_msgs::MeshVertexCostsSt
         return;
     }
 
-    cacheVertexCosts(costsStamped);
+    cacheVertexCosts(costsStamped->type, costsStamped->mesh_vertex_costs.costs);
     updateVertexCosts();
 }
 
-void TexturedMeshDisplay::cacheVertexCosts(
-    const mesh_msgs::MeshVertexCostsStamped::ConstPtr costsStamped
-)
+void TexturedMeshDisplay::cacheVertexCosts(std::string layer, const std::vector<float>& costs)
 {
-    ROS_INFO_STREAM("Cache vertex cost map '" << costsStamped->type << "' for UUID " << costsStamped->uuid);
+    ROS_INFO_STREAM("Cache vertex cost map '" << layer << "' for UUID ");
 
     // insert into cache
-    std::pair<std::map<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>::iterator, bool> ret =
-        m_costCache.insert(
-            std::pair<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>(costsStamped->type, costsStamped));
-    if(ret.second)
+    auto it = m_costCache.find(layer);
+    if (it != m_costCache.end())
     {
-        ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been added.");
-        m_selectVertexCostMap->addOptionStd(costsStamped->type, m_selectVertexCostMap->numChildren());
+        ROS_INFO_STREAM("The cost layer \"" << layer << "\" has been updated.");
+        m_costCache.erase(layer);
     }
     else
     {
-        //m_selectVertexCostMap->addOptionStd(costsStamped->type, m_selectVertexCostMap->numChildren());
-        m_costCache.erase(ret.first);
-        m_costCache.insert(
-            std::pair<std::string, const mesh_msgs::MeshVertexCostsStamped::ConstPtr>(costsStamped->type, costsStamped));
-        ROS_INFO_STREAM("The cost layer \"" << costsStamped->type << "\" has been updated.");
+        ROS_INFO_STREAM("The cost layer \"" <<layer << "\" has been added.");
+        m_selectVertexCostMap->addOptionStd(layer, m_selectVertexCostMap->numChildren());
     }
+    
+    m_costCache.insert(std::pair<std::string, std::vector<float>>(layer, costs));
 
 }
 
@@ -836,7 +839,31 @@ void TexturedMeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::C
 
     boost::shared_ptr<TexturedMeshVisual> visual = getNewVisual();
 
-    visual->setGeometry(meshMsg);
+    Geometry mesh;
+    for (const geometry_msgs::Point& v : meshMsg->mesh_geometry.vertices) {
+        Vertex vertex;
+        vertex.x = v.x;
+        vertex.y = v.y;
+        vertex.z = v.z;
+        mesh.vertices.push_back(vertex);
+    }
+    for (const mesh_msgs::TriangleIndices& f : meshMsg->mesh_geometry.faces) {
+        Face face;
+        face.vertexIndices[0] = f.vertex_indices[0];
+        face.vertexIndices[1] = f.vertex_indices[1];
+        face.vertexIndices[2] = f.vertex_indices[2];
+        mesh.faces.push_back(face);
+    }
+
+    std::vector<Normal> normals;
+    for (const geometry_msgs::Point& n : meshMsg->mesh_geometry.vertex_normals) {
+        Normal normal(n.x, n.y, n.z);
+        normals.push_back(normal);
+    }
+
+    visual->setGeometry(mesh);
+    visual->setNormals(normals);
+
     requestVertexColors(visual, meshMsg->uuid);
     requestMaterials(visual, meshMsg->uuid);
     updateMesh();
@@ -854,7 +881,13 @@ void TexturedMeshDisplay::requestVertexColors(boost::shared_ptr<TexturedMeshVisu
         mesh_msgs::MeshVertexColorsStamped::ConstPtr meshVertexColors =
             boost::make_shared<const mesh_msgs::MeshVertexColorsStamped>(srv.response.mesh_vertex_colors_stamped);
 
-        visual->setVertexColors(meshVertexColors);
+        std::vector<Color> vertexColors;
+        for (const std_msgs::ColorRGBA c : meshVertexColors->mesh_vertex_colors.vertex_colors) {
+            Color color(c.r, c.g, c.b, c.a);
+            vertexColors.push_back(color);
+        }
+
+        visual->setVertexColors(vertexColors);
     }
     else
     {
@@ -873,6 +906,12 @@ void TexturedMeshDisplay::requestMaterials(boost::shared_ptr<TexturedMeshVisual>
         mesh_msgs::MeshMaterialsStamped::ConstPtr meshMaterialsStamped =
             boost::make_shared<const mesh_msgs::MeshMaterialsStamped>(srv.response.mesh_materials_stamped);
 
+        std::vector<Material> materials;
+        for (const mesh_msgs::MeshMaterial& mat : meshMaterialsStamped->mesh_materials.materials)
+        {
+            Material material;
+            material.textureIndex = mat.texture_index;
+        }
 
         visual->setMaterials(meshMaterialsStamped);
 

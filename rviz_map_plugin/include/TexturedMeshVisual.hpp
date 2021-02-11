@@ -124,12 +124,12 @@ public:
    */
   bool setGeometry(const Geometry& geometry);
 
-  /**
-   * @brief Extracts data from the ros-messages and creates meshes.
-   *
-   * @param meshMsg         Message containing the mesh
-   */
-  bool setGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg);
+//   /**
+//    * @brief Extracts data from the ros-messages and creates meshes.
+//    *
+//    * @param meshMsg         Message containing the mesh
+//    */
+//   bool setGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg);
 
   /**
    * @brief Passes the normal data to the mesh visual
@@ -145,12 +145,12 @@ public:
    */
   bool setVertexColors(const std::vector<Color>& vertexColors);
 
-  /**
-   * @brief Extracts data from the ros-messages and creates a colored mesh.
-   *
-   * @param vertexColorsMsg Message containing the vertex color information
-   */
-  bool setVertexColors(const mesh_msgs::MeshVertexColorsStamped::ConstPtr& vertexColorsMsg);
+//   /**
+//    * @brief Extracts data from the ros-messages and creates a colored mesh.
+//    *
+//    * @param vertexColorsMsg Message containing the vertex color information
+//    */
+//   bool setVertexColors(const mesh_msgs::MeshVertexColorsStamped::ConstPtr& vertexColorsMsg);
 
   /**
    * @brief Extracts data from the ros-messages and creates a colored mesh with colors calculated from vertex costs.
@@ -162,11 +162,20 @@ public:
   /**
    * @brief Extracts data from the ros-messages and creates a colored mesh with colors calculated from vertex costs.
    *
-   * @param vertexCostsMsg Message containing the vertex cost information
+   * @param vertexCosts Vector containing the vertex cost information
+   * @param costColorType colorization method (0 = rainbow; 1 = red-green)
    */
-  bool setVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& vertexCostsMsg, int costColorType);
+  bool setVertexCosts(const std::vector<float>& vertexCosts, int costColorType);
 
-  bool setVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& vertexCostsMsg, int costColorType,
+  /**
+   * @brief Extracts data from the ros-messages and creates a colored mesh with colors calculated from vertex costs.
+   *
+   * @param vertexCosts Vector containing the vertex cost information
+   * @param costColorType colorization method (0 = rainbow; 1 = red-green)
+   * @param minCost minimum value for colorization
+   * @param maxCost maximum value for colorization
+   */
+  bool setVertexCosts(const std::vector<float>& vertexCosts, int costColorType,
                       float minCost, float maxCost);
 
   /**
@@ -295,17 +304,13 @@ private:
   void showTextures(Ogre::Pass* pass);
 
   void enteringGeneralTriangleMesh(const Geometry& mesh);
-  void enteringGeneralTriangleMesh(const mesh_msgs::MeshGeometry& mesh);
 
   void enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors);
   void enteringColoredTriangleMesh(const mesh_msgs::MeshGeometry& mesh,
                                    const mesh_msgs::MeshVertexColors& vertexColors);
 
-  void enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts);
-  void enteringTriangleMeshWithVertexCosts(const mesh_msgs::MeshGeometry& mesh,
-                                           const mesh_msgs::MeshVertexCosts& vertexCosts, int costColorType);
-  void enteringTriangleMeshWithVertexCosts(const mesh_msgs::MeshGeometry& mesh,
-                                           const mesh_msgs::MeshVertexCosts& vertexCosts, int costColorType,
+  void enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts, int costColorType);
+  void enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts, int costColorType,
                                            float minCost, float maxCost);
 
   void enteringTexturedTriangleMesh(const Geometry& mesh, const vector<Material>& meshMaterials,
@@ -313,7 +318,6 @@ private:
   void enteringTexturedTriangleMesh(const mesh_msgs::MeshGeometry& mesh, const mesh_msgs::MeshMaterials& meshMaterials);
 
   void enteringNormals(const Geometry& mesh, const vector<Normal>& normals);
-  void enteringNormals(const mesh_msgs::MeshGeometry& mesh);
 
   Ogre::PixelFormat getOgrePixelFormatFromRosString(std::string encoding);
 
@@ -392,21 +396,6 @@ private:
 
   /// Factor the normal-size is multiplied with.
   float m_normalsScalingFactor;
-
-  /// Triangle Mesh contained in the given message
-  mesh_msgs::MeshGeometry m_meshMsg;
-
-  /// Uuid of the currently shown vertex colors
-  std::string m_meshUuid;
-
-  /// Uuid of the currently shown vertex colors
-  std::string m_vertexColorsUuid;
-
-  /// Uuid of the currently shown vertex costs
-  std::string m_vertexCostsUuid;
-
-  /// Uuid of the currently shown materials
-  std::string m_materialsUuid;
 
   /// Triangle Mesh contained in the given message
   Geometry m_geometry;
