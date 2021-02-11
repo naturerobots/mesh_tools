@@ -54,6 +54,7 @@ set(SOURCE_FILES
   src/ClusterLabelVisual.cpp
   src/MapDisplay.cpp
   src/MeshDisplay.cpp
+  src/TexturedMeshDisplay.cpp
   src/TexturedMeshVisual.cpp
 )
 
@@ -63,6 +64,7 @@ set(HEADER_FILES
   include/ClusterLabelVisual.hpp
   include/MapDisplay.hpp
   include/MeshDisplay.hpp
+  include/TexturedMeshDisplay.hpp
   include/TexturedMeshVisual.hpp
   include/ClusterLabelTool.hpp
   include/CLUtil.hpp
