@@ -906,14 +906,33 @@ void TexturedMeshDisplay::requestMaterials(boost::shared_ptr<TexturedMeshVisual>
         mesh_msgs::MeshMaterialsStamped::ConstPtr meshMaterialsStamped =
             boost::make_shared<const mesh_msgs::MeshMaterialsStamped>(srv.response.mesh_materials_stamped);
 
-        std::vector<Material> materials;
-        for (const mesh_msgs::MeshMaterial& mat : meshMaterialsStamped->mesh_materials.materials)
+        std::vector<Material> materials(meshMaterialsStamped->mesh_materials.materials.size());
+        for (int i = 0; i < meshMaterialsStamped->mesh_materials.materials.size(); i++)
         {
-            Material material;
-            material.textureIndex = mat.texture_index;
+            const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[i];
+            materials[i].textureIndex = mat.texture_index;
+            materials[i].color = Color(mat.color.r, mat.color.g, mat.color.b, mat.color.a);
+        }
+        for (int i = 0; i < meshMaterialsStamped->mesh_materials.clusters.size(); i++)
+        {
+            const mesh_msgs::MeshFaceCluster& clu = meshMaterialsStamped->mesh_materials.clusters[i];
+
+            uint32_t materialIndex = meshMaterialsStamped->mesh_materials.cluster_materials[i];
+            const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[materialIndex];
+            
+            for (uint32_t face_index : clu.face_indices)
+            {
+                materials[i].faceIndices.push_back(face_index);
+            }
         }
 
-        visual->setMaterials(meshMaterialsStamped);
+        std::vector<TexCoords> textureCoords;
+        for (const mesh_msgs::MeshVertexTexCoords& coord : meshMaterialsStamped->mesh_materials.vertex_tex_coords)
+        {
+            textureCoords.push_back(TexCoords(coord.u, coord.v));
+        }
+
+        visual->setMaterials(materials, textureCoords);
 
         for (mesh_msgs::MeshMaterial material : meshMaterialsStamped->mesh_materials.materials)
         {
@@ -925,10 +944,17 @@ void TexturedMeshDisplay::requestMaterials(boost::shared_ptr<TexturedMeshVisual>
                 if (m_textureClient.call(texSrv))
                 {
                     ROS_INFO("Successful texture service call with index %d!", material.texture_index);
-                    mesh_msgs::MeshTexture::ConstPtr texture =
+                    mesh_msgs::MeshTexture::ConstPtr textureMsg =
                         boost::make_shared<const mesh_msgs::MeshTexture>(texSrv.response.texture);
 
-                    visual->addTexture(texture);
+                    Texture texture;
+                    texture.width = textureMsg->image.width;
+                    texture.height = textureMsg->image.height;
+                    texture.channels = textureMsg->image.step;
+                    texture.pixelFormat = textureMsg->image.encoding;
+                    texture.data = textureMsg->image.data;
+
+                    visual->addTexture(texture, textureMsg->texture_index);
                 }
                 else
                 {

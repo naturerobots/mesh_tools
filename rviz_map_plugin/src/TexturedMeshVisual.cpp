@@ -566,45 +566,6 @@ void TexturedMeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const
   m_mesh->end();
 }
 
-void TexturedMeshVisual::enteringColoredTriangleMesh(const mesh_msgs::MeshGeometry& mesh,
-                                                     const mesh_msgs::MeshVertexColors& vertexColors)
-{
-  if (m_meshGeneralMaterial.isNull())
-  {
-    std::stringstream sstm;
-    sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
-
-    m_meshGeneralMaterial = Ogre::MaterialManager::getSingleton().create(
-        sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-  }
-
-  // start entering data
-  m_mesh->clear();
-  m_mesh->begin(m_meshGeneralMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
-  // write vertices
-  // write vertex colors
-  // write vertex normals(if enabled)
-  for (size_t i = 0; i < mesh.vertices.size(); i++)
-  {
-    // write vertices
-    m_mesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-
-    // write vertex colors
-    m_mesh->colour(vertexColors.vertex_colors[i].r, vertexColors.vertex_colors[i].g, vertexColors.vertex_colors[i].b,
-                   vertexColors.vertex_colors[i].a);
-  }
-
-  // write triangles
-  for (size_t i = 0; i < mesh.faces.size(); i++)
-  {
-    m_mesh->triangle(mesh.faces[i].vertex_indices[0], mesh.faces[i].vertex_indices[1], mesh.faces[i].vertex_indices[2]);
-  }
-
-  // finish entering data
-  m_mesh->end();
-}
-
 void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
                                                              int costColorType)
 {
@@ -777,128 +738,6 @@ void TexturedMeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, cons
         for (size_t j = 0; j < 3; j++)
         {
           int vertexIndex = mesh.faces[faceIndex].vertexIndices[j];
-          // write vertex positions
-          m_noTexCluMesh->position(mesh.vertices[vertexIndex].x, mesh.vertices[vertexIndex].y,
-                                   mesh.vertices[vertexIndex].z);
-
-          // write triangle colors
-          m_noTexCluMesh->colour(material.color.r, material.color.g, material.color.b, material.color.a);
-        }
-        // write the three triangle vertex indices
-        m_noTexCluMesh->triangle(noTexCluVertexCount, noTexCluVertexCount + 1, noTexCluVertexCount + 2);
-        noTexCluVertexCount += 3;
-      }
-    }
-  }
-
-  m_noTexCluMesh->end();
-}
-
-void TexturedMeshVisual::enteringTexturedTriangleMesh(const mesh_msgs::MeshGeometry& mesh,
-                                                      const mesh_msgs::MeshMaterials& meshMaterials)
-{
-  size_t clusterCounter = meshMaterials.clusters.size();
-  size_t materialCounter = meshMaterials.materials.size();
-  size_t textureIndex = 0;
-
-  std::stringstream sstm;
-  sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NoTexCluMaterial_";
-  m_noTexCluMaterial = Ogre::MaterialManager::getSingleton().create(
-      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-  Ogre::Pass* pass = m_noTexCluMaterial->getTechnique(0)->getPass(0);
-  pass->setCullingMode(Ogre::CULL_NONE);
-  pass->setLightingEnabled(false);
-
-  // start entering data
-  m_noTexCluMesh->clear();
-  m_noTexCluMesh->begin(m_noTexCluMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
-  size_t noTexCluVertexCount = 0;
-
-  for (size_t clusterIndex = 0; clusterIndex < clusterCounter; clusterIndex++)
-  {
-    mesh_msgs::MeshFaceCluster cluster = meshMaterials.clusters[clusterIndex];
-
-    uint32_t materialIndex = meshMaterials.cluster_materials[clusterIndex];
-    mesh_msgs::MeshMaterial material = meshMaterials.materials[materialIndex];
-    bool hasTexture = material.has_texture;
-
-    // if the material has a texture, create an ogre texture and load the image
-    if (hasTexture)
-    {
-      std::stringstream sstm;
-      sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "TextureMaterial_" << textureIndex;
-      m_textureMaterials.push_back(Ogre::MaterialManager::getSingleton().create(
-          sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true));
-
-      // set some rendering options for textured clusters
-      Ogre::Pass* pass = m_textureMaterials[textureIndex]->getTechnique(0)->getPass(0);
-      // pass->setTextureFiltering(Ogre::TFO_NONE);
-      pass->setCullingMode(Ogre::CULL_NONE);
-      pass->setLightingEnabled(false);
-
-      // check if image was already loaded
-      // this is the case if the vector of images doesn't contain this element yet or
-      // if the image was only default constructed, in which case its width will be 0
-      if (m_images.size() < textureIndex + 1 || m_images[textureIndex].getWidth() == 0)
-      {
-        ROS_INFO("Texture with index %lu not loaded yet", textureIndex);
-      }
-      else
-      {
-        loadImageIntoTextureMaterial(textureIndex);
-      }
-    }
-
-    if (hasTexture)
-    {
-      // start entering data
-      m_texturedMesh->clear();
-      m_texturedMesh->begin(m_textureMaterials[textureIndex]->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-      textureIndex++;
-
-      // write vertices for each triangle
-      // write texture coordinates
-      // write vertex normals (if enabled)
-
-      size_t triangleVertexCount = 0;
-      for (size_t i = 0; i < cluster.face_indices.size(); i++)
-      {
-        uint32_t faceIndex = cluster.face_indices[i];
-        // write three triangle vertices
-        for (size_t j = 0; j < 3; j++)
-        {
-          int vertexIndex = mesh.faces[faceIndex].vertex_indices[j];
-          // write vertex positions
-          m_texturedMesh->position(mesh.vertices[vertexIndex].x, mesh.vertices[vertexIndex].y,
-                                   mesh.vertices[vertexIndex].z);
-          // write texture coordinates
-          m_texturedMesh->textureCoord(meshMaterials.vertex_tex_coords[vertexIndex].u,
-                                       1 - meshMaterials.vertex_tex_coords[vertexIndex].v);
-        }
-        // write the three triangle vertex indices
-        m_texturedMesh->triangle(triangleVertexCount, triangleVertexCount + 1, triangleVertexCount + 2);
-        triangleVertexCount += 3;
-      }
-
-      // finish entering data
-      m_texturedMesh->end();
-    }
-    else
-    {
-      // write vertices for each triangle to enable a coloring for each triangle
-      // write triangle colors as vertex colours
-      // write vertex normals (if enabled)
-
-      size_t triangleVertexCount = 0;
-      for (size_t i = 0; i < cluster.face_indices.size(); i++)
-      {
-        uint32_t faceIndex = cluster.face_indices[i];
-        // write three triangle vertices
-        for (size_t j = 0; j < 3; j++)
-        {
-          int vertexIndex = mesh.faces[faceIndex].vertex_indices[j];
           // write vertex positions
           m_noTexCluMesh->position(mesh.vertices[vertexIndex].x, mesh.vertices[vertexIndex].y,
                                    mesh.vertices[vertexIndex].z);
@@ -1128,13 +967,6 @@ bool TexturedMeshVisual::setMaterials(const vector<Material>& materials, const v
   return true;
 }
 
-bool TexturedMeshVisual::setMaterials(const mesh_msgs::MeshMaterialsStamped::ConstPtr& materialMsg)
-{
-  //enteringTexturedTriangleMesh(m_meshMsg, meshMaterials);
-
-  return true;
-}
-
 bool TexturedMeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
 {
   uint32_t width = texture.width;
@@ -1148,47 +980,6 @@ bool TexturedMeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
   Ogre::Image image = Ogre::Image();
   image.loadDynamicImage(texture.data.data(), width, height, 1, pixelFormat, false);
   m_images.insert(m_images.begin() + textureIndex, image);
-
-  if (m_textureMaterials.size() >= textureIndex + 1)
-  {
-    loadImageIntoTextureMaterial(textureIndex);
-    return true;
-  }
-  else
-  {
-    ROS_WARN("Can't load image into texture material, material does not exist!");
-    return false;
-  }
-}
-
-bool TexturedMeshVisual::addTexture(const mesh_msgs::MeshTexture::ConstPtr& textureMsg)
-{
-//   if (m_meshUuid != textureMsg->uuid || m_materialsUuid != textureMsg->uuid)
-//   {
-//     ROS_WARN("Can't add texture, uuids do not match.");
-//     return false;
-//   }
-
-  size_t textureIndex = textureMsg->texture_index;
-
-  uint32_t width = textureMsg->image.width;
-  uint32_t height = textureMsg->image.height;
-  uint32_t step = textureMsg->image.step;
-  std::vector<uint8_t> data = textureMsg->image.data;
-
-  uint32_t dataSize = height * step;
-
-  uchar* imageData = new uchar[dataSize];
-  std::memcpy(imageData, &data[0], dataSize);
-
-  Ogre::PixelFormat pixelFormat = getOgrePixelFormatFromRosString(textureMsg->image.encoding);
-
-  Ogre::Image image = Ogre::Image();
-  // image.loadDynamicImage(&data[0], width, height, 1, pixelFormat, false);
-  image.loadDynamicImage(imageData, width, height, 1, pixelFormat, false);
-  m_images.insert(m_images.begin() + textureIndex, image);
-
-  delete imageData;
 
   if (m_textureMaterials.size() >= textureIndex + 1)
   {

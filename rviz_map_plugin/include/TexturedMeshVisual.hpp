@@ -124,13 +124,6 @@ public:
    */
   bool setGeometry(const Geometry& geometry);
 
-//   /**
-//    * @brief Extracts data from the ros-messages and creates meshes.
-//    *
-//    * @param meshMsg         Message containing the mesh
-//    */
-//   bool setGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg);
-
   /**
    * @brief Passes the normal data to the mesh visual
    *
@@ -144,13 +137,6 @@ public:
    * @param vertexColors Vector containing the vertex color information
    */
   bool setVertexColors(const std::vector<Color>& vertexColors);
-
-//   /**
-//    * @brief Extracts data from the ros-messages and creates a colored mesh.
-//    *
-//    * @param vertexColorsMsg Message containing the vertex color information
-//    */
-//   bool setVertexColors(const mesh_msgs::MeshVertexColorsStamped::ConstPtr& vertexColorsMsg);
 
   /**
    * @brief Extracts data from the ros-messages and creates a colored mesh with colors calculated from vertex costs.
@@ -187,26 +173,12 @@ public:
   bool setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords);
 
   /**
-   * @brief Extracts data from the ros-messages and creates a textured mesh.
-   *
-   * @param materialMsg Message containing the material information
-   */
-  bool setMaterials(const mesh_msgs::MeshMaterialsStamped::ConstPtr& materialMsg);
-
-  /**
    * @brief Extracts data from the ros-messages and adds textures to the textured mesh.
    *
    * @param texture       Texture containing the texture information and data
    * @param textureIndex  Index of the texture
    */
   bool addTexture(Texture& texture, uint32_t textureIndex);
-
-  /**
-   * @brief Extracts data from the ros-messages and adds textures to the textured mesh.
-   *
-   * @param textureMsg Message containing the texture information
-   */
-  bool addTexture(const mesh_msgs::MeshTexture::ConstPtr& textureMsg);
 
   /**
    * @brief Sets the pose of the coordinate frame the message refers to.
@@ -306,8 +278,6 @@ private:
   void enteringGeneralTriangleMesh(const Geometry& mesh);
 
   void enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors);
-  void enteringColoredTriangleMesh(const mesh_msgs::MeshGeometry& mesh,
-                                   const mesh_msgs::MeshVertexColors& vertexColors);
 
   void enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts, int costColorType);
   void enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts, int costColorType,
@@ -315,8 +285,7 @@ private:
 
   void enteringTexturedTriangleMesh(const Geometry& mesh, const vector<Material>& meshMaterials,
                                     const vector<TexCoords>& texCoords);
-  void enteringTexturedTriangleMesh(const mesh_msgs::MeshGeometry& mesh, const mesh_msgs::MeshMaterials& meshMaterials);
-
+  
   void enteringNormals(const Geometry& mesh, const vector<Normal>& normals);
 
   Ogre::PixelFormat getOgrePixelFormatFromRosString(std::string encoding);
