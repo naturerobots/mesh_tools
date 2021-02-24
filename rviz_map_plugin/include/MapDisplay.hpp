@@ -51,6 +51,7 @@
 #define MAP_DISPLAY_HPP
 
 #include <Types.hpp>
+#include "RvizFileProperty.hpp"
 
 #include <vector>
 #include <memory>
@@ -212,7 +213,7 @@ private:
     vector<Cluster> m_clusterList;
 
     /// Path to map file
-    rviz::StringProperty* m_mapFilePath;
+    rviz::FileProperty* m_mapFilePath;
 
     /// Subdisplay: ClusterLabel (for showing the clusters)
     rviz_map_plugin::ClusterLabelDisplay* m_clusterLabelDisplay;

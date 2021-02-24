@@ -67,7 +67,7 @@ namespace rviz_map_plugin
 MapDisplay::MapDisplay()
 {
 
-    m_mapFilePath = new rviz::StringProperty(
+    m_mapFilePath = new rviz::FileProperty(
         "Map file path",
         "/path/to/map.h5",
         "Absolute path of the map file",
@@ -188,7 +188,7 @@ void MapDisplay::updateMap()
 bool MapDisplay::loadData()
 {
     // Read map file path
-    std::string mapFile = m_mapFilePath->getStdString();
+    std::string mapFile = m_mapFilePath->getFilename();
     if (mapFile.empty())
     {
         ROS_WARN_STREAM("Map Display: No map file path specified!");
@@ -380,7 +380,7 @@ void MapDisplay::saveLabel(Cluster cluster)
         }
 
         // Open IO
-        hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getStdString());
+        hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getFilename());
 
         // Add label with faces list
         map_io.addOrUpdateLabel(results[0], results[1], faces);

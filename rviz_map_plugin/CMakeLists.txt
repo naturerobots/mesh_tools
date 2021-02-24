@@ -56,6 +56,7 @@ set(SOURCE_FILES
   src/MeshDisplay.cpp
   src/TexturedMeshDisplay.cpp
   src/TexturedMeshVisual.cpp
+  src/RvizFileProperty.cpp
 )
 
 set(HEADER_FILES
@@ -68,6 +69,7 @@ set(HEADER_FILES
   include/TexturedMeshVisual.hpp
   include/ClusterLabelTool.hpp
   include/CLUtil.hpp
+  include/RvizFileProperty.hpp
 )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
