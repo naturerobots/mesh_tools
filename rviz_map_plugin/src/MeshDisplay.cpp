@@ -52,6 +52,7 @@
 #include <rviz/properties/color_property.h>
 #include <rviz/properties/float_property.h>
 #include <rviz/properties/int_property.h>
+#include <rviz/properties/ros_topic_property.h>
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/string_property.h>
 
@@ -59,122 +60,239 @@
 namespace rviz_map_plugin
 {
 
-MeshDisplay::MeshDisplay(): rviz::Display()
+MeshDisplay::MeshDisplay(): rviz::Display(), m_ignoreMsgs(true)
 {
+    // Display Type
+    {
+        m_displayType = new rviz::EnumProperty(
+            "Display Type",
+            "Fixed Color",
+            "Select Display Type for Mesh",
+            this,
+            SLOT(updateMesh()),
+            this
+        );
+        m_displayType->addOption("Fixed Color", 0);
+        m_displayType->addOption("Vertex Color", 1);
+        m_displayType->addOption("Textures", 2);
+        m_displayType->addOption("Vertex Costs", 3);
+        m_displayType->addOption("Hide Faces", 4);
 
-    // Display type selection dropdown
-    m_displayType = new rviz::EnumProperty(
-        "Display Type",
-        "Fixed Color",
-        "Select Display Type for Mesh",
-        this,
-        SLOT(updateMesh()),
-        this
-    );
-    m_displayType->addOption("Fixed Color", 0);
-    m_displayType->addOption("Vertex Color", 1);
-    m_displayType->addOption("Textures", 2);
-    m_displayType->addOption("Vertex Costs", 3);
-    m_displayType->addOption("Hide Faces", 4);
+        // Fixed Color
+        {
+            // face color properties
+            m_facesColor = new rviz::ColorProperty(
+                "Faces Color",
+                QColor(0, 255, 0),
+                "The color of the faces.",
+                m_displayType,
+                SLOT(updateMesh()),
+                this
+            );
 
-    m_showTexturedFacesOnly = new rviz::BoolProperty(
-        "Show textured faces only",
-        false,
-        "Show textured faces only",
-        m_displayType,
-        SLOT(updateMesh()),
-        this
-    );
+            // face alpha properties
+            m_facesAlpha = new rviz::FloatProperty(
+                "Faces Alpha",
+                1.0,
+                "The alpha-value of the faces",
+                m_displayType,
+                SLOT(updateMesh()),
+                this
+            );
+            m_facesAlpha->setMin(0);
+            m_facesAlpha->setMax(1);
+        }
 
-     // face color properties
-    m_facesColor = new rviz::ColorProperty(
-        "Faces Color",
-        QColor(0, 255, 0),
-        "The color of the faces.",
-        m_displayType,
-        SLOT(updateMesh()),
-        this
-    );
+        // Vertex Color
+        {
+            m_vertexColorsTopic = new rviz::RosTopicProperty(
+                "Vertex Colors Topic",
+                "",
+                QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshVertexColorsStamped>()),
+                "Vertex color topic to subscribe to.",
+                m_displayType,
+                SLOT(updateTopic()),
+                this
+            );
 
-    // face alpha properties
-    m_facesAlpha = new rviz::FloatProperty(
-        "Faces Alpha",
-        1.0,
-        "The alpha-value of the faces",
-        m_displayType,
-        SLOT(updateMesh()),
-        this
-    );
-    m_facesAlpha->setMin(0);
-    m_facesAlpha->setMax(1);
+            m_vertexColorServiceName = new rviz::StringProperty(
+                "Vertex Color Service Name",
+                "get_vertex_colors",
+                "Name of the Vertex Color Service to request Vertex Colors from.",
+                m_displayType,
+                SLOT(updateVertexColorService()),
+                this
+            );
+        }
 
+        // Textures
+        {
+            m_showTexturedFacesOnly = new rviz::BoolProperty(
+                "Show textured faces only",
+                false,
+                "Show textured faces only",
+                m_displayType,
+                SLOT(updateMesh()),
+                this
+            );
 
-    m_showWireframe = new rviz::BoolProperty(
-        "Show Wireframe",
-        true,
-        "Show Wireframe",
-        this,
-        SLOT(updateWireframe()),
-        this
-    );
+            m_materialServiceName = new rviz::StringProperty(
+                "Material Service Name",
+                "get_materials",
+                "Name of the Matrial Service to request Materials from.",
+                m_displayType,
+                SLOT(updateMaterialAndTextureServices()),
+                this
+            );
 
-    // wireframe color property
-    m_wireframeColor = new rviz::ColorProperty(
-        "Wireframe Color",
-        QColor(0, 0, 0),
-        "The color of the wireframe.",
-        m_showWireframe,
-        SLOT(updateWireframe()),
-        this
-    );
-    // wireframe alpha property
-    m_wireframeAlpha = new rviz::FloatProperty(
-        "Wireframe Alpha",
-        1.0,
-        "The alpha-value of the wireframe",
-        m_showWireframe,
-        SLOT(updateWireframe()),
-        this
-    );
-    m_wireframeAlpha->setMin(0);
-    m_wireframeAlpha->setMax(1);
+            m_textureServiceName = new rviz::StringProperty(
+                "Texture Service Name",
+                "get_texture",
+                "Name of the Texture Service to request Textures from.",
+                m_displayType,
+                SLOT(updateMaterialAndTextureServices()),
+                this
+            );
+        }
 
+        // Vertex Costs
+        {
+            m_costColorType = new rviz::EnumProperty(
+                "Color Scale",
+                "Rainbow",
+                "Select color scale for vertex costs. Mesh will update when new data arrives.",
+                m_displayType,
+                SLOT(updateMesh()),
+                this
+            );
+            m_costColorType->addOption("Rainbow", 0);
+            m_costColorType->addOption("Red Green", 1);
 
-    m_showNormals = new rviz::BoolProperty(
-        "Show Normals",
-        true,
-        "Show Normals",
-        this,
-        SLOT(updateNormals()),
-        this
-    );
+            m_vertexCostsTopic = new rviz::RosTopicProperty(
+                "Vertex Costs Topic",
+                "",
+                QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshVertexCostsStamped>()),
+                "Vertex cost topic to subscribe to.",
+                m_displayType,
+                SLOT(updateTopic()),
+                this
+            );
 
-    m_normalsColor = new rviz::ColorProperty(
-        "Normals Color",
-        QColor(255, 0, 255),
-        "The color of the normals.",
-        m_showNormals,
-        SLOT(updateNormals()),
-        this
-    );
-    m_normalsAlpha = new rviz::FloatProperty(
-        "Normals Alpha",
-        1.0,
-        "The alpha-value of the normals",
-        m_showNormals,
-        SLOT(updateNormals()),
-        this
-    );
-    m_normalsAlpha->setMin(0);
-    m_normalsAlpha->setMax(1);
-    m_scalingFactor = new rviz::FloatProperty(
-        "Normals Scaling Factor",
-        0.1,
-        "Scaling factor of the normals",
-        m_showNormals,
-        SLOT(updateNormals()),
-        this
-    );
+            m_selectVertexCostMap = new rviz::EnumProperty(
+                "Vertex Costs Type",
+                "-- None --",
+                "Select the type of vertex cost map to be displayed. New types will appear here when a new message arrives.",
+                m_displayType,
+                SLOT(updateVertexCosts()),
+                this
+            );
+            m_selectVertexCostMap->addOption("-- None --", 0);
+
+            m_costUseCustomLimits = new rviz::BoolProperty(
+                "Use Custom limits",
+                false,
+                "Use custom vertex cost limits",
+                m_displayType,
+                SLOT(updateVertexCosts()),
+                this
+            );
+
+            // custom cost limits
+            {
+                m_costLowerLimit = new rviz::FloatProperty(
+                    "Vertex Costs Lower Limit",
+                    0.0,
+                    "Vertex costs lower limit",
+                    m_costUseCustomLimits,
+                    SLOT(updateVertexCosts()),
+                    this
+                );
+                m_costLowerLimit->hide();
+
+                m_costUpperLimit = new rviz::FloatProperty(
+                    "Vertex Costs Upper Limit",
+                    1.0,
+                    "Vertex costs upper limit",
+                    m_costUseCustomLimits,
+                    SLOT(updateVertexCosts()),
+                    this
+                );
+                m_costUpperLimit->hide();
+            }
+        }
+    }
+
+    // Wireframe
+    {
+        m_showWireframe = new rviz::BoolProperty(
+            "Show Wireframe",
+            true,
+            "Show Wireframe",
+            this,
+            SLOT(updateWireframe()),
+            this
+        );
+
+        // wireframe color property
+        m_wireframeColor = new rviz::ColorProperty(
+            "Wireframe Color",
+            QColor(0, 0, 0),
+            "The color of the wireframe.",
+            m_showWireframe,
+            SLOT(updateWireframe()),
+            this
+        );
+        // wireframe alpha property
+        m_wireframeAlpha = new rviz::FloatProperty(
+            "Wireframe Alpha",
+            1.0,
+            "The alpha-value of the wireframe",
+            m_showWireframe,
+            SLOT(updateWireframe()),
+            this
+        );
+        m_wireframeAlpha->setMin(0);
+        m_wireframeAlpha->setMax(1);
+    }
+
+    // Normals
+    {
+        m_showNormals = new rviz::BoolProperty(
+            "Show Normals",
+            true,
+            "Show Normals",
+            this,
+            SLOT(updateNormals()),
+            this
+        );
+
+        m_normalsColor = new rviz::ColorProperty(
+            "Normals Color",
+            QColor(255, 0, 255),
+            "The color of the normals.",
+            m_showNormals,
+            SLOT(updateNormals()),
+            this
+        );
+        m_normalsAlpha = new rviz::FloatProperty(
+            "Normals Alpha",
+            1.0,
+            "The alpha-value of the normals",
+            m_showNormals,
+            SLOT(updateNormals()),
+            this
+        );
+        m_normalsAlpha->setMin(0);
+        m_normalsAlpha->setMax(1);
+        m_scalingFactor = new rviz::FloatProperty(
+            "Normals Scaling Factor",
+            0.1,
+            "Scaling factor of the normals",
+            m_showNormals,
+            SLOT(updateNormals()),
+            this
+        );
+    }
 
     setStatus(rviz::StatusProperty::Error, "Display", "Can't be used without Map3D plugin or no data is available");
 }
@@ -228,6 +346,33 @@ void MeshDisplay::onDisable()
 // =====================================================================================================================
 // Callbacks triggered from UI events (mostly)
 
+void MeshDisplay::updateVertexCosts()
+{
+    // if (m_costUseCustomLimits->getBool())
+    // {
+    //     if (m_meshVisuals.size() > 0 && m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
+    //     {
+    //         getCurrentVisual()->setVertexCosts(
+    //             m_costCache[m_selectVertexCostMap->getStdString()],
+    //             m_costColorType->getOptionInt(),
+    //             m_costLowerLimit->getFloat(),
+    //             m_costUpperLimit->getFloat()
+    //         );
+    //     }
+    // }
+    // else
+    // {
+    //     if (m_meshVisuals.size() > 0 && m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
+    //     {
+    //         getCurrentVisual()->setVertexCosts(
+    //             m_costCache[m_selectVertexCostMap->getStdString()],
+    //             m_costColorType->getOptionInt()
+    //         );
+    //     }
+    // }
+    updateMesh();
+}
+
 void MeshDisplay::updateMesh()
 {
     ROS_INFO("Mesh Display: Update");
@@ -237,9 +382,22 @@ void MeshDisplay::updateMesh()
     bool showVertexColors = false;
     bool showVertexCosts = false;
 
-    m_showTexturedFacesOnly->hide();
     m_facesColor->hide();
     m_facesAlpha->hide();
+
+    m_vertexColorsTopic->hide();
+    m_vertexColorServiceName->hide();
+
+    m_showTexturedFacesOnly->hide();
+    m_materialServiceName->hide();
+    m_textureServiceName->hide();
+
+    m_costColorType->hide();
+    m_vertexCostsTopic->hide();
+    m_selectVertexCostMap->hide();
+    m_costUseCustomLimits->hide();
+    m_costLowerLimit->hide();
+    m_costUpperLimit->hide();
 
     switch (m_displayType->getOptionInt())
     {
@@ -252,15 +410,37 @@ void MeshDisplay::updateMesh()
         case 1: // Faces with vertex color
             showFaces = true;
             showVertexColors = true;
+            if (!m_ignoreMsgs)
+            {
+                m_vertexColorsTopic->show();
+                m_vertexColorServiceName->show();
+            }
             break;
         case 2: // Faces with textures
             showFaces = true;
             showTextures = true;
             m_showTexturedFacesOnly->show();
+            if (!m_ignoreMsgs)
+            {
+                m_materialServiceName->show();
+                m_textureServiceName->show();
+            }
             break;
         case 3: // Faces with vertex costs
             showFaces = true;
             showVertexCosts = true;
+            m_costColorType->show();
+            if (!m_ignoreMsgs)
+            {
+                m_vertexCostsTopic->show();
+            }
+            m_selectVertexCostMap->show();
+            m_costUseCustomLimits->show();
+            if (m_costUseCustomLimits->getBool())
+            {
+                m_costLowerLimit->show();
+                m_costUpperLimit->show();
+            }
             break;
         case 4: // No Faces
             break;

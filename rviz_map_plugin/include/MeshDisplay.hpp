@@ -95,6 +95,7 @@ class BoolProperty;
 class ColorProperty;
 class FloatProperty;
 class IntProperty;
+class RosTopicProperty;
 class EnumProperty;
 class StringProperty;
 
@@ -177,6 +178,11 @@ public:
 private Q_SLOTS:
 
     /**
+    * @brief Update the vertex costs
+    */
+    void updateVertexCosts();
+
+    /**
      * @brief Updates the mesh
      */
     void updateMesh();
@@ -198,32 +204,65 @@ private:
      */
     void onInitialize();
 
+    /// if set to true, ignore incoming messages and do not use services to request materials
+    bool m_ignoreMsgs;
+
     /// Geometry data
     shared_ptr<Geometry> m_geometry;
 
     /// Visual data
     shared_ptr<TexturedMeshVisual> m_visual;
 
-    /// Property to set wireframe color
-    rviz::ColorProperty* m_wireframeColor;
 
-    /// Property to set wireframe transparency
-    rviz::FloatProperty* m_wireframeAlpha;
+    /// Property to select the display type
+    rviz::EnumProperty* m_displayType;
+
 
     /// Property to set faces color
     rviz::ColorProperty* m_facesColor;
 
     /// Property to set faces transparency
     rviz::FloatProperty* m_facesAlpha;
+    
 
-    /// Property to use the vertex colors
-    rviz::BoolProperty* m_facesVertexColors;
+    /// Property to handle topic for vertex colors
+    rviz::RosTopicProperty* m_vertexColorsTopic;
 
-    /// Property to use the triangle colors
-    rviz::BoolProperty* m_facesTriangleColors;
+    /// Property to handle service name for vertexColors
+    rviz::StringProperty* m_vertexColorServiceName;
 
-    /// Property to set the size of the normals
-    rviz::FloatProperty* m_scalingFactor;
+
+    /// Property to only show textured faces when texturizing is enabled
+    rviz::BoolProperty* m_showTexturedFacesOnly;
+
+    /// Property to handle service name for materials
+    rviz::StringProperty* m_materialServiceName;
+
+    /// Property to handle service name for textures
+    rviz::StringProperty* m_textureServiceName;
+
+
+    /// Property for selecting the color type for cost display
+    rviz::EnumProperty* m_costColorType;
+
+    /// Property to handle topic for vertex cost maps
+    rviz::RosTopicProperty* m_vertexCostsTopic;
+
+    /// Property to select different types of vertex cost maps to be shown
+    rviz::EnumProperty* m_selectVertexCostMap;
+
+    /// Property for using custom limits for cost display
+    rviz::BoolProperty* m_costUseCustomLimits;
+
+    /// Property for setting the lower limit of cost display
+    rviz::FloatProperty* m_costLowerLimit;
+
+    /// Property for setting the upper limit of cost display
+    rviz::FloatProperty* m_costUpperLimit;
+
+
+    /// Property to select the normals
+    rviz::BoolProperty* m_showNormals;
 
     /// Property to set the color of the normals
     rviz::ColorProperty* m_normalsColor;
@@ -231,17 +270,19 @@ private:
     /// Property to set the transparency of the normals
     rviz::FloatProperty* m_normalsAlpha;
 
-    /// Property to select the display type
-    rviz::EnumProperty* m_displayType;
+    /// Property to set the size of the normals
+    rviz::FloatProperty* m_scalingFactor;
+
 
     /// Property to select the wireframe
     rviz::BoolProperty* m_showWireframe;
 
-    /// Property to select the normals
-    rviz::BoolProperty* m_showNormals;
+    /// Property to set wireframe color
+    rviz::ColorProperty* m_wireframeColor;
 
-    /// Property to only show textured faces when texturizing is enabled
-    rviz::BoolProperty* m_showTexturedFacesOnly;
+    /// Property to set wireframe transparency
+    rviz::FloatProperty* m_wireframeAlpha;
+
 
     /// Will be set to true once the initial data has arrived
     bool has_data = false;
