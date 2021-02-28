@@ -125,11 +125,11 @@ void MapDisplay::onInitialize()
 
     m_meshDisplay = static_cast<MeshDisplay*>(meshDisplay);
     addChild(m_meshDisplay);
-    m_meshDisplay->ignoreIncomingMessages();
     m_meshDisplay->setName("Mesh");
     m_meshDisplay->setModel(model_);
     m_meshDisplay->setParent(this);
     m_meshDisplay->initialize(context_);
+    m_meshDisplay->ignoreIncomingMessages();
 
     // Make signal/slot connections
     connect(

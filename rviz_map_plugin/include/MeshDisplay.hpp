@@ -224,6 +224,16 @@ private Q_SLOTS:
   void updateVertexCosts();
 
   /**
+   * @brief Updates the subscribed vertex colors topic.
+   */
+  void updateVertexColorsTopic();
+
+  /**
+   * @brief Updates the subscribed vertex costs topic.
+   */
+  void updateVertexCostsTopic();
+
+  /**
    * @brief Updates the subscribed topic.
    */
   void updateTopic();

@@ -99,7 +99,7 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
       m_vertexColorsTopic = new rviz::RosTopicProperty(
           "Vertex Colors Topic", "",
           QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshVertexColorsStamped>()),
-          "Vertex color topic to subscribe to.", m_displayType, SLOT(updateTopic()), this);
+          "Vertex color topic to subscribe to.", m_displayType, SLOT(updateVertexColorsTopic()), this);
 
       m_vertexColorServiceName = new rviz::StringProperty("Vertex Color Service Name", "get_vertex_colors",
                                                           "Name of the Vertex Color Service to request Vertex Colors "
@@ -133,7 +133,7 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
       m_vertexCostsTopic = new rviz::RosTopicProperty(
           "Vertex Costs Topic", "",
           QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshVertexCostsStamped>()),
-          "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateTopic()), this);
+          "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateVertexCostsTopic()), this);
 
       m_selectVertexCostMap = new rviz::EnumProperty("Vertex Costs Type", "-- None --",
                                                      "Select the type of vertex cost map to be displayed. New types "
@@ -185,8 +185,6 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
     m_scalingFactor = new rviz::FloatProperty("Normals Scaling Factor", 0.1, "Scaling factor of the normals",
                                               m_showNormals, SLOT(updateNormals()), this);
   }
-
-  // setStatus(rviz::StatusProperty::Error, "Display", "Can't be used without Map3D plugin or no data is available");
 }
 
 MeshDisplay::~MeshDisplay()
@@ -529,10 +527,29 @@ void MeshDisplay::updateVertexCosts()
   updateMesh();
 }
 
+void MeshDisplay::updateVertexColorsTopic()
+{
+  m_vertexColorsSubscriber.unsubscribe();
+  delete m_colorsSynchronizer;
+
+  m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
+  m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
+  m_colorsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexColors, this, _1));
+}
+
+void MeshDisplay::updateVertexCostsTopic()
+{
+  m_vertexCostsSubscriber.unsubscribe();
+  delete m_costsSynchronizer;
+
+  m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 4);
+  m_costsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
+  m_costsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexCosts, this, _1));
+}
+
 void MeshDisplay::updateTopic()
 {
   unsubscribe();
-  reset();
   subscribe();
   context_->queueRender();
 }
