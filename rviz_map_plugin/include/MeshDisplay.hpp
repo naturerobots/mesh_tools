@@ -76,6 +76,12 @@
 #include <rviz/display.h>
 
 #ifndef Q_MOC_RUN
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/cache.h>
+
+#include <tf2_ros/message_filter.h>
+
 #include <rviz/mesh_loader.h>
 
 #include <OGRE/OgreManualObject.h>
@@ -175,6 +181,16 @@ public:
      */
     void onDisable();
 
+    /**
+    * @brief Set the topics to subscribe.
+    */
+    void subscribe();
+
+    /**
+    * @brief Unsubscribes all topics.
+    */
+    void unsubscribe();
+
 private Q_SLOTS:
 
     /**
@@ -204,8 +220,86 @@ private:
      */
     void onInitialize();
 
+    /**
+    * @brief Handler for incoming geometry messages. Validate data and update mesh
+    * @param meshMsg The geometry
+    */
+    void incomingGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg);
+
+    /**
+    * @brief Sets data for trianglemesh_visual and updates the mesh.
+    * @param meshMsg Message containing geometry information
+    */
+    void processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg);
+
+    /**
+    * @brief Handler for incoming vertex color messages. Validate data and update mesh
+    * @param colorsStamped The vertex colors
+    */
+    void incomingVertexColors(const mesh_msgs::MeshVertexColorsStamped::ConstPtr& colorsStamped);
+
+    /**
+    * @brief Handler for incoming vertex cost messages. Validate data and update mesh
+    * @param costsStamped The vertex costs
+    */
+    void incomingVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& costsStamped);
+
+    /**
+    * @brief Cache function for vertex cost messages.
+    * @param costsStamped The vertex cost message
+    */
+    void cacheVertexCosts(std::string layer, const std::vector<float>& costs);
+
     /// if set to true, ignore incoming messages and do not use services to request materials
     bool m_ignoreMsgs;
+
+    /// Client to request the vertex colors
+    ros::ServiceClient m_vertexColorClient;
+
+    /// Client to request the materials
+    ros::ServiceClient m_materialsClient;
+
+    /// Client to request the textures
+    ros::ServiceClient m_textureClient;
+
+    /// Client to request the UUID
+    ros::ServiceClient m_uuidClient;
+
+    /// Client to request the geometry
+    ros::ServiceClient m_geometryClient;
+
+    /// Subscriber for meshMsg
+    message_filters::Subscriber<mesh_msgs::MeshGeometryStamped> m_meshSubscriber;
+
+    /// Subscriber for vertex colors
+    message_filters::Subscriber<mesh_msgs::MeshVertexColorsStamped> m_vertexColorsSubscriber;
+
+    /// Subscriber for vertex costs
+    message_filters::Subscriber<mesh_msgs::MeshVertexCostsStamped> m_vertexCostsSubscriber;
+
+    /// Messagefilter for meshMsg
+    tf2_ros::MessageFilter<mesh_msgs::MeshGeometryStamped>* m_tfMeshFilter;
+
+    /// Messagefilter for vertex colors
+    tf2_ros::MessageFilter<mesh_msgs::MeshVertexColorsStamped>* m_tfVertexColorsFilter;
+
+    /// Messagefilter for vertex costs
+    tf2_ros::MessageFilter<mesh_msgs::MeshVertexCostsStamped>* m_tfVertexCostsFilter;
+
+    /// Synchronizer for meshMsgs
+    message_filters::Cache<mesh_msgs::MeshGeometryStamped>* m_meshSynchronizer;
+
+    /// Synchronizer for vertex colors
+    message_filters::Cache<mesh_msgs::MeshVertexColorsStamped>* m_colorsSynchronizer;
+
+    /// Synchronizer for vertex costs
+    message_filters::Cache<mesh_msgs::MeshVertexCostsStamped>* m_costsSynchronizer;
+
+    /// Counter for the received messages
+    uint32_t m_messagesReceived;
+
+    /// Uuid of the last received message
+    std::string m_lastUuid;
 
     /// Geometry data
     shared_ptr<Geometry> m_geometry;
@@ -213,6 +307,9 @@ private:
     /// Visual data
     shared_ptr<TexturedMeshVisual> m_visual;
 
+
+    /// Property to handle topic for meshMsg
+    rviz::RosTopicProperty* m_meshTopic;
 
     /// Property to select the display type
     rviz::EnumProperty* m_displayType;
@@ -282,6 +379,10 @@ private:
 
     /// Property to set wireframe transparency
     rviz::FloatProperty* m_wireframeAlpha;
+
+
+    /// Cache for received vertex cost messages
+    std::map<std::string, std::vector<float>> m_costCache;
 
 
     /// Will be set to true once the initial data has arrived
