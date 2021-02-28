@@ -126,7 +126,7 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
       m_costColorType = new rviz::EnumProperty("Color Scale", "Rainbow",
                                                "Select color scale for vertex costs. Mesh will update when new data "
                                                "arrives.",
-                                               m_displayType, SLOT(updateMesh()), this);
+                                               m_displayType, SLOT(updateVertexCosts()), this);
       m_costColorType->addOption("Rainbow", 0);
       m_costColorType->addOption("Red Green", 1);
 
