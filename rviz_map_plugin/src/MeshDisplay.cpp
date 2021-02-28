@@ -310,7 +310,7 @@ MeshDisplay::MeshDisplay(): rviz::Display(), m_ignoreMsgs(false)
         );
     }
 
-    setStatus(rviz::StatusProperty::Error, "Display", "Can't be used without Map3D plugin or no data is available");
+    // setStatus(rviz::StatusProperty::Error, "Display", "Can't be used without Map3D plugin or no data is available");
 }
 
 MeshDisplay::~MeshDisplay()
@@ -365,6 +365,41 @@ void MeshDisplay::onInitialize()
     updateMesh();
     updateWireframe();
     updateNormals();
+    updateTopic();
+}
+
+void MeshDisplay::initialServiceCall()
+{
+    ros::NodeHandle n;
+    ros::ServiceClient m_uuidClient = n.serviceClient<mesh_msgs::GetUUID>("get_uuid");
+
+    mesh_msgs::GetUUID srv_uuid;
+    if (m_uuidClient.call(srv_uuid))
+    {
+        std::string uuid = (std::string)srv_uuid.response.uuid;
+
+        ROS_INFO_STREAM("Initial data available for UUID=" << uuid);
+
+        ros::ServiceClient m_geometryClient = n.serviceClient<mesh_msgs::GetGeometry>("get_geometry");
+
+        mesh_msgs::GetGeometry srv_geometry;
+        srv_geometry.request.uuid = uuid;
+        if (m_geometryClient.call(srv_geometry))
+        {
+            ROS_INFO_STREAM("Found geometry for UUID=" << uuid);
+            mesh_msgs::MeshGeometryStamped::ConstPtr geometry
+                = boost::make_shared<const mesh_msgs::MeshGeometryStamped>(srv_geometry.response.mesh_geometry_stamped);
+            processMessage(geometry);
+        }
+        else
+        {
+            ROS_INFO_STREAM("Could not load geometry. Waiting for callback to trigger ... ");
+        }
+    }
+    else
+    {
+        ROS_INFO("No initial data available, waiting for callback to trigger ...");
+    }
 }
 
 void MeshDisplay::onEnable()
@@ -452,7 +487,7 @@ void MeshDisplay::subscribe()
 
     }
 
-    // initialServiceCall();
+    initialServiceCall();
 }
 
 void MeshDisplay::unsubscribe()
@@ -638,9 +673,171 @@ void MeshDisplay::updateNormals()
 
 }
 
+void MeshDisplay::updateTopic()
+{
+    unsubscribe();
+    reset();
+    subscribe();
+    context_->queueRender();
+}
+
+void MeshDisplay::updateMaterialAndTextureServices()
+{
+    // Check if the service names are valid
+    std::string error;
+    if(!ros::names::validate(m_materialServiceName->getStdString(), error)
+        || !ros::names::validate(m_textureServiceName->getStdString(), error))
+    {
+        setStatus(rviz::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
+        return;
+    }
+
+    // Update material and texture service clients
+    ros::NodeHandle n;
+    m_materialsClient = n.serviceClient<mesh_msgs::GetMaterials>(m_materialServiceName->getStdString());
+    m_textureClient = n.serviceClient<mesh_msgs::GetTexture>(m_textureServiceName->getStdString());
+    if (m_materialsClient.exists())
+    {
+        requestMaterials(m_visual, m_lastUuid);
+        if (m_textureClient.exists())
+        {
+            setStatus(rviz::StatusProperty::Ok, "Services", "Material and Texture Service OK");
+        }
+        else
+        {
+            setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
+        }
+    }
+    else
+    {
+        setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
+    }
+}
+
+void MeshDisplay::updateVertexColorService()
+{
+    // Check if the service name is valid
+    std::string error;
+    if(!ros::names::validate(m_vertexColorServiceName->getStdString(), error))
+    {
+        setStatus(rviz::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
+        return;
+    }
+
+    // Update vertex color service client
+    ros::NodeHandle n;
+    m_vertexColorClient = n.serviceClient<mesh_msgs::GetVertexColors>(m_vertexColorServiceName->getStdString());
+    if (m_vertexColorClient.exists())
+    {
+        setStatus(rviz::StatusProperty::Ok, "Services", "Vertex Color Service OK");
+        requestVertexColors(m_visual, m_lastUuid);
+    }
+    else
+    {
+        setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Vertex Color Service doesn't exist."));
+    }
+}
 
 // =====================================================================================================================
 // Data loading
+
+void MeshDisplay::requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
+{
+    mesh_msgs::GetVertexColors srv;
+    srv.request.uuid = uuid;
+    if (m_vertexColorClient.call(srv))
+    {
+        ROS_INFO("Successful vertex colors service call!");
+        mesh_msgs::MeshVertexColorsStamped::ConstPtr meshVertexColors =
+            boost::make_shared<const mesh_msgs::MeshVertexColorsStamped>(srv.response.mesh_vertex_colors_stamped);
+
+        std::vector<Color> vertexColors;
+        for (const std_msgs::ColorRGBA c : meshVertexColors->mesh_vertex_colors.vertex_colors) {
+            Color color(c.r, c.g, c.b, c.a);
+            vertexColors.push_back(color);
+        }
+
+        visual->setVertexColors(vertexColors);
+    }
+    else
+    {
+        ROS_INFO("Failed vertex colors service call!");
+    }
+}
+
+void MeshDisplay::requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
+{
+    mesh_msgs::GetMaterials srv;
+    srv.request.uuid = uuid;
+    if (m_materialsClient.call(srv))
+    {
+        ROS_INFO("Successful materials service call!");
+
+        mesh_msgs::MeshMaterialsStamped::ConstPtr meshMaterialsStamped =
+            boost::make_shared<const mesh_msgs::MeshMaterialsStamped>(srv.response.mesh_materials_stamped);
+
+        std::vector<Material> materials(meshMaterialsStamped->mesh_materials.materials.size());
+        for (int i = 0; i < meshMaterialsStamped->mesh_materials.materials.size(); i++)
+        {
+            const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[i];
+            materials[i].textureIndex = mat.texture_index;
+            materials[i].color = Color(mat.color.r, mat.color.g, mat.color.b, mat.color.a);
+        }
+        for (int i = 0; i < meshMaterialsStamped->mesh_materials.clusters.size(); i++)
+        {
+            const mesh_msgs::MeshFaceCluster& clu = meshMaterialsStamped->mesh_materials.clusters[i];
+
+            uint32_t materialIndex = meshMaterialsStamped->mesh_materials.cluster_materials[i];
+            const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[materialIndex];
+            
+            for (uint32_t face_index : clu.face_indices)
+            {
+                materials[i].faceIndices.push_back(face_index);
+            }
+        }
+
+        std::vector<TexCoords> textureCoords;
+        for (const mesh_msgs::MeshVertexTexCoords& coord : meshMaterialsStamped->mesh_materials.vertex_tex_coords)
+        {
+            textureCoords.push_back(TexCoords(coord.u, coord.v));
+        }
+
+        visual->setMaterials(materials, textureCoords);
+
+        for (mesh_msgs::MeshMaterial material : meshMaterialsStamped->mesh_materials.materials)
+        {
+            if (material.has_texture)
+            {
+                mesh_msgs::GetTexture texSrv;
+                texSrv.request.uuid = uuid;
+                texSrv.request.texture_index = material.texture_index;
+                if (m_textureClient.call(texSrv))
+                {
+                    ROS_INFO("Successful texture service call with index %d!", material.texture_index);
+                    mesh_msgs::MeshTexture::ConstPtr textureMsg =
+                        boost::make_shared<const mesh_msgs::MeshTexture>(texSrv.response.texture);
+
+                    Texture texture;
+                    texture.width = textureMsg->image.width;
+                    texture.height = textureMsg->image.height;
+                    texture.channels = textureMsg->image.step;
+                    texture.pixelFormat = textureMsg->image.encoding;
+                    texture.data = textureMsg->image.data;
+
+                    visual->addTexture(texture, textureMsg->texture_index);
+                }
+                else
+                {
+                    ROS_INFO("Failed texture service call with index %d!", material.texture_index);
+                }
+            }
+        }
+    }
+    else
+    {
+        ROS_INFO("Failed materials service call!");
+    }
+}
 
 void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
 {
@@ -807,12 +1004,19 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
         normals.push_back(normal);
     }
 
+    // Create the visual
+    int randomId = (int)((double)rand() / RAND_MAX * 9998);
+    m_visual.reset(new TexturedMeshVisual(context_, 0, 0, randomId));
+    
     m_visual->setGeometry(mesh);
     m_visual->setNormals(normals);
+    has_data = true;
 
-    //requestVertexColors(m_visual, meshMsg->uuid);
-    //requestMaterials(m_visual, meshMsg->uuid);
+    requestVertexColors(m_visual, meshMsg->uuid);
+    requestMaterials(m_visual, meshMsg->uuid);
     updateMesh();
+    updateWireframe();
+    updateNormals();
     m_visual->setFramePosition(position);
     m_visual->setFrameOrientation(orientation);
 }

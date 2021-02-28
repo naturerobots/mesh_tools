@@ -213,12 +213,32 @@ private Q_SLOTS:
      */
     void updateNormals();
 
+    /**
+    * @brief Updates the subscribed topic.
+    */
+    void updateTopic();
+
+    /**
+    * @brief Updates the vertex color service.
+    */
+    void updateVertexColorService();
+
+    /**
+    * @brief Updates the material and texture services.
+    */
+    void updateMaterialAndTextureServices();
+
 private:
 
     /**
      * @brief RViz callback on initialize
      */
     void onInitialize();
+
+    /**
+    * @brief initial service call for UUID & geometry
+    */
+    void initialServiceCall();
 
     /**
     * @brief Handler for incoming geometry messages. Validate data and update mesh
@@ -249,6 +269,20 @@ private:
     * @param costsStamped The vertex cost message
     */
     void cacheVertexCosts(std::string layer, const std::vector<float>& costs);
+
+    /**
+    * @brief Requests vertex colors from the specified service
+    * @param visual Visual to which the vertex colors will be added
+    * @param uuid Mesh UUID
+    */
+    void requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid);
+
+    /**
+    * @brief Requests materials from the specified service
+    * @param visual Visual to which the materials will be added
+    * @param uuid Mesh UUID
+    */
+    void requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid);
 
     /// if set to true, ignore incoming messages and do not use services to request materials
     bool m_ignoreMsgs;
