@@ -191,6 +191,14 @@ public:
     */
     void unsubscribe();
 
+    /**
+    * @brief disables visualization of incoming messages
+    *
+    * When called, incoming mesh messages will be ignored and the rviz properties to set topics and services will be hidden.
+    * This cloud be useful when using this display as a child-display e.g. of the MapDisplay
+    */
+    void ignoreIncomingMessages();
+
 private Q_SLOTS:
 
     /**

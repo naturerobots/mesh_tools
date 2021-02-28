@@ -370,6 +370,11 @@ void MeshDisplay::onInitialize()
 
 void MeshDisplay::initialServiceCall()
 {
+    if (m_ignoreMsgs)
+    {
+        return;
+    }
+
     ros::NodeHandle n;
     ros::ServiceClient m_uuidClient = n.serviceClient<mesh_msgs::GetUUID>("get_uuid");
 
@@ -434,6 +439,13 @@ void MeshDisplay::onDisable()
             1.0f
         );
     }
+}
+
+void MeshDisplay::ignoreIncomingMessages()
+{
+    m_ignoreMsgs = true;
+    unsubscribe();
+    updateMesh();
 }
 
 void MeshDisplay::subscribe()
@@ -683,6 +695,11 @@ void MeshDisplay::updateTopic()
 
 void MeshDisplay::updateMaterialAndTextureServices()
 {
+    if (m_ignoreMsgs)
+    {
+        return;
+    }
+
     // Check if the service names are valid
     std::string error;
     if(!ros::names::validate(m_materialServiceName->getStdString(), error)
@@ -716,6 +733,11 @@ void MeshDisplay::updateMaterialAndTextureServices()
 
 void MeshDisplay::updateVertexColorService()
 {
+    if (m_ignoreMsgs)
+    {
+        return;
+    }
+
     // Check if the service name is valid
     std::string error;
     if(!ros::names::validate(m_vertexColorServiceName->getStdString(), error))
@@ -743,6 +765,11 @@ void MeshDisplay::updateVertexColorService()
 
 void MeshDisplay::requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
 {
+    if (m_ignoreMsgs)
+    {
+        return;
+    }
+
     mesh_msgs::GetVertexColors srv;
     srv.request.uuid = uuid;
     if (m_vertexColorClient.call(srv))
@@ -767,6 +794,11 @@ void MeshDisplay::requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual
 
 void MeshDisplay::requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
 {
+    if (m_ignoreMsgs)
+    {
+        return;
+    }
+
     mesh_msgs::GetMaterials srv;
     srv.request.uuid = uuid;
     if (m_materialsClient.call(srv))
@@ -957,6 +989,11 @@ void MeshDisplay::incomingGeometry(const mesh_msgs::MeshGeometryStamped::ConstPt
 
 void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
 {
+    if (m_ignoreMsgs)
+    {
+        return;
+    }
+
     Ogre::Quaternion orientation;
     Ogre::Vector3 position;
 
