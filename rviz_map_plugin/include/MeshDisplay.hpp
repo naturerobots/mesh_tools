@@ -219,6 +219,16 @@ private Q_SLOTS:
   void updateNormals();
 
   /**
+   * @brief Update the color of the mesh normals
+   */
+  void updateNormalsColor();
+
+  /**
+   * @brief Update the size of the mesh normals
+   */
+  void updateNormalsSize();
+
+  /**
    * @brief Update the vertex costs
    */
   void updateVertexCosts();

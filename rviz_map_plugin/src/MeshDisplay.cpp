@@ -177,13 +177,13 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
     m_showNormals = new rviz::BoolProperty("Show Normals", true, "Show Normals", this, SLOT(updateNormals()), this);
 
     m_normalsColor = new rviz::ColorProperty("Normals Color", QColor(255, 0, 255), "The color of the normals.",
-                                             m_showNormals, SLOT(updateNormals()), this);
+                                             m_showNormals, SLOT(updateNormalsColor()), this);
     m_normalsAlpha = new rviz::FloatProperty("Normals Alpha", 1.0, "The alpha-value of the normals", m_showNormals,
-                                             SLOT(updateNormals()), this);
+                                             SLOT(updateNormalsColor()), this);
     m_normalsAlpha->setMin(0);
     m_normalsAlpha->setMax(1);
     m_scalingFactor = new rviz::FloatProperty("Normals Scaling Factor", 0.1, "Scaling factor of the normals",
-                                              m_showNormals, SLOT(updateNormals()), this);
+                                              m_showNormals, SLOT(updateNormalsSize()), this);
   }
 }
 
@@ -504,6 +504,24 @@ void MeshDisplay::updateNormals()
   {
     m_visual->updateNormals(showNormals, m_normalsColor->getOgreColor(), m_normalsAlpha->getFloat(),
                             m_scalingFactor->getFloat());
+  }
+}
+
+void MeshDisplay::updateNormalsColor()
+{
+  bool showNormals = m_showNormals->getBool();
+
+  if (m_visual)
+  {
+    m_visual->updateNormals(showNormals, m_normalsColor->getOgreColor(), m_normalsAlpha->getFloat());
+  }
+}
+
+void MeshDisplay::updateNormalsSize()
+{
+  if (m_visual)
+  {
+    m_visual->updateNormals(m_scalingFactor->getFloat());
   }
 }
 

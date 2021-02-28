@@ -371,24 +371,25 @@ void TexturedMeshVisual::updateNormals(float scalingFactor)
   enteringNormals(m_geometry, m_geometryNormals);
 }
 
-void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha,
-                                       float scalingFactor)
+void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha)
 {
   if (!m_normalMaterial.isNull())
   {
     m_normalMaterial->getTechnique(0)->removeAllPasses();
-  }
 
-  if (!m_normalMaterial.isNull())
-  {
     if (showNormals)
     {
       Ogre::Technique* tech = m_normalMaterial->getTechnique(0);
       this->showNormals(tech->createPass(), normalsColor, normalsAlpha);
-
-      updateNormals(scalingFactor);
     }
   }
+}
+
+void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha,
+                                       float scalingFactor)
+{
+  updateNormals(showNormals, normalsColor, normalsAlpha);
+  updateNormals(scalingFactor);
 }
 
 void TexturedMeshVisual::updateWireframe(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha)

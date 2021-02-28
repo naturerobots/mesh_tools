@@ -243,6 +243,15 @@ public:
    * @param showNormals       When TRUE normals are visible
    * @param normalsColor      The color of the normals
    * @param normalsAlpha      The transparency of the normals
+   */
+  void updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha);
+
+  /**
+   * @brief Updates the normals dynamically.
+   *
+   * @param showNormals       When TRUE normals are visible
+   * @param normalsColor      The color of the normals
+   * @param normalsAlpha      The transparency of the normals
    * @param scalingFactor     The factor the normals have to be scaled with
    */
   void updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha, float scalingFactor);
