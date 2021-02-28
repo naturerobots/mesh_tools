@@ -685,6 +685,8 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
   {
     ROS_WARN("Received geometry with new UUID!");
     m_costCache.clear();
+    m_selectVertexCostMap->clearOptions();
+    m_selectVertexCostMap->addOption("-- None --", 0);
   }
 
   m_lastUuid = meshMsg->uuid;
