@@ -365,53 +365,10 @@ void TexturedMeshVisual::updateMaterial(bool showWireframe, Ogre::ColourValue wi
   }
 }
 
-void TexturedMeshVisual::updateNormals(float ScalingFactor)
+void TexturedMeshVisual::updateNormals(float scalingFactor)
 {
-  Ogre::VertexData* vertexData;
-  const Ogre::VertexElement* vertexElement;
-  Ogre::HardwareVertexBufferSharedPtr vertexBuffer;
-  unsigned char* vertexChar;
-  float* vertexFloat;
-
-  vertexData = m_normals->getSection(0)->getRenderOperation()->vertexData;
-  vertexElement = vertexData->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
-  vertexBuffer = vertexData->vertexBufferBinding->getBuffer(vertexElement->getSource());
-  vertexChar = static_cast<unsigned char*>(vertexBuffer->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
-
-  size_t halfVertexCount = vertexData->vertexCount / 2;
-  Ogre::Vector3* vertices = new Ogre::Vector3[halfVertexCount];
-  Ogre::Vector3* normals = new Ogre::Vector3[halfVertexCount];
-
-  for (size_t i = 0, vIndex = 0, nIndex = 0; i < vertexData->vertexCount;
-       i++, vertexChar += vertexBuffer->getVertexSize())
-  {
-    vertexElement->baseVertexPointerToElement(vertexChar, &vertexFloat);
-    Ogre::Vector3 tempVector(vertexFloat[0], vertexFloat[1], vertexFloat[2]);
-
-    if (i % 2 == 0)
-    {
-      vertices[vIndex] = tempVector;
-      vIndex++;
-    }
-    else
-    {
-      normals[nIndex] = (tempVector - vertices[nIndex]) / m_normalsScalingFactor;
-      nIndex++;
-    }
-  }
-  vertexBuffer->unlock();
-
-  m_normals->beginUpdate(0);
-  for (size_t i = 0; i < halfVertexCount; i++)
-  {
-    m_normals->position(vertices[i].x, vertices[i].y, vertices[i].z);
-    m_normals->position(vertices[i].x + ScalingFactor * normals[i].x, vertices[i].y + ScalingFactor * normals[i].y,
-                        vertices[i].z + ScalingFactor * normals[i].z);
-  }
-  m_normals->end();
-  delete[] vertices;
-  delete[] normals;
-  m_normalsScalingFactor = ScalingFactor;
+  m_normalsScalingFactor = scalingFactor;
+  enteringNormals(m_geometry, m_geometryNormals);
 }
 
 void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha,
@@ -429,51 +386,7 @@ void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue norma
       Ogre::Technique* tech = m_normalMaterial->getTechnique(0);
       this->showNormals(tech->createPass(), normalsColor, normalsAlpha);
 
-      Ogre::VertexData* vertexData;
-      const Ogre::VertexElement* vertexElement;
-      Ogre::HardwareVertexBufferSharedPtr vertexBuffer;
-      unsigned char* vertexChar;
-      float* vertexFloat;
-
-      vertexData = m_normals->getSection(0)->getRenderOperation()->vertexData;
-      vertexElement = vertexData->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
-      vertexBuffer = vertexData->vertexBufferBinding->getBuffer(vertexElement->getSource());
-      vertexChar = static_cast<unsigned char*>(vertexBuffer->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
-
-      size_t halfVertexCount = vertexData->vertexCount / 2;
-      Ogre::Vector3* vertices = new Ogre::Vector3[halfVertexCount];
-      Ogre::Vector3* normals = new Ogre::Vector3[halfVertexCount];
-
-      for (size_t i = 0, vIndex = 0, nIndex = 0; i < vertexData->vertexCount;
-           i++, vertexChar += vertexBuffer->getVertexSize())
-      {
-        vertexElement->baseVertexPointerToElement(vertexChar, &vertexFloat);
-        Ogre::Vector3 tempVector(vertexFloat[0], vertexFloat[1], vertexFloat[2]);
-
-        if (i % 2 == 0)
-        {
-          vertices[vIndex] = tempVector;
-          vIndex++;
-        }
-        else
-        {
-          normals[nIndex] = (tempVector - vertices[nIndex]) / m_normalsScalingFactor;
-          nIndex++;
-        }
-      }
-      vertexBuffer->unlock();
-
-      m_normals->beginUpdate(0);
-      for (size_t i = 0; i < halfVertexCount; i++)
-      {
-        m_normals->position(vertices[i].x, vertices[i].y, vertices[i].z);
-        m_normals->position(vertices[i].x + scalingFactor * normals[i].x, vertices[i].y + scalingFactor * normals[i].y,
-                            vertices[i].z + scalingFactor * normals[i].z);
-      }
-      m_normals->end();
-      delete[] vertices;
-      delete[] normals;
-      m_normalsScalingFactor = scalingFactor;
+      updateNormals(scalingFactor);
     }
   }
 }
@@ -763,13 +676,21 @@ void TexturedMeshVisual::enteringNormals(const Geometry& mesh, const vector<Norm
   }
 
   std::stringstream sstm;
-  sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
-  m_normalMaterial = Ogre::MaterialManager::getSingleton().create(
-      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-  m_normalMaterial->getTechnique(0)->removeAllPasses();
+  if (m_normalMaterial.isNull())
+  {
+    sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
+    m_normalMaterial = Ogre::MaterialManager::getSingleton().create(
+        sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
+    m_normalMaterial->getTechnique(0)->removeAllPasses();
 
-  // Create pointNormals
-  m_normals->begin(sstm.str(), Ogre::RenderOperation::OT_LINE_LIST);
+    // Create pointNormals
+    m_normals->clear();
+    m_normals->begin(sstm.str(), Ogre::RenderOperation::OT_LINE_LIST);
+  }
+  else
+  {
+    m_normals->beginUpdate(0);
+  }
 
   // Vertices
   for (size_t i = 0; i < mesh.vertices.size(); i++)
@@ -840,6 +761,8 @@ bool TexturedMeshVisual::setNormals(const vector<Normal>& normals)
     return false;
   }
 
+  m_geometryNormals = normals;
+
   // avoid memory reallocation
   m_normals->estimateVertexCount(m_geometry.vertices.size() * 2);
   m_normals->estimateIndexCount(m_geometry.vertices.size() * 2);
@@ -877,15 +800,14 @@ bool TexturedMeshVisual::setVertexCosts(const vector<float>& vertexCosts)
   return setVertexCosts(vertexCosts, 0);
 }
 
-bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts,
-                                        int costColorType)
+bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costColorType)
 {
-//   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
-//   if (m_meshUuid != vertexCostsMsg->uuid)
-//   {
-//     ROS_WARN("Can't add vertex costs, uuids do not match.");
-//     return false;
-//   }
+  //   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
+  //   if (m_meshUuid != vertexCostsMsg->uuid)
+  //   {
+  //     ROS_WARN("Can't add vertex costs, uuids do not match.");
+  //     return false;
+  //   }
 
   // check if there are vertex costs for each vertex
   if (vertexCosts.size() == m_geometry.vertices.size())
@@ -901,20 +823,20 @@ bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts,
 
   enteringTriangleMeshWithVertexCosts(m_geometry, vertexCosts, costColorType);
 
-//   m_vertexCostsUuid = vertexCostsMsg->uuid;
+  //   m_vertexCostsUuid = vertexCostsMsg->uuid;
 
   return true;
 }
 
-bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts,
-                                        int costColorType, float minCost, float maxCost)
+bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costColorType, float minCost,
+                                        float maxCost)
 {
-//   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
-//   if (m_meshUuid != vertexCostsMsg->uuid)
-//   {
-//     ROS_WARN("Can't add vertex costs, uuids do not match.");
-//     return false;
-//   }
+  //   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
+  //   if (m_meshUuid != vertexCostsMsg->uuid)
+  //   {
+  //     ROS_WARN("Can't add vertex costs, uuids do not match.");
+  //     return false;
+  //   }
 
   // check if there are vertex costs for each vertex
   if (vertexCosts.size() == m_geometry.vertices.size())
@@ -930,7 +852,7 @@ bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts,
 
   enteringTriangleMeshWithVertexCosts(m_geometry, vertexCosts, costColorType, minCost, maxCost);
 
-//   m_vertexCostsUuid = vertexCostsMsg->uuid;
+  //   m_vertexCostsUuid = vertexCostsMsg->uuid;
 
   return true;
 }

@@ -161,8 +161,7 @@ public:
    * @param minCost minimum value for colorization
    * @param maxCost maximum value for colorization
    */
-  bool setVertexCosts(const std::vector<float>& vertexCosts, int costColorType,
-                      float minCost, float maxCost);
+  bool setVertexCosts(const std::vector<float>& vertexCosts, int costColorType, float minCost, float maxCost);
 
   /**
    * @brief Extracts data from the ros-messages and creates a textured mesh.
@@ -285,7 +284,7 @@ private:
 
   void enteringTexturedTriangleMesh(const Geometry& mesh, const vector<Material>& meshMaterials,
                                     const vector<TexCoords>& texCoords);
-  
+
   void enteringNormals(const Geometry& mesh, const vector<Normal>& normals);
 
   Ogre::PixelFormat getOgrePixelFormatFromRosString(std::string encoding);
@@ -366,8 +365,11 @@ private:
   /// Factor the normal-size is multiplied with.
   float m_normalsScalingFactor;
 
-  /// Triangle Mesh contained in the given message
+  /// raw Triangle Mesh
   Geometry m_geometry;
+
+  /// raw normals
+  std::vector<Normal> m_geometryNormals;
 };
 }  // End namespace rviz_map_plugin
 
