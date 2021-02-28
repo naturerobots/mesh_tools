@@ -194,6 +194,13 @@ public:
    */
   void addTexture(Texture& texture, uint32_t textureIndex);
 
+  /**
+   * @brief Set geometrys pose
+   * @param position position of the pose
+   * @param orientation orientation of the pose
+   */
+  void setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation);
+
 private Q_SLOTS:
 
   /**
@@ -268,17 +275,15 @@ private:
 
   /**
    * @brief Requests vertex colors from the specified service
-   * @param visual Visual to which the vertex colors will be added
    * @param uuid Mesh UUID
    */
-  void requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid);
+  void requestVertexColors(std::string uuid);
 
   /**
    * @brief Requests materials from the specified service
-   * @param visual Visual to which the materials will be added
    * @param uuid Mesh UUID
    */
-  void requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid);
+  void requestMaterials(std::string uuid);
 
   /**
    * @brief Cache function for vertex cost messages.

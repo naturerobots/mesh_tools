@@ -381,6 +381,15 @@ void MeshDisplay::addTexture(Texture& texture, uint32_t textureIndex)
   }
 }
 
+void MeshDisplay::setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation)
+{
+  if (m_visual)
+  {
+    m_visual->setFramePosition(position);
+    m_visual->setFrameOrientation(orientation);
+  }
+}
+
 // =====================================================================================================================
 // Callbacks triggered from UI events (mostly)
 
@@ -550,7 +559,7 @@ void MeshDisplay::updateMaterialAndTextureServices()
   m_textureClient = n.serviceClient<mesh_msgs::GetTexture>(m_textureServiceName->getStdString());
   if (m_materialsClient.exists())
   {
-    requestMaterials(m_visual, m_lastUuid);
+    requestMaterials(m_lastUuid);
     if (m_textureClient.exists())
     {
       setStatus(rviz::StatusProperty::Ok, "Services", "Material and Texture Service OK");
@@ -587,7 +596,7 @@ void MeshDisplay::updateVertexColorService()
   if (m_vertexColorClient.exists())
   {
     setStatus(rviz::StatusProperty::Ok, "Services", "Vertex Color Service OK");
-    requestVertexColors(m_visual, m_lastUuid);
+    requestVertexColors(m_lastUuid);
   }
   else
   {
@@ -663,14 +672,15 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
 
   m_lastUuid = meshMsg->uuid;
 
-  Geometry mesh;
+  // set Geometry
+  std::shared_ptr<Geometry> mesh(std::make_shared<Geometry>());
   for (const geometry_msgs::Point& v : meshMsg->mesh_geometry.vertices)
   {
     Vertex vertex;
     vertex.x = v.x;
     vertex.y = v.y;
     vertex.z = v.z;
-    mesh.vertices.push_back(vertex);
+    mesh->vertices.push_back(vertex);
   }
   for (const mesh_msgs::TriangleIndices& f : meshMsg->mesh_geometry.faces)
   {
@@ -678,31 +688,22 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
     face.vertexIndices[0] = f.vertex_indices[0];
     face.vertexIndices[1] = f.vertex_indices[1];
     face.vertexIndices[2] = f.vertex_indices[2];
-    mesh.faces.push_back(face);
+    mesh->faces.push_back(face);
   }
+  setGeometry(mesh);
+  setPose(position, orientation);
 
+  // set Normals
   std::vector<Normal> normals;
   for (const geometry_msgs::Point& n : meshMsg->mesh_geometry.vertex_normals)
   {
     Normal normal(n.x, n.y, n.z);
     normals.push_back(normal);
   }
+  setVertexNormals(normals);
 
-  // Create the visual
-  int randomId = (int)((double)rand() / RAND_MAX * 9998);
-  m_visual.reset(new TexturedMeshVisual(context_, 0, 0, randomId));
-
-  m_visual->setGeometry(mesh);
-  m_visual->setNormals(normals);
-  has_data = true;
-
-  requestVertexColors(m_visual, meshMsg->uuid);
-  requestMaterials(m_visual, meshMsg->uuid);
-  updateMesh();
-  updateWireframe();
-  updateNormals();
-  m_visual->setFramePosition(position);
-  m_visual->setFrameOrientation(orientation);
+  requestVertexColors(meshMsg->uuid);
+  requestMaterials(meshMsg->uuid);
 }
 
 void MeshDisplay::incomingGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
@@ -727,9 +728,7 @@ void MeshDisplay::incomingVertexColors(const mesh_msgs::MeshVertexColorsStamped:
     vertexColors.push_back(color);
   }
 
-  m_visual->setVertexColors(vertexColors);
-
-  updateMesh();
+  setVertexColors(vertexColors);
 }
 
 void MeshDisplay::incomingVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& costsStamped)
@@ -744,7 +743,7 @@ void MeshDisplay::incomingVertexCosts(const mesh_msgs::MeshVertexCostsStamped::C
   updateVertexCosts();
 }
 
-void MeshDisplay::requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
+void MeshDisplay::requestVertexColors(std::string uuid)
 {
   if (m_ignoreMsgs)
   {
@@ -766,7 +765,7 @@ void MeshDisplay::requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual
       vertexColors.push_back(color);
     }
 
-    visual->setVertexColors(vertexColors);
+    setVertexColors(vertexColors);
   }
   else
   {
@@ -774,7 +773,7 @@ void MeshDisplay::requestVertexColors(std::shared_ptr<TexturedMeshVisual> visual
   }
 }
 
-void MeshDisplay::requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, std::string uuid)
+void MeshDisplay::requestMaterials(std::string uuid)
 {
   if (m_ignoreMsgs)
   {
@@ -816,7 +815,7 @@ void MeshDisplay::requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, s
       textureCoords.push_back(TexCoords(coord.u, coord.v));
     }
 
-    visual->setMaterials(materials, textureCoords);
+    setMaterials(materials, textureCoords);
 
     for (mesh_msgs::MeshMaterial material : meshMaterialsStamped->mesh_materials.materials)
     {
@@ -838,7 +837,7 @@ void MeshDisplay::requestMaterials(std::shared_ptr<TexturedMeshVisual> visual, s
           texture.pixelFormat = textureMsg->image.encoding;
           texture.data = textureMsg->image.data;
 
-          visual->addTexture(texture, textureMsg->texture_index);
+          addTexture(texture, textureMsg->texture_index);
         }
         else
         {
