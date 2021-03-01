@@ -231,8 +231,8 @@ void MeshDisplay::onInitialize()
 
 void MeshDisplay::onEnable()
 {
+  m_messagesReceived = 0;
   subscribe();
-  // Create the visual
   updateMesh();
   updateWireframe();
   updateNormals();
@@ -324,14 +324,11 @@ void MeshDisplay::ignoreIncomingMessages()
 
 void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
 {
-  m_geometry = geometry;
-
   // Create the visual
   int randomId = (int)((double)rand() / RAND_MAX * 9998);
   m_visual.reset(new TexturedMeshVisual(context_, 0, 0, randomId));
 
   m_visual->setGeometry(*geometry);
-  has_data = true;
   if (isEnabled())
   {
     updateMesh();
@@ -343,7 +340,7 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
 
 void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
 {
-  if (has_data)
+  if (m_visual)
   {
     m_visual->setVertexColors(vertexColors);
   }
@@ -352,7 +349,7 @@ void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
 
 void MeshDisplay::setVertexNormals(vector<Normal>& vertexNormals)
 {
-  if (has_data)
+  if (m_visual)
   {
     m_visual->setNormals(vertexNormals);
   }
@@ -364,7 +361,7 @@ void MeshDisplay::setVertexNormals(vector<Normal>& vertexNormals)
 
 void MeshDisplay::setMaterials(vector<Material>& materials, vector<TexCoords>& texCoords)
 {
-  if (has_data)
+  if (m_visual)
   {
     m_visual->setMaterials(materials, texCoords);
   }
@@ -373,7 +370,7 @@ void MeshDisplay::setMaterials(vector<Material>& materials, vector<TexCoords>& t
 
 void MeshDisplay::addTexture(Texture& texture, uint32_t textureIndex)
 {
-  if (has_data)
+  if (m_visual)
   {
     m_visual->addTexture(texture, textureIndex);
   }
@@ -473,9 +470,9 @@ void MeshDisplay::updateMesh()
       break;
   }
 
-  if (!has_data)
+  if (!m_visual)
   {
-    ROS_ERROR("Mesh display: no data available, can't draw mesh!");
+    ROS_ERROR("Mesh display: no visual available, can't draw mesh! (maybe no data has been received yet?)");
     return;
   }
 
@@ -650,7 +647,7 @@ void MeshDisplay::initialServiceCall()
   }
 
   ros::NodeHandle n;
-  ros::ServiceClient m_uuidClient = n.serviceClient<mesh_msgs::GetUUID>("get_uuid");
+  m_uuidClient = n.serviceClient<mesh_msgs::GetUUID>("get_uuid");
 
   mesh_msgs::GetUUID srv_uuid;
   if (m_uuidClient.call(srv_uuid))
@@ -659,7 +656,7 @@ void MeshDisplay::initialServiceCall()
 
     ROS_INFO_STREAM("Initial data available for UUID=" << uuid);
 
-    ros::ServiceClient m_geometryClient = n.serviceClient<mesh_msgs::GetGeometry>("get_geometry");
+    m_geometryClient = n.serviceClient<mesh_msgs::GetGeometry>("get_geometry");
 
     mesh_msgs::GetGeometry srv_geometry;
     srv_geometry.request.uuid = uuid;

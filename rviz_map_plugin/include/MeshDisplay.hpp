@@ -362,9 +362,6 @@ private:
   /// Uuid of the last received message
   std::string m_lastUuid;
 
-  /// Geometry data
-  shared_ptr<Geometry> m_geometry;
-
   /// Visual data
   shared_ptr<TexturedMeshVisual> m_visual;
 
@@ -436,9 +433,6 @@ private:
 
   /// Cache for received vertex cost messages
   std::map<std::string, std::vector<float>> m_costCache;
-
-  /// Will be set to true once the initial data has arrived
-  bool has_data = false;
 };
 
 }  // end namespace rviz_map_plugin
