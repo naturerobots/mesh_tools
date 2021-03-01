@@ -480,6 +480,7 @@ void MeshDisplay::updateMesh()
   {
     m_visual->updateMaterial(showFaces, m_facesColor->getOgreColor(), m_facesAlpha->getFloat(), showVertexColors,
                              showVertexCosts, showTextures, m_showTexturedFacesOnly->getBool());
+    updateWireframe();
   }
 }
 
