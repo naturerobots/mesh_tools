@@ -249,7 +249,7 @@ void TexturedMeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normals
     pass->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
     pass->setDepthWriteEnabled(true);
   }
-  pass->setPolygonMode(Ogre::PM_SOLID);
+  pass->setPolygonMode(Ogre::PM_WIREFRAME);
   pass->setCullingMode(Ogre::CULL_NONE);
 }
 
