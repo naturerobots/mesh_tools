@@ -42,8 +42,13 @@
  *
  *  authors:
  *
+ *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
+ *    Henning Deeken <hdeeken@uni-osnabrueck.de>
+ *    Marcel Mrozinski
+ *    Nils Oesting
  *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
+ *    Malte kleine Piening <malte@klpiening.de>
  */
 
 #ifndef MESH_DISPLAY_HPP

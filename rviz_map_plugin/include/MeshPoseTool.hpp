@@ -55,7 +55,7 @@
 #include <rviz/tool.h>
 #include <rviz/ogre_helpers/arrow.h>
 
-namespace rviz_mesh_plugin
+namespace rviz_map_plugin
 {
 class MeshPoseTool : public rviz::Tool
 {
@@ -92,6 +92,6 @@ protected:
   Ogre::Vector3 ori_;
 };
 
-} /* namespace rviz_mesh_plugin */
+} /* namespace rviz_map_plugin */
 
-#endif /* mesh_pose_tool.h */
+#endif

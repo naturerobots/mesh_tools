@@ -54,9 +54,10 @@ set(SOURCE_FILES
   src/ClusterLabelVisual.cpp
   src/MapDisplay.cpp
   src/MeshDisplay.cpp
-  src/TexturedMeshDisplay.cpp
   src/TexturedMeshVisual.cpp
   src/RvizFileProperty.cpp
+  src/MeshPoseTool.cpp
+  src/MeshGoalTool.cpp
 )
 
 set(HEADER_FILES
@@ -65,11 +66,12 @@ set(HEADER_FILES
   include/ClusterLabelVisual.hpp
   include/MapDisplay.hpp
   include/MeshDisplay.hpp
-  include/TexturedMeshDisplay.hpp
   include/TexturedMeshVisual.hpp
   include/ClusterLabelTool.hpp
   include/CLUtil.hpp
   include/RvizFileProperty.hpp
+  include/MeshPoseTool.hpp
+  include/MeshGoalTool.hpp
 )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})

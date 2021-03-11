@@ -45,7 +45,7 @@
 #ifndef RVIZ_MESH_PLUGIN__MESH_GOAL_TOOL_H_
 #define RVIZ_MESH_PLUGIN__MESH_GOAL_TOOL_H_
 
-#include "mesh_pose_tool.h"
+#include "MeshPoseTool.hpp"
 #include <geometry_msgs/PoseStamped.h>
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/string_property.h>
@@ -55,7 +55,7 @@
 #include <QObject>
 #endif
 
-namespace rviz_mesh_plugin
+namespace rviz_map_plugin
 {
 /**
  * @class MeshGoalTool
@@ -100,6 +100,6 @@ protected:
   ros::NodeHandle nh_;
 };
 
-} /* namespace rviz_mesh_plugin */
+} /* namespace rviz_map_plugin */
 
-#endif /* mesh_goal_tool.h */
+#endif

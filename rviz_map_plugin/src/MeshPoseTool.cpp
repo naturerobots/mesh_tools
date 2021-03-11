@@ -57,9 +57,9 @@
 #include <rviz/render_panel.h>
 #include <rviz/display_context.h>
 
-#include "mesh_pose_tool.h"
+#include "MeshPoseTool.hpp"
 
-namespace rviz_mesh_plugin
+namespace rviz_map_plugin
 {
 
   MeshPoseTool::MeshPoseTool()
@@ -308,5 +308,5 @@ void MeshPoseTool::getRawManualObjectData(
   indexBuffer->unlock();
 }
 
-} /* rviz_mesh_plugin */
+} /* rviz_map_plugin */
 
