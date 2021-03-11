@@ -76,6 +76,10 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
       "Geometry Topic", "", QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshGeometryStamped>()),
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
 
+  // buffer size / amount of meshes visualized
+  m_bufferSize = new rviz::IntProperty("Buffer Size", 1, "Amount of meshes visualized", this, SLOT(updateBufferSize()));
+  m_bufferSize->setMin(1);
+
   // Display Type
   {
     m_displayType = new rviz::EnumProperty("Display Type", "Fixed Color", "Select Display Type for Mesh", this,
@@ -247,12 +251,8 @@ void MeshDisplay::onDisable()
 {
   unsubscribe();
 
-  if (m_visual)
-  {
-    m_visual->updateMaterial(false, Ogre::ColourValue(), 0.0f, false, false, false, false);
-    m_visual->updateWireframe(false, Ogre::ColourValue(), 0.0f);
-    m_visual->updateNormals(false, Ogre::ColourValue(), 0.0f, 1.0f);
-  }
+  // clear visuals
+  std::queue<std::shared_ptr<MeshVisual>>().swap(m_visuals);
 }
 
 void MeshDisplay::subscribe()
@@ -322,6 +322,12 @@ void MeshDisplay::ignoreIncomingMessages()
   m_ignoreMsgs = true;
   unsubscribe();
   updateMesh();
+
+  // only allow one mesh to be visualized
+  while (m_visuals.size() > 1)
+  {
+    m_visuals.pop();
+  }
 }
 
 // =====================================================================================================================
@@ -330,10 +336,8 @@ void MeshDisplay::ignoreIncomingMessages()
 void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
 {
   // Create the visual
-  int randomId = (int)((double)rand() / RAND_MAX * 9998);
-  m_visual.reset(new MeshVisual(context_, 0, 0, randomId));
-
-  m_visual->setGeometry(*geometry);
+  std::shared_ptr<MeshVisual> visual = addNewVisual();
+  visual->setGeometry(*geometry);
   if (isEnabled())
   {
     updateMesh();
@@ -345,18 +349,20 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
 
 void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
 {
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->setVertexColors(vertexColors);
+    visual->setVertexColors(vertexColors);
   }
   updateMesh();
 }
 
 void MeshDisplay::setVertexNormals(vector<Normal>& vertexNormals)
 {
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->setNormals(vertexNormals);
+    visual->setNormals(vertexNormals);
   }
   if (isEnabled())
   {
@@ -366,32 +372,43 @@ void MeshDisplay::setVertexNormals(vector<Normal>& vertexNormals)
 
 void MeshDisplay::setMaterials(vector<Material>& materials, vector<TexCoords>& texCoords)
 {
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->setMaterials(materials, texCoords);
+    visual->setMaterials(materials, texCoords);
   }
   updateMesh();
 }
 
 void MeshDisplay::addTexture(Texture& texture, uint32_t textureIndex)
 {
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->addTexture(texture, textureIndex);
+    visual->addTexture(texture, textureIndex);
   }
 }
 
 void MeshDisplay::setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation)
 {
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->setFramePosition(position);
-    m_visual->setFrameOrientation(orientation);
+    visual->setFramePosition(position);
+    visual->setFrameOrientation(orientation);
   }
 }
 
 // =====================================================================================================================
 // Callbacks triggered from UI events (mostly)
+
+void MeshDisplay::updateBufferSize()
+{
+  while (m_visuals.size() > m_bufferSize->getInt())
+  {
+    m_visuals.pop();
+  }
+}
 
 void MeshDisplay::updateMesh()
 {
@@ -422,10 +439,12 @@ void MeshDisplay::updateMesh()
   if (m_ignoreMsgs)
   {
     m_meshTopic->hide();
+    m_bufferSize->hide();
   }
   else
   {
     m_meshTopic->show();
+    m_bufferSize->show();
   }
 
   switch (m_displayType->getOptionInt())
@@ -475,7 +494,8 @@ void MeshDisplay::updateMesh()
       break;
   }
 
-  if (!m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (!visual)
   {
     ROS_ERROR("Mesh display: no visual available, can't draw mesh! (maybe no data has been received yet?)");
     return;
@@ -483,8 +503,8 @@ void MeshDisplay::updateMesh()
 
   if (isEnabled())
   {
-    m_visual->updateMaterial(showFaces, m_facesColor->getOgreColor(), m_facesAlpha->getFloat(), showVertexColors,
-                             showVertexCosts, showTextures, m_showTexturedFacesOnly->getBool());
+    visual->updateMaterial(showFaces, m_facesColor->getOgreColor(), m_facesAlpha->getFloat(), showVertexColors,
+                           showVertexCosts, showTextures, m_showTexturedFacesOnly->getBool());
     updateWireframe();
   }
 }
@@ -493,9 +513,10 @@ void MeshDisplay::updateWireframe()
 {
   bool showWireframe = m_showWireframe->getBool();
 
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->updateWireframe(showWireframe, m_wireframeColor->getOgreColor(), m_wireframeAlpha->getFloat());
+    visual->updateWireframe(showWireframe, m_wireframeColor->getOgreColor(), m_wireframeAlpha->getFloat());
   }
 }
 
@@ -503,10 +524,11 @@ void MeshDisplay::updateNormals()
 {
   bool showNormals = m_showNormals->getBool();
 
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->updateNormals(showNormals, m_normalsColor->getOgreColor(), m_normalsAlpha->getFloat(),
-                            m_scalingFactor->getFloat());
+    visual->updateNormals(showNormals, m_normalsColor->getOgreColor(), m_normalsAlpha->getFloat(),
+                          m_scalingFactor->getFloat());
   }
 }
 
@@ -514,17 +536,19 @@ void MeshDisplay::updateNormalsColor()
 {
   bool showNormals = m_showNormals->getBool();
 
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->updateNormals(showNormals, m_normalsColor->getOgreColor(), m_normalsAlpha->getFloat());
+    visual->updateNormals(showNormals, m_normalsColor->getOgreColor(), m_normalsAlpha->getFloat());
   }
 }
 
 void MeshDisplay::updateNormalsSize()
 {
-  if (m_visual)
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
   {
-    m_visual->updateNormals(m_scalingFactor->getFloat());
+    visual->updateNormals(m_scalingFactor->getFloat());
   }
 }
 
@@ -534,15 +558,23 @@ void MeshDisplay::updateVertexCosts()
   {
     if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
     {
-      m_visual->setVertexCosts(m_costCache[m_selectVertexCostMap->getStdString()], m_costColorType->getOptionInt(),
+      std::shared_ptr<MeshVisual> visual = getLatestVisual();
+      if (visual)
+      {
+        visual->setVertexCosts(m_costCache[m_selectVertexCostMap->getStdString()], m_costColorType->getOptionInt(),
                                m_costLowerLimit->getFloat(), m_costUpperLimit->getFloat());
+      }
     }
   }
   else
   {
     if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
     {
-      m_visual->setVertexCosts(m_costCache[m_selectVertexCostMap->getStdString()], m_costColorType->getOptionInt());
+      std::shared_ptr<MeshVisual> visual = getLatestVisual();
+      if (visual)
+      {
+        visual->setVertexCosts(m_costCache[m_selectVertexCostMap->getStdString()], m_costColorType->getOptionInt());
+      }
     }
   }
   updateMesh();
@@ -910,6 +942,34 @@ void MeshDisplay::cacheVertexCosts(std::string layer, const std::vector<float>& 
   }
 
   m_costCache.insert(std::pair<std::string, std::vector<float>>(layer, costs));
+}
+
+std::shared_ptr<MeshVisual> MeshDisplay::getLatestVisual()
+{
+  if (m_visuals.empty())
+  {
+    return nullptr;
+  }
+  return m_visuals.back();
+}
+
+std::shared_ptr<MeshVisual> MeshDisplay::addNewVisual()
+{
+  int randomId = (int)((double)rand() / RAND_MAX * 9998);
+  m_visuals.push(std::make_shared<MeshVisual>(context_, 0, 0, randomId));
+
+  int bufferCapacity = m_bufferSize->getInt();
+  if (m_ignoreMsgs)
+  {
+    bufferCapacity = 1;
+  }
+
+  if (m_visuals.size() > bufferCapacity)
+  {
+    m_visuals.pop();
+  }
+
+  return m_visuals.back();
 }
 
 }  // End namespace rviz_map_plugin

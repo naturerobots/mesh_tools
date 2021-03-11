@@ -59,6 +59,7 @@
 
 #include <vector>
 #include <memory>
+#include <queue>
 
 #include <string>
 #include <math.h>
@@ -209,6 +210,11 @@ public:
 private Q_SLOTS:
 
   /**
+   * @brief Updates the buffer size
+   */
+  void updateBufferSize();
+
+  /**
    * @brief Updates the mesh
    */
   void updateMesh();
@@ -316,6 +322,18 @@ private:
    */
   void cacheVertexCosts(std::string layer, const std::vector<float>& costs);
 
+  /**
+   * @brief delivers the latest mesh visual
+   * @return latest mesh visual
+   */
+  std::shared_ptr<MeshVisual> getLatestVisual();
+
+  /**
+   * @brief adds a new visual to the ring buffer
+   * @return newly added visual
+   */
+  std::shared_ptr<MeshVisual> addNewVisual();
+
   /// if set to true, ignore incoming messages and do not use services to request materials
   bool m_ignoreMsgs;
 
@@ -368,10 +386,13 @@ private:
   std::string m_lastUuid;
 
   /// Visual data
-  shared_ptr<MeshVisual> m_visual;
+  std::queue<std::shared_ptr<MeshVisual>> m_visuals;
 
   /// Property to handle topic for meshMsg
   rviz::RosTopicProperty* m_meshTopic;
+
+  /// Property to handle buffer size
+  rviz::IntProperty* m_bufferSize;
 
   /// Property to select the display type
   rviz::EnumProperty* m_displayType;
