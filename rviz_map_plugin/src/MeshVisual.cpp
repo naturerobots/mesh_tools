@@ -473,6 +473,7 @@ void MeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
   m_meshGeneralMaterial->getTechnique(0)->removeAllPasses();
 
   // start entering data
+  m_mesh->clear();
   m_mesh->begin(sstm.str(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
   // write vertices
@@ -506,6 +507,7 @@ void MeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const vector<
   }
 
   // start entering data
+  m_mesh->clear();
   m_mesh->begin(m_meshGeneralMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
   // write vertices
