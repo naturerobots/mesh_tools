@@ -1,13 +1,62 @@
-#include "TexturedMeshVisual.hpp"
+/*
+ *  Software License Agreement (BSD License)
+ *
+ *  Robot Operating System code by the University of Osnabrück
+ *  Copyright (c) 2015, University of Osnabrück
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *   1. Redistributions of source code must retain the above
+ *      copyright notice, this list of conditions and the following
+ *      disclaimer.
+ *
+ *   2. Redistributions in binary form must reproduce the above
+ *      copyright notice, this list of conditions and the following
+ *      disclaimer in the documentation and/or other materials provided
+ *      with the distribution.
+ *
+ *   3. Neither the name of the copyright holder nor the names of its
+ *      contributors may be used to endorse or promote products derived
+ *      from this software without specific prior written permission.
+ *
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ *  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ *  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ *  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ *  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ *  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ *  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ *  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *
+ *
+ *  MeshVisual.cpp
+ *
+ *
+ *  authors:
+ *
+ *    Sebastian Pütz <spuetz@uni-osnabrueck.de>
+ *    Henning Deeken <hdeeken@uni-osnabrueck.de>
+ *    Marcel Mrozinski
+ *    Nils Oesting
+ *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
+ *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
+ */
+
+#include "MeshVisual.hpp"
 
 #include <OGRE/OgreSubEntity.h>
 #include <OGRE/OgreRenderOperation.h>
 #include <OGRE/OgreTextureManager.h>
 #include <OGRE/OgreHardwarePixelBuffer.h>
 #include <OGRE/OgrePixelFormat.h>
-
-// #include <rviz/display_context.h>
-// #include <rviz/frame_manager.h>
 
 #include <limits>
 #include <stdint.h>
@@ -44,7 +93,7 @@ Ogre::ColourValue getRainbowColor1(float value)
   return Ogre::ColourValue(r, g, b, 1.0f);
 }
 
-TexturedMeshVisual::TexturedMeshVisual(rviz::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID)
+MeshVisual::MeshVisual(rviz::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID)
   : m_displayContext(context)
   , m_prefix(displayID)
   , m_postfix(meshID)
@@ -55,7 +104,7 @@ TexturedMeshVisual::TexturedMeshVisual(rviz::DisplayContext* context, size_t dis
   , m_texture_coords_enabled(false)
   , m_normalsScalingFactor(1)
 {
-  ROS_INFO("Creating TexturedMeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
+  ROS_INFO("Creating MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
   // get or create the scene node
   Ogre::SceneManager* sceneManager = m_displayContext->getSceneManager();
@@ -107,9 +156,9 @@ TexturedMeshVisual::TexturedMeshVisual(rviz::DisplayContext* context, size_t dis
   m_sceneNode->attachObject(m_vertexCostsMesh);
 }
 
-TexturedMeshVisual::~TexturedMeshVisual()
+MeshVisual::~MeshVisual()
 {
-  ROS_INFO("Destroying TexturedMeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
+  ROS_INFO("Destroying MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
   reset();
 
@@ -138,9 +187,9 @@ TexturedMeshVisual::~TexturedMeshVisual()
   sstm.flush();
 }
 
-void TexturedMeshVisual::reset()
+void MeshVisual::reset()
 {
-  ROS_INFO("Resetting TexturedMeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
+  ROS_INFO("Resetting MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
   std::stringstream sstm;
 
@@ -206,7 +255,7 @@ void TexturedMeshVisual::reset()
   m_vertex_costs_enabled = false;
 }
 
-void TexturedMeshVisual::showWireframe(Ogre::Pass* pass, Ogre::ColourValue wireframeColor, float wireframeAlpha)
+void MeshVisual::showWireframe(Ogre::Pass* pass, Ogre::ColourValue wireframeColor, float wireframeAlpha)
 {
   pass->setAmbient(Ogre::ColourValue(wireframeColor.r, wireframeColor.g, wireframeColor.b, wireframeAlpha));
   pass->setDiffuse(Ogre::ColourValue(wireframeColor.r, wireframeColor.g, wireframeColor.b, wireframeAlpha));
@@ -220,7 +269,7 @@ void TexturedMeshVisual::showWireframe(Ogre::Pass* pass, Ogre::ColourValue wiref
   pass->setCullingMode(Ogre::CULL_NONE);
 }
 
-void TexturedMeshVisual::showFaces(Ogre::Pass* pass, Ogre::ColourValue facesColor, float facesAlpha,
+void MeshVisual::showFaces(Ogre::Pass* pass, Ogre::ColourValue facesColor, float facesAlpha,
                                    bool useVertexColors)
 {
   pass->setDiffuse(Ogre::ColourValue(facesColor.r, facesColor.g, facesColor.b, facesAlpha));
@@ -240,7 +289,7 @@ void TexturedMeshVisual::showFaces(Ogre::Pass* pass, Ogre::ColourValue facesColo
   pass->setCullingMode(Ogre::CULL_NONE);
 }
 
-void TexturedMeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normalsColor, float normalsAlpha)
+void MeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normalsColor, float normalsAlpha)
 {
   pass->setSelfIllumination(normalsColor.r, normalsColor.g, normalsColor.b);
   pass->setDiffuse(Ogre::ColourValue(normalsColor.r, normalsColor.g, normalsColor.b, normalsAlpha));
@@ -253,7 +302,7 @@ void TexturedMeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normals
   pass->setCullingMode(Ogre::CULL_NONE);
 }
 
-void TexturedMeshVisual::updateMaterial(bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
+void MeshVisual::updateMaterial(bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
                                         bool useVertexColors, bool showVertexCosts, bool showTextures,
                                         bool showTexturedFacesOnly)
 {
@@ -300,7 +349,7 @@ void TexturedMeshVisual::updateMaterial(bool showFaces, Ogre::ColourValue facesC
   }
 }
 
-void TexturedMeshVisual::updateMaterial(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha,
+void MeshVisual::updateMaterial(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha,
                                         bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
                                         bool useVertexColors, bool showVertexCosts, bool showTextures,
                                         bool showTexturedFacesOnly, bool showNormals, Ogre::ColourValue normalsColor,
@@ -365,13 +414,13 @@ void TexturedMeshVisual::updateMaterial(bool showWireframe, Ogre::ColourValue wi
   }
 }
 
-void TexturedMeshVisual::updateNormals(float scalingFactor)
+void MeshVisual::updateNormals(float scalingFactor)
 {
   m_normalsScalingFactor = scalingFactor;
   enteringNormals(m_geometry, m_geometryNormals);
 }
 
-void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha)
+void MeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha)
 {
   if (!m_normalMaterial.isNull())
   {
@@ -385,14 +434,14 @@ void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue norma
   }
 }
 
-void TexturedMeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha,
+void MeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha,
                                        float scalingFactor)
 {
   updateNormals(showNormals, normalsColor, normalsAlpha);
   updateNormals(scalingFactor);
 }
 
-void TexturedMeshVisual::updateWireframe(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha)
+void MeshVisual::updateWireframe(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha)
 {
   if (!m_meshGeneralMaterial.isNull())
   {
@@ -412,7 +461,7 @@ void TexturedMeshVisual::updateWireframe(bool showWireframe, Ogre::ColourValue w
   }
 }
 
-void TexturedMeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
+void MeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
 {
   std::stringstream sstm;
 
@@ -443,7 +492,7 @@ void TexturedMeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
   m_mesh->end();
 }
 
-void TexturedMeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors)
+void MeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors)
 {
   if (m_meshGeneralMaterial.isNull())
   {
@@ -480,7 +529,7 @@ void TexturedMeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const
   m_mesh->end();
 }
 
-void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
+void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
                                                              int costColorType)
 {
   // Calculate maximum value for vertex costs
@@ -497,7 +546,7 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mes
   enteringTriangleMeshWithVertexCosts(mesh, vertexCosts, costColorType, minCost, maxCost);
 }
 
-void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
+void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
                                                              int costColorType, float minCost, float maxCost)
 {
   float range = maxCost - minCost;
@@ -555,7 +604,7 @@ void TexturedMeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mes
   m_vertexCostsMesh->end();
 }
 
-void TexturedMeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector<Material>& materials,
+void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector<Material>& materials,
                                                       const vector<TexCoords>& texCoords)
 {
   std::stringstream sstm;
@@ -669,7 +718,7 @@ void TexturedMeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, cons
   m_noTexCluMesh->end();
 }
 
-void TexturedMeshVisual::enteringNormals(const Geometry& mesh, const vector<Normal>& normals)
+void MeshVisual::enteringNormals(const Geometry& mesh, const vector<Normal>& normals)
 {
   if (!m_vertex_normals_enabled)
   {
@@ -707,7 +756,7 @@ void TexturedMeshVisual::enteringNormals(const Geometry& mesh, const vector<Norm
   m_normals->end();
 }
 
-bool TexturedMeshVisual::setGeometry(const Geometry& mesh)
+bool MeshVisual::setGeometry(const Geometry& mesh)
 {
   reset();
 
@@ -747,7 +796,7 @@ bool TexturedMeshVisual::setGeometry(const Geometry& mesh)
   return true;
 }
 
-bool TexturedMeshVisual::setNormals(const vector<Normal>& normals)
+bool MeshVisual::setNormals(const vector<Normal>& normals)
 {
   // vertex normals
   // check if there are vertex normals for each vertex
@@ -777,7 +826,7 @@ bool TexturedMeshVisual::setNormals(const vector<Normal>& normals)
   return true;
 }
 
-bool TexturedMeshVisual::setVertexColors(const vector<Color>& vertexColors)
+bool MeshVisual::setVertexColors(const vector<Color>& vertexColors)
 {
   // check if there are vertex colors for each vertex
   if (vertexColors.size() == m_geometry.vertices.size())
@@ -796,12 +845,12 @@ bool TexturedMeshVisual::setVertexColors(const vector<Color>& vertexColors)
   return true;
 }
 
-bool TexturedMeshVisual::setVertexCosts(const vector<float>& vertexCosts)
+bool MeshVisual::setVertexCosts(const vector<float>& vertexCosts)
 {
   return setVertexCosts(vertexCosts, 0);
 }
 
-bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costColorType)
+bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costColorType)
 {
   //   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
   //   if (m_meshUuid != vertexCostsMsg->uuid)
@@ -829,7 +878,7 @@ bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, i
   return true;
 }
 
-bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costColorType, float minCost,
+bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costColorType, float minCost,
                                         float maxCost)
 {
   //   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
@@ -858,7 +907,7 @@ bool TexturedMeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, i
   return true;
 }
 
-bool TexturedMeshVisual::setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords)
+bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords)
 {
   // check if there is a material index for each cluster
   if (materials.size() >= 0)
@@ -890,7 +939,7 @@ bool TexturedMeshVisual::setMaterials(const vector<Material>& materials, const v
   return true;
 }
 
-bool TexturedMeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
+bool MeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
 {
   uint32_t width = texture.width;
   uint32_t height = texture.height;
@@ -916,7 +965,7 @@ bool TexturedMeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
   }
 }
 
-Ogre::PixelFormat TexturedMeshVisual::getOgrePixelFormatFromRosString(std::string encoding)
+Ogre::PixelFormat MeshVisual::getOgrePixelFormatFromRosString(std::string encoding)
 {
   if (encoding == "rgba8")
   {
@@ -931,7 +980,7 @@ Ogre::PixelFormat TexturedMeshVisual::getOgrePixelFormatFromRosString(std::strin
   return Ogre::PF_UNKNOWN;
 }
 
-void TexturedMeshVisual::loadImageIntoTextureMaterial(size_t textureIndex)
+void MeshVisual::loadImageIntoTextureMaterial(size_t textureIndex)
 {
   std::stringstream textureNameStream;
   textureNameStream << m_prefix << "_Texture" << textureIndex << "_" << m_postfix << "_" << m_random;
@@ -947,7 +996,7 @@ void TexturedMeshVisual::loadImageIntoTextureMaterial(size_t textureIndex)
   pass->createTextureUnitState()->addFrameTextureName(textureNameStream.str());
 }
 
-Ogre::ColourValue TexturedMeshVisual::calculateColorFromCost(float cost, int costColorType)
+Ogre::ColourValue MeshVisual::calculateColorFromCost(float cost, int costColorType)
 {
   Ogre::ColourValue color;
 
@@ -971,12 +1020,12 @@ Ogre::ColourValue TexturedMeshVisual::calculateColorFromCost(float cost, int cos
   return getRainbowColor1(cost);
 }
 
-void TexturedMeshVisual::setFramePosition(const Ogre::Vector3& position)
+void MeshVisual::setFramePosition(const Ogre::Vector3& position)
 {
   m_sceneNode->setPosition(position);
 }
 
-void TexturedMeshVisual::setFrameOrientation(const Ogre::Quaternion& orientation)
+void MeshVisual::setFrameOrientation(const Ogre::Quaternion& orientation)
 {
   m_sceneNode->setOrientation(orientation);
 }

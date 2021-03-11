@@ -46,7 +46,8 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-#pragma once
+#ifndef CLUSTER_LABEL_PANEL_HPP
+#define CLUSTER_LABEL_PANEL_HPP
 
 #include <Types.hpp>
 #include <ros/ros.h>
@@ -144,3 +145,5 @@ protected:
 };
 
 }  // end namespace rviz_map_plugin
+
+#endif

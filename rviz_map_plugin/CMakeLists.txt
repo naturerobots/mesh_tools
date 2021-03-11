@@ -54,7 +54,7 @@ set(SOURCE_FILES
   src/ClusterLabelVisual.cpp
   src/MapDisplay.cpp
   src/MeshDisplay.cpp
-  src/TexturedMeshVisual.cpp
+  src/MeshVisual.cpp
   src/RvizFileProperty.cpp
   src/MeshPoseTool.cpp
   src/MeshGoalTool.cpp
@@ -66,7 +66,7 @@ set(HEADER_FILES
   include/ClusterLabelVisual.hpp
   include/MapDisplay.hpp
   include/MeshDisplay.hpp
-  include/TexturedMeshVisual.hpp
+  include/MeshVisual.hpp
   include/ClusterLabelTool.hpp
   include/CLUtil.hpp
   include/RvizFileProperty.hpp

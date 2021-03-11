@@ -45,7 +45,8 @@
  *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
  */
 
-#pragma once
+#ifndef CL_UTIL_HPP
+#define CL_UTIL_HPP
 
 #include <CL/cl2.hpp>
 
@@ -471,3 +472,5 @@ public:
 };
 
 }  // end namespace rviz_map_plugin
+
+#endif

@@ -37,7 +37,7 @@
  *
  *
  *
- *  mesh_goal_tool.h
+ *  MeshGoalTool.hpp
  *
  *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  */

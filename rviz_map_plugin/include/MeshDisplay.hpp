@@ -55,7 +55,7 @@
 #define MESH_DISPLAY_HPP
 
 #include <Types.hpp>
-#include <TexturedMeshVisual.hpp>
+#include <MeshVisual.hpp>
 
 #include <vector>
 #include <memory>
@@ -118,7 +118,7 @@ using std::unique_ptr;
 using std::vector;
 
 // Forward declaration
-class TexturedMeshVisual;
+class MeshVisual;
 
 /**
  * @class MeshDisplay
@@ -368,7 +368,7 @@ private:
   std::string m_lastUuid;
 
   /// Visual data
-  shared_ptr<TexturedMeshVisual> m_visual;
+  shared_ptr<MeshVisual> m_visual;
 
   /// Property to handle topic for meshMsg
   rviz::RosTopicProperty* m_meshTopic;

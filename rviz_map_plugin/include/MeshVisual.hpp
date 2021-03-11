@@ -37,7 +37,7 @@
  *
  *
  *
- *  textured_mesh_visual.h
+ *  MeshVisual.hpp
  *
  *
  *  authors:
@@ -50,8 +50,8 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-#ifndef TEXTURED_MESH_VISUAL_HPP
-#define TEXTURED_MESH_VISUAL_HPP
+#ifndef MESH_VISUAL_HPP
+#define MESH_VISUAL_HPP
 
 #include <mesh_msgs/MeshGeometryStamped.h>
 #include <mesh_msgs/MeshGeometry.h>
@@ -94,7 +94,7 @@ namespace rviz_map_plugin
 /**
  * @brief Class to display mesh data in the main panel of rviz.
  */
-class TexturedMeshVisual
+class MeshVisual
 {
 public:
   /**
@@ -105,12 +105,12 @@ public:
    * @param meshID The mesh id
    * @param randomID random number that will be used as part of the meshes UID
    */
-  TexturedMeshVisual(rviz::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID);
+  MeshVisual(rviz::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID);
 
   /**
    * @brief Destructor.
    */
-  virtual ~TexturedMeshVisual();
+  virtual ~MeshVisual();
 
   /**
    * @brief Clears whole stored data.

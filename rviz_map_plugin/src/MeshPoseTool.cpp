@@ -37,7 +37,7 @@
  *
  *
  *
- *  mesh_pose_tool.cpp
+ *  MeshPoseTool.cpp
  *
  *	authors:  Sebastian Pütz <spuetz@uos.de>
  *

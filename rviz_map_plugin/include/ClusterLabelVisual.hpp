@@ -45,7 +45,8 @@
  *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
  */
 
-#pragma once
+#ifndef CLUSTER_LABEL_VISUAL_HPP
+#define CLUSTER_LABEL_VISUAL_HPP
 
 #include <Types.hpp>
 
@@ -172,3 +173,5 @@ private:
 };
 
 }  // end namespace rviz_map_plugin
+
+#endif

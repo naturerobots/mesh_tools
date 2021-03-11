@@ -331,7 +331,7 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
 {
   // Create the visual
   int randomId = (int)((double)rand() / RAND_MAX * 9998);
-  m_visual.reset(new TexturedMeshVisual(context_, 0, 0, randomId));
+  m_visual.reset(new MeshVisual(context_, 0, 0, randomId));
 
   m_visual->setGeometry(*geometry);
   if (isEnabled())

@@ -45,7 +45,8 @@
  *
  */
 
-#pragma once
+#ifndef CLUSTER_LABEL_TOOL_HPP
+#define CLUSTER_LABEL_TOOL_HPP
 
 // enable exceptions for OpenCL
 #define CL_HPP_TARGET_OPENCL_VERSION 120
@@ -259,3 +260,5 @@ private:
   cl::Kernel m_clKernelDirAndDist;
 };
 }  // end namespace rviz_map_plugin
+
+#endif
