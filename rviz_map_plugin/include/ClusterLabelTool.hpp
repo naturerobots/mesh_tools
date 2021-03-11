@@ -98,17 +98,18 @@
 
 #endif
 
-namespace rviz{
-    class RosTopicProperty;
-    class ColorProperty;
-}
+namespace rviz
+{
+class RosTopicProperty;
+class ColorProperty;
+}  // namespace rviz
 
 // OGRE stuff
 namespace Ogre
 {
 // Forward declaration
 class Vector3;
-}
+}  // namespace Ogre
 
 namespace rviz_map_plugin
 {
@@ -120,144 +121,141 @@ class ClusterLabelVisual;
  * @class ClusterLabelTool
  * @brief Tool for selecting faces
  */
-class ClusterLabelTool: public rviz::Tool
+class ClusterLabelTool : public rviz::Tool
 {
-Q_OBJECT
+  Q_OBJECT
 public:
+  /**
+   * @brief Constructor
+   */
+  ClusterLabelTool();
 
-    /**
-     * @brief Constructor
-     */
-    ClusterLabelTool();
+  /**
+   * @brief Destructor
+   */
+  ~ClusterLabelTool();
 
-    /**
-     * @brief Destructor
-     */
-    ~ClusterLabelTool();
+  /**
+   * @brief RViz callback on initialize
+   */
+  virtual void onInitialize();
 
-    /**
-     * @brief RViz callback on initialize
-     */
-    virtual void onInitialize();
+  /**
+   * @brief RViz callback for activating
+   */
+  virtual void activate();
 
-    /**
-     * @brief RViz callback for activating
-     */
-    virtual void activate();
+  /**
+   * @bríef RViz callback for deactivating
+   */
+  virtual void deactivate();
 
-    /**
-     * @bríef RViz callback for deactivating
-     */
-    virtual void deactivate();
+  /**
+   * @brief RViz callback for mouse events
+   * @param event The mouse event
+   * @return Exit code
+   */
+  virtual int processMouseEvent(rviz::ViewportMouseEvent& event);
 
-    /**
-     * @brief RViz callback for mouse events
-     * @param event The mouse event
-     * @return Exit code
-     */
-    virtual int processMouseEvent(rviz::ViewportMouseEvent& event);
+  /**
+   * @brief Connects this tool with a given display
+   * @param display The display that creates this tool
+   */
+  void setDisplay(ClusterLabelDisplay* display);
 
-    /**
-     * @brief Connects this tool with a given display
-     * @param display The display that creates this tool
-     */
-    void setDisplay(ClusterLabelDisplay* display);
+  /**
+   * @brief Connects this tool with a given visual
+   * @param visual The visual that will become editable with this tool
+   */
+  void setVisual(std::shared_ptr<ClusterLabelVisual> visual);
 
-    /**
-     * @brief Connects this tool with a given visual
-     * @param visual The visual that will become editable with this tool
-     */
-    void setVisual(std::shared_ptr<ClusterLabelVisual> visual);
-
-    /**
-     * @brief Adjust the sphere size for the brush tool
-     * @param size The sphere size
-     */
-    void setSphereSize(float size);
+  /**
+   * @brief Adjust the sphere size for the brush tool
+   * @param size The sphere size
+   */
+  void setSphereSize(float size);
 
 public Q_SLOTS:
 
-    /**
-     * @brief Publish a label with a given namen
-     * @param name The label name
-     */
-    void publishLabel(std::string name);
+  /**
+   * @brief Publish a label with a given namen
+   * @param name The label name
+   */
+  void publishLabel(std::string name);
 
-    /**
-     * @brief Returns a list of selected face ID's
-     * @return List of face ID's
-     */
-    std::vector<uint32_t> getSelectedFaces();
+  /**
+   * @brief Returns a list of selected face ID's
+   * @return List of face ID's
+   */
+  std::vector<uint32_t> getSelectedFaces();
 
-    /**
-     * @brief Resets the list of selected faces
-     */
-    void resetFaces();
+  /**
+   * @brief Resets the list of selected faces
+   */
+  void resetFaces();
 
-    /**
-     * @brief Resets the current visual
-     */
-    void resetVisual();
+  /**
+   * @brief Resets the current visual
+   */
+  void resetVisual();
 
 private:
+  std::vector<uint32_t> m_selectedFaces;
+  std::vector<bool> m_faceSelectedArray;
+  bool m_displayInitialized;
+  ClusterLabelDisplay* m_display;
+  std::shared_ptr<ClusterLabelVisual> m_visual;
+  std::shared_ptr<Geometry> m_meshGeometry;
+  float m_sphereSize = 1.0f;
 
-    std::vector<uint32_t> m_selectedFaces;
-    std::vector<bool> m_faceSelectedArray;
-    bool m_displayInitialized;
-    ClusterLabelDisplay* m_display;
-    std::shared_ptr<ClusterLabelVisual> m_visual;
-    std::shared_ptr<Geometry> m_meshGeometry;
-    float m_sphereSize = 1.0f;
+  // Selection Box
+  rviz::DisplayContext* m_displayContext;
+  Ogre::SceneNode* m_sceneNode;
+  Ogre::ManualObject* m_selectionBox;
+  Ogre::MaterialPtr m_selectionBoxMaterial;
+  Ogre::Vector2 m_selectionStart;
+  Ogre::Vector2 m_selectionStop;
+  bool m_multipleSelect = false;
+  bool m_singleSelect = false;
+  bool m_singleDeselect = false;
 
-    // Selection Box
-    rviz::DisplayContext* m_displayContext;
-    Ogre::SceneNode* m_sceneNode;
-    Ogre::ManualObject* m_selectionBox;
-    Ogre::MaterialPtr m_selectionBoxMaterial;
-    Ogre::Vector2 m_selectionStart;
-    Ogre::Vector2 m_selectionStop;
-    bool m_multipleSelect = false;
-    bool m_singleSelect = false;
-    bool m_singleDeselect = false;
+  std::vector<Ogre::Vector3> m_vertexPositions;
 
-    std::vector<Ogre::Vector3> m_vertexPositions;
+  void updateSelectionBox();
+  void selectionBoxStart(rviz::ViewportMouseEvent& event);
+  void selectionBoxMove(rviz::ViewportMouseEvent& event);
+  void selectMultipleFaces(rviz::ViewportMouseEvent& event, bool selectMode);
+  void selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume, bool selectMode);
+  void selectSingleFace(rviz::ViewportMouseEvent& event, bool selectMode);
+  void selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode);
+  void selectSphereFaces(rviz::ViewportMouseEvent& event, bool selectMode);
+  void selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode);
+  boost::optional<std::pair<uint32_t, float>> getClosestIntersectedFaceParallel(Ogre::Ray& ray);
 
-    void updateSelectionBox();
-    void selectionBoxStart(rviz::ViewportMouseEvent& event);
-    void selectionBoxMove(rviz::ViewportMouseEvent& event);
-    void selectMultipleFaces(rviz::ViewportMouseEvent& event, bool selectMode);
-    void selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume, bool selectMode);
-    void selectSingleFace(rviz::ViewportMouseEvent& event, bool selectMode);
-    void selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode);
-    void selectSphereFaces(rviz::ViewportMouseEvent& event, bool selectMode);
-    void selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode);
-    boost::optional<std::pair<uint32_t, float>> getClosestIntersectedFaceParallel(Ogre::Ray& ray);
+  ros::Publisher m_labelPublisher;
 
-    ros::Publisher m_labelPublisher;
+  std::vector<float> m_vertexData;
+  std::array<float, 6> m_rayData;
+  std::array<float, 4> m_sphereData;
+  std::array<float, 3> m_startNormalData;
+  std::vector<float> m_boxData;
+  std::vector<float> m_resultDistances;
 
-    std::vector<float> m_vertexData;
-    std::array<float, 6> m_rayData;
-    std::array<float, 4> m_sphereData;
-    std::array<float, 3> m_startNormalData;
-    std::vector<float> m_boxData;
-    std::vector<float> m_resultDistances;
-
-    // OpenCL
-    cl::Device m_clDevice;
-    cl::Context m_clContext;
-    cl::Program::Sources m_clProgramSources;
-    cl::Program m_clProgram;
-    cl::CommandQueue m_clQueue;
-    cl::Buffer m_clVertexBuffer;
-    cl::Buffer m_clResultBuffer;
-    cl::Buffer m_clRayBuffer;
-    cl::Buffer m_clSphereBuffer;
-    cl::Buffer m_clBoxBuffer;
-    cl::Buffer m_clStartNormalBuffer;
-    cl::Kernel m_clKernelSingleRay;
-    cl::Kernel m_clKernelSphere;
-    cl::Kernel m_clKernelBox;
-    cl::Kernel m_clKernelDirAndDist;
-
+  // OpenCL
+  cl::Device m_clDevice;
+  cl::Context m_clContext;
+  cl::Program::Sources m_clProgramSources;
+  cl::Program m_clProgram;
+  cl::CommandQueue m_clQueue;
+  cl::Buffer m_clVertexBuffer;
+  cl::Buffer m_clResultBuffer;
+  cl::Buffer m_clRayBuffer;
+  cl::Buffer m_clSphereBuffer;
+  cl::Buffer m_clBoxBuffer;
+  cl::Buffer m_clStartNormalBuffer;
+  cl::Kernel m_clKernelSingleRay;
+  cl::Kernel m_clKernelSphere;
+  cl::Kernel m_clKernelBox;
+  cl::Kernel m_clKernelDirAndDist;
 };
-} // end namespace rviz_map_plugin
+}  // end namespace rviz_map_plugin

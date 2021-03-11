@@ -53,115 +53,125 @@
 #include <array>
 #include <boost/optional.hpp>
 
-namespace rviz_map_plugin {
-
-using std::vector;
-using std::string;
-using std::array;
+namespace rviz_map_plugin
+{
 using boost::optional;
+using std::array;
+using std::string;
+using std::vector;
 
 /// Struct for normals
 struct Normal
 {
-    float x;
-    float y;
-    float z;
+  float x;
+  float y;
+  float z;
 
-    Normal(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
+  Normal(float _x, float _y, float _z) : x(_x), y(_y), z(_z)
+  {
+  }
 };
 
 /// Struct for texture coordinates
 struct TexCoords
 {
-    float u;
-    float v;
+  float u;
+  float v;
 
-    TexCoords(float _u, float _v) : u(_u), v(_v) {}
+  TexCoords(float _u, float _v) : u(_u), v(_v)
+  {
+  }
 };
 
 /// Struct for clusters
 struct Cluster
 {
-    string name;
-    vector<uint32_t> faces;
+  string name;
+  vector<uint32_t> faces;
 
-    Cluster(string n, vector<uint32_t> f) : name(n), faces(f) {}
+  Cluster(string n, vector<uint32_t> f) : name(n), faces(f)
+  {
+  }
 };
 
 /// Struct for vertices
 struct Vertex
 {
-    float x;
-    float y;
-    float z;
+  float x;
+  float y;
+  float z;
 };
 
 /// Struct for faces
 struct Face
 {
-    array<uint32_t, 3> vertexIndices;
+  array<uint32_t, 3> vertexIndices;
 };
 
 /// Struct for geometry
 struct Geometry
 {
-    vector<Vertex> vertices;
-    vector<Face> faces;
+  vector<Vertex> vertices;
+  vector<Face> faces;
 
-    Geometry()
-    {}
+  Geometry()
+  {
+  }
 
-    Geometry(vector<float> v, vector<uint32_t> f)
+  Geometry(vector<float> v, vector<uint32_t> f)
+  {
+    for (uint32_t i = 0; i < v.size() / 3; i++)
     {
-        for (uint32_t i = 0; i < v.size() / 3; i++)
-        {
-            Vertex vertex;
-            vertex.x = v[i * 3 + 0];
-            vertex.y = v[i * 3 + 1];
-            vertex.z = v[i * 3 + 2];
-            vertices.push_back(vertex);
-        }
-
-        for (uint32_t i = 0; i < f.size() / 3; i++)
-        {
-            Face face;
-            face.vertexIndices[0] = f[i * 3 + 0];
-            face.vertexIndices[1] = f[i * 3 + 1];
-            face.vertexIndices[2] = f[i * 3 + 2];
-            faces.push_back(face);
-        }
+      Vertex vertex;
+      vertex.x = v[i * 3 + 0];
+      vertex.y = v[i * 3 + 1];
+      vertex.z = v[i * 3 + 2];
+      vertices.push_back(vertex);
     }
+
+    for (uint32_t i = 0; i < f.size() / 3; i++)
+    {
+      Face face;
+      face.vertexIndices[0] = f[i * 3 + 0];
+      face.vertexIndices[1] = f[i * 3 + 1];
+      face.vertexIndices[2] = f[i * 3 + 2];
+      faces.push_back(face);
+    }
+  }
 };
 
 /// Struct for colors
 struct Color
 {
-    float r;
-    float g;
-    float b;
-    float a;
+  float r;
+  float g;
+  float b;
+  float a;
 
-    Color() {}
-    Color(float _r, float _g, float _b, float _a) : r(_r), g(_g), b(_b), a(_a) {}
+  Color()
+  {
+  }
+  Color(float _r, float _g, float _b, float _a) : r(_r), g(_g), b(_b), a(_a)
+  {
+  }
 };
 
 /// Struct for textures
 struct Texture
 {
-    uint32_t width;
-    uint32_t height;
-    uint8_t channels;
-    vector<uint8_t> data;
-    string pixelFormat;
+  uint32_t width;
+  uint32_t height;
+  uint8_t channels;
+  vector<uint8_t> data;
+  string pixelFormat;
 };
 
 /// Struct for materials
 struct Material
 {
-    optional<uint32_t> textureIndex;
-    Color color;
-    vector<uint32_t> faceIndices;
+  optional<uint32_t> textureIndex;
+  Color color;
+  vector<uint32_t> faceIndices;
 };
 
-
-} // namespace
+}  // namespace rviz_map_plugin

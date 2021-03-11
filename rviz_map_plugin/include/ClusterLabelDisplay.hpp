@@ -46,7 +46,6 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-
 #ifndef CLUSTER_LABEL_DISPLAY_HPP
 #define CLUSTER_LABEL_DISPLAY_HPP
 
@@ -110,7 +109,6 @@
 
 namespace rviz
 {
-
 // Forward declaration
 class BoolProperty;
 class ColorProperty;
@@ -119,187 +117,181 @@ class IntProperty;
 class EnumProperty;
 class StringProperty;
 
-} // End namespace rviz
+}  // End namespace rviz
 
 namespace rviz_map_plugin
 {
-
-using std::shared_ptr;
-using std::unique_ptr;
-using std::string;
-using std::vector;
 using std::map;
+using std::shared_ptr;
+using std::string;
+using std::unique_ptr;
+using std::vector;
 
 // Forward declaration
 class ClusterLabelVisual;
 class ClusterLabelTool;
 
-
 /**
  * @class ClusterLabelDisplay
  * @brief Display class for the map plugin
  */
-class ClusterLabelDisplay: public rviz::Display
+class ClusterLabelDisplay : public rviz::Display
 {
-
-Q_OBJECT
+  Q_OBJECT
 
 public:
+  /**
+   * @brief Constructor
+   */
+  ClusterLabelDisplay();
 
-    /**
-     * @brief Constructor
-     */
-    ClusterLabelDisplay();
+  /**
+   * @brief Destructor
+   */
+  ~ClusterLabelDisplay();
 
-    /**
-     * @brief Destructor
-     */
-    ~ClusterLabelDisplay();
+  /**
+   * @brief The tool will call this function and emit the signal below to the master display to
+   *        create the label
+   * @param label The label name
+   * @param faces The list of face IDs
+   */
+  void addLabel(string label, vector<uint32_t> faces);
 
-    /**
-     * @brief The tool will call this function and emit the signal below to the master display to
-     *        create the label
-     * @param label The label name
-     * @param faces The list of face IDs
-     */
-    void addLabel(string label, vector<uint32_t> faces);
+  /**
+   * @brief RViz callback on enable
+   */
+  void onEnable();
 
-    /**
-     * @brief RViz callback on enable
-     */
-    void onEnable();
-
-    /**
-     * @brief RViz callback on disable
-     */
-    void onDisable();
+  /**
+   * @brief RViz callback on disable
+   */
+  void onDisable();
 
 Q_SIGNALS:
 
-    /**
-     * @brief This signal is used for delegating new label data to the master display.
-     * @param cluster The cluster
-     */
-    void signalAddLabel(Cluster cluster);
+  /**
+   * @brief This signal is used for delegating new label data to the master display.
+   * @param cluster The cluster
+   */
+  void signalAddLabel(Cluster cluster);
 
-public Q_SLOTS: // not sure wether any of those actually need to be q slots ...
+public Q_SLOTS:  // not sure wether any of those actually need to be q slots ...
 
-    /**
-     * @brief Refreshes the tool's current visual
-     */
-    void notifyLabelTool();
+  /**
+   * @brief Refreshes the tool's current visual
+   */
+  void notifyLabelTool();
 
-    /**
-     * @brief Getter for the current geometry
-     * @return The geometry
-     */
-    shared_ptr<Geometry> getGeometry();
+  /**
+   * @brief Getter for the current geometry
+   * @return The geometry
+   */
+  shared_ptr<Geometry> getGeometry();
 
-    /**
-     * @brief Setter for the geometry and cluster data
-     * @param geometry The geometry
-     * @param clusters The clusters
-     */
-    void setData(shared_ptr<Geometry> geometry, vector<Cluster> clusters);
+  /**
+   * @brief Setter for the geometry and cluster data
+   * @param geometry The geometry
+   * @param clusters The clusters
+   */
+  void setData(shared_ptr<Geometry> geometry, vector<Cluster> clusters);
 
 private Q_SLOTS:
 
-    /**
-     * @brief Update the map, based on newly loaded data since the last update
-     */
-    void updateMap();
+  /**
+   * @brief Update the map, based on newly loaded data since the last update
+   */
+  void updateMap();
 
-    /**
-     * @brief Updates the colors, based on newly loaded data since the last update
-     */
-    void updateColors();
+  /**
+   * @brief Updates the colors, based on newly loaded data since the last update
+   */
+  void updateColors();
 
-    /**
-     * @brief Updates the sphere size for the brush tool
-     */
-    void updateSphereSize();
+  /**
+   * @brief Updates the sphere size for the brush tool
+   */
+  void updateSphereSize();
 
-    /**
-     * @brief Updates the phantom visual, based on newly loaded data since the last update
-     */
-    void updatePhantomVisual();
+  /**
+   * @brief Updates the phantom visual, based on newly loaded data since the last update
+   */
+  void updatePhantomVisual();
 
-    /**
-     * @brief Slot for changing the visual to the selected visual from the dropdown menu
-     */
-    void changeVisual();
+  /**
+   * @brief Slot for changing the visual to the selected visual from the dropdown menu
+   */
+  void changeVisual();
 
 private:
+  /**
+   * @brief RViz callback on initialize
+   */
+  void onInitialize();
 
-    /**
-     * @brief RViz callback on initialize
-     */
-    void onInitialize();
+  /**
+   * @brief Programmatically create an instance of the label tool from this package
+   */
+  void initializeLabelTool();
 
-    /**
-     * @brief Programmatically create an instance of the label tool from this package
-     */
-    void initializeLabelTool();
+  /**
+   * @brief Create visuals for each cluster in the list
+   */
+  void createVisualsFromClusterList();
 
-    /**
-     * @brief Create visuals for each cluster in the list
-     */
-    void createVisualsFromClusterList();
+  /**
+   * @brief Creates a phantom visual
+   */
+  void createPhantomVisual();
 
-    /**
-     * @brief Creates a phantom visual
-     */
-    void createPhantomVisual();
+  /**
+   * @brief Dynamically fills the dropdown menus of those properties
+   */
+  void fillPropertyOptions();
 
-    /**
-     * @brief Dynamically fills the dropdown menus of those properties
-     */
-    void fillPropertyOptions();
+  /// Geometry
+  shared_ptr<Geometry> m_geometry;
 
-    /// Geometry
-    shared_ptr<Geometry> m_geometry;
+  /// Visuals
+  vector<shared_ptr<ClusterLabelVisual>> m_visuals;
 
-    /// Visuals
-    vector<shared_ptr<ClusterLabelVisual>> m_visuals;
+  /// ID of the current active visual
+  uint32_t m_activeVisualId = 0;
 
-    /// ID of the current active visual
-    uint32_t m_activeVisualId = 0;
+  /// Additional visual to help with labeling without a TexturedMesh
+  unique_ptr<ClusterLabelVisual> m_phantomVisual;
 
-    /// Additional visual to help with labeling without a TexturedMesh
-    unique_ptr<ClusterLabelVisual> m_phantomVisual;
+  /// Cluster data
+  vector<Cluster> m_clusterList;
 
-    /// Cluster data
-    vector<Cluster> m_clusterList;
+  /// Label tool
+  ClusterLabelTool* m_tool;
 
-    /// Label tool
-    ClusterLabelTool* m_tool;
+  /// Property for the current active visual
+  rviz::EnumProperty* m_activeVisualProperty;
 
-    /// Property for the current active visual
-    rviz::EnumProperty* m_activeVisualProperty;
+  /// Property to set transparency
+  rviz::FloatProperty* m_alphaProperty;
 
-    /// Property to set transparency
-    rviz::FloatProperty* m_alphaProperty;
+  /// Property for selecting colors (menu)
+  rviz::Property* m_colorsProperty;
 
-    /// Property for selecting colors (menu)
-    rviz::Property* m_colorsProperty;
+  /// Properties for selecting colors (menu-items)
+  std::vector<rviz::ColorProperty*> m_colorProperties;
 
-    /// Properties for selecting colors (menu-items)
-    std::vector<rviz::ColorProperty*> m_colorProperties;
+  /// Property to set the brushsize of the sphere brush of the label tool from this package
+  rviz::FloatProperty* m_sphereSizeProperty;
 
-    /// Property to set the brushsize of the sphere brush of the label tool from this package
-    rviz::FloatProperty* m_sphereSizeProperty;
+  /// Property to hide or show a phantom visual
+  rviz::BoolProperty* m_phantomVisualProperty;
 
-    /// Property to hide or show a phantom visual
-    rviz::BoolProperty* m_phantomVisualProperty;
+  /// Index for the visuals
+  int m_labelToolVisualIndex = 0;
 
-    /// Index for the visuals
-    int m_labelToolVisualIndex = 0;
-
-    /// A variable that will be set to true, once the initial data has arrived
-    bool has_data = false;
-
+  /// A variable that will be set to true, once the initial data has arrived
+  bool has_data = false;
 };
 
-} // end namespace rviz_map_plugin
+}  // end namespace rviz_map_plugin
 
 #endif

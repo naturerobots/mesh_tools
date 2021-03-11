@@ -46,7 +46,6 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-
 #ifndef MAP_DISPLAY_HPP
 #define MAP_DISPLAY_HPP
 
@@ -115,7 +114,6 @@
 
 namespace rviz
 {
-
 // Forward declaration
 class BoolProperty;
 class ColorProperty;
@@ -124,110 +122,108 @@ class IntProperty;
 class EnumProperty;
 class StringProperty;
 
-} // End namespace rviz
+}  // End namespace rviz
 
 namespace rviz_map_plugin
 {
-
 using std::shared_ptr;
-using std::unique_ptr;
 using std::string;
+using std::unique_ptr;
 using std::vector;
 
 /**
  * @class MapDisplay
  * @brief Master display for the Mesh- and Cluster- subdisplays. THis implementation uses HDF5 as it's data source
  */
-class MapDisplay: public rviz::Display
+class MapDisplay : public rviz::Display
 {
-Q_OBJECT
+  Q_OBJECT
 
 public:
-    /**
-     * @brief Constructor
-     */
-    MapDisplay();
+  /**
+   * @brief Constructor
+   */
+  MapDisplay();
 
-    /**
-     * @brief Destructor
-     */
-    ~MapDisplay();
+  /**
+   * @brief Destructor
+   */
+  ~MapDisplay();
 
 public Q_SLOTS:
 
-    /**
-     * @brief Saves a label to HDF5
-     * @param cluster The cluster to be saved
-     */
-    void saveLabel(Cluster cluster);
+  /**
+   * @brief Saves a label to HDF5
+   * @param cluster The cluster to be saved
+   */
+  void saveLabel(Cluster cluster);
 
-    /**
-     * @brief Get the geometry
-     * @return The geometry
-     */
-    shared_ptr<Geometry> getGeometry();
+  /**
+   * @brief Get the geometry
+   * @return The geometry
+   */
+  shared_ptr<Geometry> getGeometry();
 
 private Q_SLOTS:
 
-    /**
-     * @brief Update the map, based on the current data state
-     */
-    void updateMap();
+  /**
+   * @brief Update the map, based on the current data state
+   */
+  void updateMap();
 
 private:
+  /**
+   * @brief RViz callback on initialize
+   */
+  void onInitialize();
 
-    /**
-     * @brief RViz callback on initialize
-     */
-    void onInitialize();
+  /**
+   * @brief RViz callback on enable
+   */
+  void onEnable();
 
-    /**
-     * @brief RViz callback on enable
-     */
-    void onEnable();
+  /**
+   * @brief RViz callback on disable
+   */
+  void onDisable();
 
-    /**
-     * @brief RViz callback on disable
-     */
-    void onDisable();
+  /**
+   * @brief Read all data from the HDF5 file and save it in the member variables
+   * @return true, if successful
+   */
+  bool loadData();
 
-    /**
-     * @brief Read all data from the HDF5 file and save it in the member variables
-     * @return true, if successful
-     */
-    bool loadData();
+  /// Geometry
+  shared_ptr<Geometry> m_geometry;
+  /// Materials
+  vector<Material> m_materials;
+  /// Textures
+  vector<Texture> m_textures;
+  /// Colors
+  vector<Color> m_colors;
+  /// Vertex normals
+  vector<Normal> m_normals;
+  /// Texture coordinates
+  vector<TexCoords> m_texCoords;
+  /// Clusters
+  vector<Cluster> m_clusterList;
 
-    /// Geometry
-    shared_ptr<Geometry> m_geometry;
-    /// Materials
-    vector<Material> m_materials;
-    /// Textures
-    vector<Texture> m_textures;
-    /// Colors
-    vector<Color> m_colors;
-    /// Vertex normals
-    vector<Normal> m_normals;
-    /// Texture coordinates
-    vector<TexCoords> m_texCoords;
-    /// Clusters
-    vector<Cluster> m_clusterList;
+  /// Path to map file
+  rviz::FileProperty* m_mapFilePath;
 
-    /// Path to map file
-    rviz::FileProperty* m_mapFilePath;
+  /// Subdisplay: ClusterLabel (for showing the clusters)
+  rviz_map_plugin::ClusterLabelDisplay* m_clusterLabelDisplay;
+  /// Subdisplay: MeshDisplay (for showing the mesh)
+  rviz_map_plugin::MeshDisplay* m_meshDisplay;
 
-    /// Subdisplay: ClusterLabel (for showing the clusters)
-    rviz_map_plugin::ClusterLabelDisplay* m_clusterLabelDisplay;
-    /// Subdisplay: MeshDisplay (for showing the mesh)
-    rviz_map_plugin::MeshDisplay* m_meshDisplay;
-
-    /**
-     * @brief Create a RViz display from it's unique class_id
-     * @param class_id The class ID
-     * @return Pointer to RViz display
-     */
-    rviz::Display* createDisplay(const QString& class_id);
+  /**
+   * @brief Create a RViz display from it's unique class_id
+   * @param class_id The class ID
+   * @return Pointer to RViz display
+   */
+  rviz::Display* createDisplay(const QString& class_id);
 };
 
-} // end namespace rviz_map_plugin
+}  // end namespace rviz_map_plugin
 
 #endif

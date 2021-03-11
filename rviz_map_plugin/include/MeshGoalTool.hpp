@@ -42,8 +42,8 @@
  *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  */
 
-#ifndef RVIZ_MESH_PLUGIN__MESH_GOAL_TOOL_H_
-#define RVIZ_MESH_PLUGIN__MESH_GOAL_TOOL_H_
+#ifndef MESH_GOAL_TOOL_HPP
+#define MESH_GOAL_TOOL_HPP
 
 #include "MeshPoseTool.hpp"
 #include <geometry_msgs/PoseStamped.h>
@@ -51,7 +51,7 @@
 #include <rviz/properties/string_property.h>
 #include <rviz/display_context.h>
 
-#ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
+#ifndef Q_MOC_RUN
 #include <QObject>
 #endif
 

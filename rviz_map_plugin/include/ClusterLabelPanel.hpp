@@ -67,85 +67,80 @@ class Tool;
 
 namespace rviz_map_plugin
 {
-
 /**
  * @class ClusterLabelPanel
  * @brief Panel for interacting with the label tool
  */
-class ClusterLabelPanel: public rviz::Panel
+class ClusterLabelPanel : public rviz::Panel
 {
-
-Q_OBJECT
+  Q_OBJECT
 
 public:
+  /**
+   * @brief Constructor
+   * @param parent This panel's parent, if available
+   */
+  ClusterLabelPanel(QWidget* parent = 0);
 
-    /**
-     * @brief Constructor
-     * @param parent This panel's parent, if available
-     */
-    ClusterLabelPanel(QWidget* parent = 0);
+  /**
+   * @brief RViz callback on inizialize
+   */
+  void onInitialize();
 
-    /**
-     * @brief RViz callback on inizialize
-     */
-    void onInitialize();
+  /**
+   * @brief Load a configuration
+   * @input config The configuration
+   */
+  virtual void load(const rviz::Config& config);
 
-    /**
-     * @brief Load a configuration
-     * @input config The configuration
-     */
-    virtual void load(const rviz::Config& config);
-
-    /**
-     * @brief Save a configuration
-     * @input config The configuration
-     */
-    virtual void save(rviz::Config config) const;
+  /**
+   * @brief Save a configuration
+   * @input config The configuration
+   */
+  virtual void save(rviz::Config config) const;
 
 public Q_SLOTS:
 
-    /**
-     * @brief Set the name under which the current cluster will be saved
-     * @param clusterName The new name
-     */
-    void setClusterName(const QString& clusterName);
+  /**
+   * @brief Set the name under which the current cluster will be saved
+   * @param clusterName The new name
+   */
+  void setClusterName(const QString& clusterName);
 
-    /**
-     * @brief Updates the current cluster name
-     */
-    void updateClusterName();
+  /**
+   * @brief Updates the current cluster name
+   */
+  void updateClusterName();
 
-    /**
-     * @brief Publishes the current cluster
-     */
-    void publish();
+  /**
+   * @brief Publishes the current cluster
+   */
+  void publish();
 
-    /**
-     * @brief Resets the current face selection state
-     */
-    void resetFaces();
+  /**
+   * @brief Resets the current face selection state
+   */
+  void resetFaces();
 
 protected:
+  /// Input for entering the cluster name
+  QLineEdit* m_clusterNameEditor;
+  /// Input for entering the output topic name
+  QLineEdit* m_outputTopicEditor;
 
-    /// Input for entering the cluster name
-    QLineEdit* m_clusterNameEditor;
-    /// Input for entering the output topic name
-    QLineEdit* m_outputTopicEditor;
+  /// Name of the cluster
+  QString m_clusterName;
 
-    /// Name of the cluster
-    QString m_clusterName;
+  /// Button for creating and publishing the cluster
+  QPushButton* m_createClusterButton;
+  /// Button for resetting the current faces in cluster
+  QPushButton* m_resetFacesButton;
 
-    /// Button for creating and publishing the cluster
-    QPushButton* m_createClusterButton;
-    /// Button for resetting the current faces in cluster
-    QPushButton* m_resetFacesButton;
+  /// Instance of the label tool from this package
+  ClusterLabelTool* m_tool;
 
-    /// Instance of the label tool from this package
-    ClusterLabelTool* m_tool;
-
-    /// Node handle
-    ros::NodeHandle m_nodeHandle;
-
+  /// Node handle
+  ros::NodeHandle m_nodeHandle;
 };
 
-} // end namespace rviz_map_plugin
+}  // end namespace rviz_map_plugin

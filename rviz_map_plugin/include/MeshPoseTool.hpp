@@ -42,8 +42,8 @@
  *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  */
 
-#ifndef RVIZ_MESH_PLUGIN__MESH_POSE_TOOL_H_
-#define RVIZ_MESH_PLUGIN__MESH_POSE_TOOL_H_
+#ifndef MESH_POSE_TOOL_HPP
+#define MESH_POSE_TOOL_HPP
 
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreQuaternion.h>
