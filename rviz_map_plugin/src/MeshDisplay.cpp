@@ -357,6 +357,18 @@ void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
   updateMesh();
 }
 
+void MeshDisplay::clearVertexCosts()
+{
+    m_costCache.clear();
+    updateVertexCosts();
+}
+
+void MeshDisplay::addVertexCosts(std::string costlayer, std::vector<float>& vertexCosts)
+{
+    cacheVertexCosts(costlayer, vertexCosts);
+    updateVertexCosts();
+}
+
 void MeshDisplay::setVertexNormals(vector<Normal>& vertexNormals)
 {
   std::shared_ptr<MeshVisual> visual = getLatestVisual();

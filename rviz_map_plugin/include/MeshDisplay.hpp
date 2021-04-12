@@ -181,6 +181,18 @@ public:
   void setVertexColors(vector<Color>& vertexColors);
 
   /**
+   * @brief Clears the vertex costs
+   */
+  void clearVertexCosts();
+
+  /**
+   * @brief Adds a vertex costlayer
+   * @param costlayer Name of the new costlayer
+   * @param vertexCosts The vertex costs
+   */
+  void addVertexCosts(std::string costlayer, vector<float>& vertexCosts);
+
+  /**
    * @brief Set the vertex normals
    * @param vertexNormals The vertex normals
    */

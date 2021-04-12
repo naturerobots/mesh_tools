@@ -154,6 +154,12 @@ void MapDisplay::updateMap()
   m_meshDisplay->setGeometry(m_geometry);
   m_meshDisplay->setVertexColors(m_colors);
   m_meshDisplay->setVertexNormals(m_normals);
+  m_meshDisplay->clearVertexCosts();
+  for (const auto& vertexCosts : m_costs)
+  {
+      std::vector<float> costs = vertexCosts.second;
+      m_meshDisplay->addVertexCosts(vertexCosts.first, costs);
+  }
   m_meshDisplay->setMaterials(m_materials, m_texCoords);
   // m_meshDisplay->setTexCoords(m_texCoords);
   for (uint32_t i = 0; i < m_textures.size(); i++)
@@ -306,6 +312,19 @@ bool MapDisplay::loadData()
 
         m_clusterList.push_back(Cluster(label, faceIds));
       }
+    }
+
+    m_costs.clear();
+    for (std::string costlayer : map_io.getCostLayers())
+    {
+        try
+        {
+            m_costs[costlayer] = map_io.getVertexCosts(costlayer);
+        }
+        catch (const hf::DataSpaceException& e)
+        {
+            ROS_WARN_STREAM("Could not load channel " << costlayer << " as a costlayer!");
+        }
     }
   }
   catch (...)

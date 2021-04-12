@@ -62,6 +62,7 @@
 #include <string>
 #include <math.h>
 #include <algorithm>
+#include <map>
 
 #include <QMessageBox>
 #include <QApplication>
@@ -192,6 +193,7 @@ private:
    */
   bool loadData();
 
+  // TODO: make more efficient - currently everything is stored in the MapDisplay, the MeshDisplay and the MeshVisual
   /// Geometry
   shared_ptr<Geometry> m_geometry;
   /// Materials
@@ -206,6 +208,8 @@ private:
   vector<TexCoords> m_texCoords;
   /// Clusters
   vector<Cluster> m_clusterList;
+
+  std::map<std::string, std::vector<float>> m_costs;
 
   /// Path to map file
   rviz::FileProperty* m_mapFilePath;
