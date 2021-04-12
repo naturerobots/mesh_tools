@@ -13,9 +13,7 @@ add_message_files(
   FILES
   MeshFaceCluster.msg
   MeshFaceClusterStamped.msg
-  Feature.msg
   MeshMaterial.msg
-  MeshFeatures.msg
   MeshGeometry.msg
   MeshGeometryStamped.msg
   MeshMaterials.msg
@@ -25,9 +23,7 @@ add_message_files(
   MeshVertexCosts.msg
   MeshVertexCostsStamped.msg
   MeshTexture.msg
-  TriangleIndices.msg
-  TriangleMesh.msg
-  TriangleMeshStamped.msg
+  MeshTriangleIndices.msg
   VectorField.msg
   VectorFieldStamped.msg
   MeshVertexTexCoords.msg
@@ -41,7 +37,7 @@ add_service_files(
   GetLabeledClusters.srv
   GetMaterials.srv
   GetTexture.srv
-  GetUUID.srv
+  GetUUIDs.srv
   GetVertexColors.srv
   GetVertexCosts.srv
 )

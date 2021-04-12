@@ -55,9 +55,7 @@
 
 #include <mesh_msgs/MeshFaceCluster.h>
 #include <mesh_msgs/MeshMaterial.h>
-#include <mesh_msgs/TriangleIndices.h>
-#include <mesh_msgs/TriangleMesh.h>
-#include <mesh_msgs/TriangleMeshStamped.h>
+#include <mesh_msgs/MeshTriangleIndices.h>
 
 #include <mesh_msgs/MeshGeometry.h>
 #include <mesh_msgs/MeshGeometryStamped.h>
@@ -118,7 +116,7 @@ inline const mesh_msgs::MeshGeometry toMeshGeometry(
 
   for(auto fH : hem.faces())
   {
-    mesh_msgs::TriangleIndices indices;
+    mesh_msgs::MeshTriangleIndices indices;
     auto vHs = hem.getVerticesOfFace(fH);
     indices.vertex_indices[0] = new_indices[vHs[0]];
     indices.vertex_indices[1] = new_indices[vHs[1]];
@@ -228,22 +226,6 @@ bool fromMeshBufferToMeshMessages(
     std::string mesh_uuid
 );
 
-/**
- * @brief Convert lvr::MeshBuffer to mesh_msgs::TriangleMesh
- * @param buffer to be read
- * @param message to be returned
- * @return bool success status
- */
-bool fromMeshBufferToTriangleMesh(
-    const lvr2::MeshBufferPtr& buffer,
-    mesh_msgs::TriangleMesh& message
-);
-
-bool fromMeshBufferToTriangleMesh(
-    lvr2::MeshBuffer& buffer,
-    mesh_msgs::TriangleMesh& message
-);
-
 bool fromMeshGeometryToMeshBuffer(
     const mesh_msgs::MeshGeometryConstPtr& mesh_geometry_ptr,
     lvr2::MeshBufferPtr& buffer_ptr
@@ -271,24 +253,11 @@ bool fromMeshGeometryToMeshBuffer(
 
 bool fromMeshGeometryToMeshBuffer(
     const mesh_msgs::MeshGeometry& mesh_geometry,
-    lvr2::MeshBuffer& buffer
-);
-
-/**
- * @brief Convert mesh_msgs::TriangleMesh to lvr::MeshBuffer
- * @param message to be read
- * @param buffer to be returned
- * @return bool success status
- */
-bool fromTriangleMeshToMeshBuffer(
-    const mesh_msgs::TriangleMesh& mesh,
     lvr2::MeshBuffer& buffer
 );
 
 /* TODO
 void removeDuplicates(lvr2::MeshBuffer& buffer);
-
-void removeDuplicates(mesh_msgs::TriangleMesh& mesh);
 */
 
 /**
@@ -307,89 +276,6 @@ bool readMeshBuffer(lvr2::MeshBufferPtr& buffer, string path);
  * @param path   Path to a MeshFile
  */
 bool writeMeshBuffer(lvr2::MeshBufferPtr& mesh, string path);
-
-/**
- * @brief Reads a file and returns a lvr_ros/TriangleMesh
- *
- * @param path to file
- * @param mesh to be filled
- *
- * @return bool indicating sucess/failure
- */
-bool readTriangleMesh(mesh_msgs::TriangleMesh& mesh, string path);
-
-/**
- * @brief Writes a ROS-TriangleMeshGeometryMessage to a file
- *
- * @param mesh   ROS-TriangleMeshGeometryMessage
- * @param path   Path to a MeshFile
- */
-bool writeTriangleMesh(mesh_msgs::TriangleMesh& mesh, string path);
-
-/**
- * @brief Writes intensity values as rainbow colors for the triangle colors
- *
- * @param intensity Intensity values as std::vector<float>
- * @param mesh      ROS-TriangleMeshGeometryMessage
- */
-// void intensityToTriangleRainbowColors(
-//     const std::vector<float>& intensity,
-//     mesh_msgs::TriangleMesh& mesh);
-
-/**
- * @brief Writes intensity values as rainbow colors for the triangle colors
- *
- * @param intensity Intensity values
- * @param mesh      ROS-TriangleMeshGeometryMessage
- * @param min       The minimal value
- * @param max       The maximal value
- */
-// void intensityToTriangleRainbowColors(
-//     const std::vector<float>& intensity,
-//     mesh_msgs::TriangleMesh& mesh,
-//     float min,
-//     float max
-// );
-
-/**
- * @brief Writes intensity values as rainbow colors for the vertex colors
- *
- * @param intensity Intensity values as std::vector<float>
- * @param mesh      ROS-TriangleMeshGeometryMessage
- * @param min       The minimal value
- * @param max       The maximal value
- */
-// void intensityToVertexRainbowColors(
-//     const std::vector<float>& intensity,
-//     mesh_msgs::TriangleMesh& mesh,
-//     float min,
-//     float max
-// );
-
-/**
- * @brief Writes intensity values as rainbow colors for the vertex colors
- *
- * @param intensity Intensity values as DenseVertexMap<float>
- * @param mesh      ROS-TriangleMeshGeometryMessage
- * @param min       The minimal value
- * @param max       The maximal value
- */
-// void intensityToVertexRainbowColors(
-//     const lvr2::DenseVertexMap<float>& intensity,
-//     mesh_msgs::TriangleMesh& mesh,
-//     float min,
-//     float max
-// );
-
-/**
- * @brief Writes intensity values as rainbow colors for the vertex colors
- *
- * @param intensity Intensity values
- * @param mesh      ROS-TriangleMeshGeometryMessage
- */
-// void intensityToVertexRainbowColors(const std::vector<float>& intensity, mesh_msgs::TriangleMesh& mesh);
-
-
 
 bool fromPointCloud2ToPointBuffer(const sensor_msgs::PointCloud2& cloud, PointBuffer& buffer);
 

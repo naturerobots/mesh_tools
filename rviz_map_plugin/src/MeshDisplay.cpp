@@ -754,7 +754,7 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
     vertex.z = v.z;
     mesh->vertices.push_back(vertex);
   }
-  for (const mesh_msgs::TriangleIndices& f : meshMsg->mesh_geometry.faces)
+  for (const mesh_msgs::MeshTriangleIndices& f : meshMsg->mesh_geometry.faces)
   {
     Face face;
     face.vertexIndices[0] = f.vertex_indices[0];

@@ -85,7 +85,6 @@
 #include <std_msgs/Int32.h>
 #include <geometry_msgs/Point32.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <mesh_msgs/TriangleMeshStamped.h>
 #include <mesh_msgs/MeshGeometryStamped.h>
 #include <mesh_msgs/MeshGeometry.h>
 #include <mesh_msgs/GetGeometry.h>

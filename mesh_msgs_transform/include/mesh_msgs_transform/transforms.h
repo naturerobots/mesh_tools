@@ -47,19 +47,9 @@
 #define MESH_MSGS_TRANSFORM__TRANSFORMS_H_
 
 #include <tf/transform_listener.h>
-#include <mesh_msgs/TriangleMeshStamped.h>
 #include <mesh_msgs/MeshGeometryStamped.h>
 
 namespace mesh_msgs_transform{
-	
-	bool transformTriangleMeshNoTime(
-		const std::string& target_frame,
-		const mesh_msgs::TriangleMeshStamped& mesh_in,
-		const std::string& fixed_frame,
-		mesh_msgs::TriangleMeshStamped& mesh_out,
-		const tf::TransformListener&  tf_listener
-	);
-
     bool transformGeometryMeshNoTime(
         const std::string& target_frame,
         const mesh_msgs::MeshGeometryStamped& mesh_in,
@@ -67,16 +57,6 @@ namespace mesh_msgs_transform{
         mesh_msgs::MeshGeometryStamped& mesh_out,
         const tf::TransformListener&  tf_listener
     );
-
-	bool transformTriangleMesh(
-		const std::string& target_frame,
-		const ros::Time& target_time,
-		const mesh_msgs::TriangleMeshStamped& mesh_in,
-		const std::string& fixed_frame,
-		mesh_msgs::TriangleMeshStamped& mesh_out,
-		const tf::TransformListener&  tf_listener
-	);
-	
 }
 
 #endif /* transforms.h */
