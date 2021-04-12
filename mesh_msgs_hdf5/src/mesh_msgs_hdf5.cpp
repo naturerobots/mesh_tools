@@ -26,8 +26,8 @@ hdf5_to_msg::hdf5_to_msg()
         "get_materials", &hdf5_to_msg::service_getMaterials, this);
     srv_get_texture_ = node_handle.advertiseService(
         "get_texture", &hdf5_to_msg::service_getTexture, this);
-    srv_get_uuid_ = node_handle.advertiseService(
-        "get_uuid", &hdf5_to_msg::service_getUUID, this);
+    srv_get_uuids_ = node_handle.advertiseService(
+        "get_uuids", &hdf5_to_msg::service_getUUIDs, this);
     srv_get_vertex_colors_ = node_handle.advertiseService(
         "get_vertex_colors", &hdf5_to_msg::service_getVertexColors, this);
 
@@ -50,11 +50,11 @@ hdf5_to_msg::hdf5_to_msg()
 
 }
 
-bool hdf5_to_msg::service_getUUID(
-    mesh_msgs::GetUUID::Request& req,
-    mesh_msgs::GetUUID::Response& res)
+bool hdf5_to_msg::service_getUUIDs(
+    mesh_msgs::GetUUIDs::Request& req,
+    mesh_msgs::GetUUIDs::Response& res)
 {
-    res.uuid = mesh_uuid;
+    res.uuids.push_back(mesh_uuid);
     return true;
 }
 

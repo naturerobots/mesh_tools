@@ -10,7 +10,7 @@
 #include <mesh_msgs/GetGeometry.h>
 #include <mesh_msgs/GetMaterials.h>
 #include <mesh_msgs/GetTexture.h>
-#include <mesh_msgs/GetUUID.h>
+#include <mesh_msgs/GetUUIDs.h>
 #include <mesh_msgs/GetVertexColors.h>
 #include <mesh_msgs/GetVertexCosts.h>
 #include <mesh_msgs/GetLabeledClusters.h>
@@ -53,9 +53,9 @@ class hdf5_to_msg
   bool service_getTexture(
       mesh_msgs::GetTexture::Request &req,
       mesh_msgs::GetTexture::Response &res);
-  bool service_getUUID(
-      mesh_msgs::GetUUID::Request &req,
-      mesh_msgs::GetUUID::Response &res);
+  bool service_getUUIDs(
+      mesh_msgs::GetUUIDs::Request &req,
+      mesh_msgs::GetUUIDs::Response &res);
   bool service_getVertexColors(
       mesh_msgs::GetVertexColors::Request &req,
       mesh_msgs::GetVertexColors::Response &res);
@@ -93,7 +93,7 @@ class hdf5_to_msg
   ros::ServiceServer srv_get_geometry_vertex_normals_;
   ros::ServiceServer srv_get_materials_;
   ros::ServiceServer srv_get_texture_;
-  ros::ServiceServer srv_get_uuid_;
+  ros::ServiceServer srv_get_uuids_;
   ros::ServiceServer srv_get_vertex_colors_;
   ros::ServiceServer srv_get_roughness_;
   ros::ServiceServer srv_get_height_difference_;
