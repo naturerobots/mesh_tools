@@ -151,6 +151,16 @@ public:
     std::vector<float> getHeightDifference();
 
     /**
+     * @brief Returns one costlayer as float vector.
+     */
+    std::vector<float> getVertexCosts(std::string costlayer);
+
+    /**
+     * @brief returns the names of all available costlayers
+     */
+    std::vector<std::string> getCostLayers();
+
+    /**
      * @brief Returns the image in the group, if it exists. If not an empty struct is returned
      */
     MapImage getImage(hf::Group group, std::string name);

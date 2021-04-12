@@ -257,32 +257,32 @@ std::vector<uint32_t> HDF5MapIO::getFaceIdsOfLabel(std::string groupName, std::s
 
 std::vector<float> HDF5MapIO::getRoughness()
 {
-    std::vector<float> roughness;
-
-    if (!m_channelsGroup.exist("roughness"))
-    {
-        return roughness;
-    }
-
-    m_channelsGroup.getDataSet("roughness")
-        .read(roughness);
-
-    return roughness;
+    return getVertexCosts("roughness");
 }
 
 std::vector<float> HDF5MapIO::getHeightDifference()
 {
-    std::vector<float> diff;
+    return getVertexCosts("height_diff");
+}
 
-    if (!m_channelsGroup.exist("height_diff"))
+std::vector<float> HDF5MapIO::getVertexCosts(std::string costlayer)
+{
+    std::vector<float> costs;
+
+    if (!m_channelsGroup.exist(costlayer))
     {
-        return diff;
+        return costs;
     }
 
-    m_channelsGroup.getDataSet("height_diff")
-        .read(diff);
+    m_channelsGroup.getDataSet(costlayer)
+        .read(costs);
 
-    return diff;
+    return costs;
+}
+
+std::vector<std::string> HDF5MapIO::getCostLayers()
+{
+    return m_channelsGroup.listObjectNames();
 }
 
 MapImage HDF5MapIO::getImage(hf::Group group, std::string name)

@@ -40,6 +40,7 @@ add_service_files(
   GetUUIDs.srv
   GetVertexColors.srv
   GetVertexCosts.srv
+  GetVertexCostLayers.srv
 )
 
 generate_messages(

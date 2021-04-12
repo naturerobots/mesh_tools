@@ -1,3 +1,4 @@
 string uuid
+string layer # costlayer (something like "roughness" or "height_diff")
 ---
 mesh_msgs/MeshVertexCostsStamped mesh_vertex_costs_stamped
