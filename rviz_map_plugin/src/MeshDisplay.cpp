@@ -57,7 +57,7 @@
 #include <mesh_msgs/GetMaterials.h>
 #include <mesh_msgs/GetGeometry.h>
 #include <mesh_msgs/GetTexture.h>
-#include <mesh_msgs/GetUUID.h>
+#include <mesh_msgs/GetUUIDs.h>
 
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/color_property.h>
@@ -359,14 +359,14 @@ void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
 
 void MeshDisplay::clearVertexCosts()
 {
-    m_costCache.clear();
-    updateVertexCosts();
+  m_costCache.clear();
+  updateVertexCosts();
 }
 
 void MeshDisplay::addVertexCosts(std::string costlayer, std::vector<float>& vertexCosts)
 {
-    cacheVertexCosts(costlayer, vertexCosts);
-    updateVertexCosts();
+  cacheVertexCosts(costlayer, vertexCosts);
+  updateVertexCosts();
 }
 
 void MeshDisplay::setVertexNormals(vector<Normal>& vertexNormals)
@@ -697,29 +697,34 @@ void MeshDisplay::initialServiceCall()
   }
 
   ros::NodeHandle n;
-  m_uuidClient = n.serviceClient<mesh_msgs::GetUUID>("get_uuid");
+  m_uuidClient = n.serviceClient<mesh_msgs::GetUUIDs>("get_uuid");
 
-  mesh_msgs::GetUUID srv_uuid;
-  if (m_uuidClient.call(srv_uuid))
+  mesh_msgs::GetUUIDs srv_uuids;
+  if (m_uuidClient.call(srv_uuids))
   {
-    std::string uuid = (std::string)srv_uuid.response.uuid;
+    std::vector<std::string> uuids = srv_uuids.response.uuids;
 
-    ROS_INFO_STREAM("Initial data available for UUID=" << uuid);
-
-    m_geometryClient = n.serviceClient<mesh_msgs::GetGeometry>("get_geometry");
-
-    mesh_msgs::GetGeometry srv_geometry;
-    srv_geometry.request.uuid = uuid;
-    if (m_geometryClient.call(srv_geometry))
+    if (uuids.size() > 0)
     {
-      ROS_INFO_STREAM("Found geometry for UUID=" << uuid);
-      mesh_msgs::MeshGeometryStamped::ConstPtr geometry =
-          boost::make_shared<const mesh_msgs::MeshGeometryStamped>(srv_geometry.response.mesh_geometry_stamped);
-      processMessage(geometry);
-    }
-    else
-    {
-      ROS_INFO_STREAM("Could not load geometry. Waiting for callback to trigger ... ");
+      std::string uuid = uuids[0];
+
+      ROS_INFO_STREAM("Initial data available for UUID=" << uuid);
+
+      m_geometryClient = n.serviceClient<mesh_msgs::GetGeometry>("get_geometry");
+
+      mesh_msgs::GetGeometry srv_geometry;
+      srv_geometry.request.uuid = uuid;
+      if (m_geometryClient.call(srv_geometry))
+      {
+        ROS_INFO_STREAM("Found geometry for UUID=" << uuid);
+        mesh_msgs::MeshGeometryStamped::ConstPtr geometry =
+            boost::make_shared<const mesh_msgs::MeshGeometryStamped>(srv_geometry.response.mesh_geometry_stamped);
+        processMessage(geometry);
+      }
+      else
+      {
+        ROS_INFO_STREAM("Could not load geometry. Waiting for callback to trigger ... ");
+      }
     }
   }
   else

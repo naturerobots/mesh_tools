@@ -88,7 +88,6 @@
 #include <mesh_msgs/MeshGeometryStamped.h>
 #include <mesh_msgs/MeshGeometry.h>
 #include <mesh_msgs/GetGeometry.h>
-#include <mesh_msgs/GetUUID.h>
 #include <mesh_msgs/GetLabeledClusters.h>
 
 #ifndef Q_MOC_RUN

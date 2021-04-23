@@ -89,7 +89,6 @@
 #include <mesh_msgs/MeshGeometryStamped.h>
 #include <mesh_msgs/MeshGeometry.h>
 #include <mesh_msgs/GetGeometry.h>
-#include <mesh_msgs/GetUUID.h>
 #include <mesh_msgs/GetLabeledClusters.h>
 
 #include <hdf5_map_io/hdf5_map_io.h>
