@@ -2,6 +2,12 @@
 Changelog for package mesh_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added publishing of mesh_msgs to mesh_msgs_hdf5 package
+* removed unused messages
+* correct wiki address for mesh_tools
+
 1.0.1 (2020-11-11)
 ------------------
 

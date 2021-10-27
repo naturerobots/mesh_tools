@@ -2,6 +2,11 @@
 Changelog for package mesh_msgs_conversions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* removed unused messages
+* resolved catkin lint problems
+
 1.0.1 (2020-11-11)
 ------------------
 * fix of static-name bug in LVR2Config.cmake

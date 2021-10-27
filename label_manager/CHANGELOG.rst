@@ -2,6 +2,10 @@
 Changelog for package label_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* resolved catkin lint problems
+
 1.0.1 (2020-11-11)
 ------------------
 

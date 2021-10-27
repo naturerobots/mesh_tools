@@ -2,6 +2,13 @@
 Changelog for package hdf5_map_io
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* added publishing of mesh_msgs to mesh_msgs_hdf5 package
+* fixed mpi error
+* resolved catkin lint problems
+* update label in hdf5 file
+
 1.0.1 (2020-11-11)
 ------------------
 * fix: find_library lvr2, since this is missing in LVR2Config.cmake
