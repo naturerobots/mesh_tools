@@ -2,8 +2,8 @@
 Changelog for package mesh_msgs_transform
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2021-10-27)
+------------------
 * removed unused messages
 * Contributors: Malte kl. Piening
 

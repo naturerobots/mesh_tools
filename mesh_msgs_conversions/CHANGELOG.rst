@@ -2,8 +2,8 @@
 Changelog for package mesh_msgs_conversions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2021-10-27)
+------------------
 * removed unused messages
 * resolved catkin lint problems
 

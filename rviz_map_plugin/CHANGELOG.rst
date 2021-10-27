@@ -2,8 +2,8 @@
 Changelog for package rviz_map_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2021-10-27)
+------------------
 * fixed GetUUIDs service call in MeshDisplay
 * added option to visualize vertex costs using the rviz Map Visuslization
 * removed unused messages

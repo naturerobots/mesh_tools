@@ -2,8 +2,8 @@
 Changelog for package hdf5_map_io
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2021-10-27)
+------------------
 * added publishing of mesh_msgs to mesh_msgs_hdf5 package
 * fixed mpi error
 * resolved catkin lint problems

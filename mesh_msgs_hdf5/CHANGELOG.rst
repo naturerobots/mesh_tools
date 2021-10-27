@@ -2,8 +2,8 @@
 Changelog for package mesh_msgs_hdf5
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2021-10-27)
+------------------
 * added publishing of mesh_msgs to mesh_msgs_hdf5 package
 * fixed hdf5 to mesh_msgs publisher node
 * resolved catkin lint problems
