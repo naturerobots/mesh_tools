@@ -223,7 +223,7 @@ bool fromMeshGeometryToMeshBuffer(
     const mesh_msgs::MeshGeometryConstPtr& mesh_geometry_ptr,
     lvr2::MeshBuffer& buffer)
 {
-    fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, buffer);
+    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, buffer);
 }
 
 bool fromMeshGeometryToMeshBuffer(
@@ -231,7 +231,7 @@ bool fromMeshGeometryToMeshBuffer(
     lvr2::MeshBufferPtr& buffer_ptr)
 {
     if(!buffer_ptr) buffer_ptr = lvr2::MeshBufferPtr(new lvr2::MeshBuffer);
-    fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, *buffer_ptr);
+    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, *buffer_ptr);
 }
 
 bool fromMeshGeometryToMeshBuffer(
@@ -239,14 +239,14 @@ bool fromMeshGeometryToMeshBuffer(
     lvr2::MeshBufferPtr& buffer_ptr)
 {
     if(!buffer_ptr) buffer_ptr = lvr2::MeshBufferPtr(new lvr2::MeshBuffer);
-    fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, *buffer_ptr);
+    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, *buffer_ptr);
 }
 
 bool fromMeshGeometryToMeshBuffer(
     const mesh_msgs::MeshGeometryPtr& mesh_geometry_ptr,
     lvr2::MeshBuffer& buffer)
 {
-    fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, buffer);
+    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, buffer);
 }
 
 bool fromMeshGeometryToMeshBuffer(
@@ -254,7 +254,7 @@ bool fromMeshGeometryToMeshBuffer(
     lvr2::MeshBufferPtr& buffer_ptr)
 {
     if(!buffer_ptr) buffer_ptr = lvr2::MeshBufferPtr(new lvr2::MeshBuffer);
-    fromMeshGeometryToMeshBuffer(mesh_geometry, *buffer_ptr);
+    return fromMeshGeometryToMeshBuffer(mesh_geometry, *buffer_ptr);
 }
 
 bool fromMeshGeometryToMeshBuffer(
