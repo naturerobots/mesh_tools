@@ -882,7 +882,7 @@ void MeshDisplay::requestMaterials(std::string uuid)
     for (int i = 0; i < meshMaterialsStamped->mesh_materials.materials.size(); i++)
     {
       const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[i];
-      materials[i].textureIndex = mat.texture_index;
+      if (mat.has_texture) materials[i].textureIndex = mat.texture_index;
       materials[i].color = Color(mat.color.r, mat.color.g, mat.color.b, mat.color.a);
     }
     for (int i = 0; i < meshMaterialsStamped->mesh_materials.clusters.size(); i++)
@@ -890,11 +890,11 @@ void MeshDisplay::requestMaterials(std::string uuid)
       const mesh_msgs::MeshFaceCluster& clu = meshMaterialsStamped->mesh_materials.clusters[i];
 
       uint32_t materialIndex = meshMaterialsStamped->mesh_materials.cluster_materials[i];
-      const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[materialIndex];
+      // const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[materialIndex];
 
       for (uint32_t face_index : clu.face_indices)
       {
-        materials[i].faceIndices.push_back(face_index);
+        materials[materialIndex].faceIndices.push_back(face_index);
       }
     }
 
