@@ -12,7 +12,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <license>BSD-3</license>
-  <url>http://ros.org/wiki/mash_tools/rviz_map_plugin</url>
+  <url>https://github.com/uos/mesh_tools/tree/master/rviz_map_plugin</url>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rviz</build_depend>
