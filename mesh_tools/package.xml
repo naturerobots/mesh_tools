@@ -13,7 +13,6 @@
   <exec_depend>mesh_msgs_transform</exec_depend>
   <exec_depend>mesh_msgs_conversions</exec_depend>
   <exec_depend>rviz_map_plugin</exec_depend>
-  <exec_depend>rviz_mesh_plugin</exec_depend>
   <exec_depend>label_manager</exec_depend>
 
   <buildtool_depend>catkin</buildtool_depend>
