@@ -346,7 +346,12 @@ bool MapDisplay::loadData()
       // 
       Assimp::Importer io;
       io.SetPropertyBool(AI_CONFIG_IMPORT_COLLADA_IGNORE_UP_DIRECTION, true);
-      const aiScene* ascene = io.ReadFile(mapFile, 0);
+      
+      // with aiProcess_PreTransformVertices assimp transforms the whole scene graph
+      // into one mesh
+      // - if you want to use TF for spawning meshes, the loading has to be done manually
+      const aiScene* ascene = io.ReadFile(mapFile, aiProcess_PreTransformVertices);
+      // what if there is more than one mesh?
       const aiMesh* amesh = ascene->mMeshes[0];
 
       const aiVector3D* ai_vertices = amesh->mVertices;
