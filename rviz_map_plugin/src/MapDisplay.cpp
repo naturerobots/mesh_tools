@@ -60,6 +60,12 @@
 #include <rviz/failed_display.h>
 #include <rviz/display_factory.h>
 
+#if defined(WITH_ASSIMP)
+  #include <assimp/Importer.hpp>
+  #include <assimp/postprocess.h>
+  #include <assimp/scene.h>
+#endif
+
 namespace rviz_map_plugin
 {
 MapDisplay::MapDisplay()
@@ -191,141 +197,181 @@ bool MapDisplay::loadData()
     setStatus(rviz::StatusProperty::Warn, "Map", "Specified map file does not exist!");
     return false;
   }
-  if (boost::filesystem::extension(mapFile).compare(".h5") != 0)
-  {
-    ROS_WARN_STREAM("Map Display: Specified map file is not a .h5 file!");
-    setStatus(rviz::StatusProperty::Warn, "Map", "Specified map file is not a .h5 file!");
-    return false;
-  }
+  
   ROS_INFO_STREAM("Map Display: Loading data for map '" << mapFile << "'");
 
   try
   {
-    // Open file IO
-    hdf5_map_io::HDF5MapIO map_io(mapFile);
-
-    ROS_INFO("Map Display: Load geometry");
-
-    // Read geometry
-    m_geometry = std::make_shared<Geometry>(Geometry(map_io.getVertices(), map_io.getFaceIds()));
-
-    ROS_INFO("Map Display: Load textures");
-
-    // Read textures
-    vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
-    m_textures.resize(textures.size());
-    for (size_t i = 0; i < textures.size(); i++)
+    if (boost::filesystem::extension(mapFile).compare(".h5") == 0)
     {
-      // Find out the texture index because textures are not stored in ascending order
-      int textureIndex = std::stoi(textures[i].name);
+      ROS_INFO("Map Display: Load HDF5 map");
+      // Open file IO
+      hdf5_map_io::HDF5MapIO map_io(mapFile);
 
-      // Copy metadata
-      m_textures[textureIndex].width = textures[i].width;
-      m_textures[textureIndex].height = textures[i].height;
-      m_textures[textureIndex].channels = textures[i].channels;
-      m_textures[textureIndex].data = textures[i].data;
-      m_textures[textureIndex].pixelFormat = "rgb8";
-    }
+      ROS_INFO("Map Display: Load geometry");
 
-    ROS_INFO("Map Display: Load materials");
+      // Read geometry
+      m_geometry = std::make_shared<Geometry>(Geometry(map_io.getVertices(), map_io.getFaceIds()));
 
-    // Read materials
-    vector<hdf5_map_io::MapMaterial> materials = map_io.getMaterials();
-    vector<uint32_t> faceToMaterialIndexArray = map_io.getMaterialFaceIndices();
-    m_materials.resize(materials.size());
-    for (size_t i = 0; i < materials.size(); i++)
-    {
-      // Copy material color
-      m_materials[i].color.r = materials[i].r / 255.0f;
-      m_materials[i].color.g = materials[i].g / 255.0f;
-      m_materials[i].color.b = materials[i].b / 255.0f;
-      m_materials[i].color.a = 1.0f;
+      ROS_INFO("Map Display: Load textures");
 
-      // Look for texture index
-      if (materials[i].textureIndex == -1)
+      // Read textures
+      vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
+      m_textures.resize(textures.size());
+      for (size_t i = 0; i < textures.size(); i++)
       {
-        // texture index -1: no texture
-        m_materials[i].textureIndex = boost::none;
-      }
-      else
-      {
-        m_materials[i].textureIndex = materials[i].textureIndex;
+        // Find out the texture index because textures are not stored in ascending order
+        int textureIndex = std::stoi(textures[i].name);
+
+        // Copy metadata
+        m_textures[textureIndex].width = textures[i].width;
+        m_textures[textureIndex].height = textures[i].height;
+        m_textures[textureIndex].channels = textures[i].channels;
+        m_textures[textureIndex].data = textures[i].data;
+        m_textures[textureIndex].pixelFormat = "rgb8";
       }
 
-      m_materials[i].faceIndices.clear();
-    }
+      ROS_INFO("Map Display: Load materials");
 
-    // Copy face indices
-    for (size_t k = 0; k < faceToMaterialIndexArray.size(); k++)
-    {
-      m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
-    }
-
-    ROS_INFO("Map Display: Load vertex colors");
-
-    // Read vertex colors
-    vector<uint8_t> colors = map_io.getVertexColors();
-    m_colors.clear();
-    m_colors.reserve(colors.size() / 3);
-    for (size_t i = 0; i < colors.size(); i += 3)
-    {
-      // convert from 0-255 (uint8) to 0.0-1.0 (float)
-      m_colors.push_back(Color(colors[i + 0] / 255.0f, colors[i + 1] / 255.0f, colors[i + 2] / 255.0f, 1.0));
-    }
-
-    ROS_INFO("Map Display: Load vertex normals");
-
-    // Read vertex normals
-    vector<float> normals = map_io.getVertexNormals();
-    m_normals.clear();
-    m_normals.reserve(normals.size() / 3);
-    for (size_t i = 0; i < normals.size(); i += 3)
-    {
-      m_normals.push_back(Normal(normals[i + 0], normals[i + 1], normals[i + 2]));
-    }
-
-    ROS_INFO("Map Display: Load texture coordinates");
-
-    // Read tex cords
-    vector<float> texCoords = map_io.getVertexTextureCoords();
-    m_texCoords.clear();
-    m_texCoords.reserve(texCoords.size() / 3);
-    for (size_t i = 0; i < texCoords.size(); i += 3)
-    {
-      m_texCoords.push_back(TexCoords(texCoords[i], texCoords[i + 1]));
-    }
-
-    ROS_INFO("Map Display: Load clusters");
-
-    // Read labels
-    m_clusterList.clear();
-    // m_clusterList.push_back(Cluster("__NEW__", vector<uint32_t>()));
-    for (auto labelGroup : map_io.getLabelGroups())
-    {
-      for (auto labelObj : map_io.getAllLabelsOfGroup(labelGroup))
+      // Read materials
+      vector<hdf5_map_io::MapMaterial> materials = map_io.getMaterials();
+      vector<uint32_t> faceToMaterialIndexArray = map_io.getMaterialFaceIndices();
+      m_materials.resize(materials.size());
+      for (size_t i = 0; i < materials.size(); i++)
       {
-        auto faceIds = map_io.getFaceIdsOfLabel(labelGroup, labelObj);
+        // Copy material color
+        m_materials[i].color.r = materials[i].r / 255.0f;
+        m_materials[i].color.g = materials[i].g / 255.0f;
+        m_materials[i].color.b = materials[i].b / 255.0f;
+        m_materials[i].color.a = 1.0f;
 
-        std::stringstream ss;
-        ss << labelGroup << "_" << labelObj;
-        std::string label = ss.str();
-
-        m_clusterList.push_back(Cluster(label, faceIds));
-      }
-    }
-
-    m_costs.clear();
-    for (std::string costlayer : map_io.getCostLayers())
-    {
-        try
+        // Look for texture index
+        if (materials[i].textureIndex == -1)
         {
-            m_costs[costlayer] = map_io.getVertexCosts(costlayer);
+          // texture index -1: no texture
+          m_materials[i].textureIndex = boost::none;
         }
-        catch (const hf::DataSpaceException& e)
+        else
         {
-            ROS_WARN_STREAM("Could not load channel " << costlayer << " as a costlayer!");
+          m_materials[i].textureIndex = materials[i].textureIndex;
         }
+
+        m_materials[i].faceIndices.clear();
+      }
+
+      // Copy face indices
+      for (size_t k = 0; k < faceToMaterialIndexArray.size(); k++)
+      {
+        m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
+      }
+
+      ROS_INFO("Map Display: Load vertex colors");
+
+      // Read vertex colors
+      vector<uint8_t> colors = map_io.getVertexColors();
+      m_colors.clear();
+      m_colors.reserve(colors.size() / 3);
+      for (size_t i = 0; i < colors.size(); i += 3)
+      {
+        // convert from 0-255 (uint8) to 0.0-1.0 (float)
+        m_colors.push_back(Color(colors[i + 0] / 255.0f, colors[i + 1] / 255.0f, colors[i + 2] / 255.0f, 1.0));
+      }
+
+      ROS_INFO("Map Display: Load vertex normals");
+
+      // Read vertex normals
+      vector<float> normals = map_io.getVertexNormals();
+      m_normals.clear();
+      m_normals.reserve(normals.size() / 3);
+      for (size_t i = 0; i < normals.size(); i += 3)
+      {
+        m_normals.push_back(Normal(normals[i + 0], normals[i + 1], normals[i + 2]));
+      }
+
+      ROS_INFO("Map Display: Load texture coordinates");
+
+      // Read tex cords
+      vector<float> texCoords = map_io.getVertexTextureCoords();
+      m_texCoords.clear();
+      m_texCoords.reserve(texCoords.size() / 3);
+      for (size_t i = 0; i < texCoords.size(); i += 3)
+      {
+        m_texCoords.push_back(TexCoords(texCoords[i], texCoords[i + 1]));
+      }
+
+      ROS_INFO("Map Display: Load clusters");
+
+      // Read labels
+      m_clusterList.clear();
+      // m_clusterList.push_back(Cluster("__NEW__", vector<uint32_t>()));
+      for (auto labelGroup : map_io.getLabelGroups())
+      {
+        for (auto labelObj : map_io.getAllLabelsOfGroup(labelGroup))
+        {
+          auto faceIds = map_io.getFaceIdsOfLabel(labelGroup, labelObj);
+
+          std::stringstream ss;
+          ss << labelGroup << "_" << labelObj;
+          std::string label = ss.str();
+
+          m_clusterList.push_back(Cluster(label, faceIds));
+        }
+      }
+
+      m_costs.clear();
+      for (std::string costlayer : map_io.getCostLayers())
+      {
+          try
+          {
+              m_costs[costlayer] = map_io.getVertexCosts(costlayer);
+          }
+          catch (const hf::DataSpaceException& e)
+          {
+              ROS_WARN_STREAM("Could not load channel " << costlayer << " as a costlayer!");
+          }
+      }
     }
+    #if defined(WITH_ASSIMP) 
+    else 
+    {
+      // PLY, OBJ, DAE? -> ASSIMP
+      // The following lines are a simple way to import the mesh geometry
+      // of commonly used mesh file formats.
+      //
+      // TODOs:
+      // 1. scene graphs will not be imported properly.
+      //    Someone has to do some transformations according to the 
+      //    node graph in the assimp structures. Or optionally (even better): 
+      //    create tf-transformations for every element of the scene graph
+      // 
+      Assimp::Importer io;
+      io.SetPropertyBool(AI_CONFIG_IMPORT_COLLADA_IGNORE_UP_DIRECTION, true);
+      const aiScene* ascene = io.ReadFile(mapFile, 0);
+      const aiMesh* amesh = ascene->mMeshes[0];
+
+      const aiVector3D* ai_vertices = amesh->mVertices;
+      const aiFace* ai_faces = amesh->mFaces;
+
+      m_geometry = std::make_shared<Geometry>();
+
+      m_geometry->vertices.resize(amesh->mNumVertices);
+      m_geometry->faces.resize(amesh->mNumFaces);
+
+      for (int i = 0; i < amesh->mNumVertices; i++)
+      {
+        m_geometry->vertices[i].x = amesh->mVertices[i].x;
+        m_geometry->vertices[i].y = amesh->mVertices[i].y;
+        m_geometry->vertices[i].z = amesh->mVertices[i].z;
+      }
+
+      for (int i = 0; i < amesh->mNumFaces; i++)
+      {
+        m_geometry->faces[i].vertexIndices[0] = amesh->mFaces[i].mIndices[0];
+        m_geometry->faces[i].vertexIndices[1] = amesh->mFaces[i].mIndices[1];
+        m_geometry->faces[i].vertexIndices[2] = amesh->mFaces[i].mIndices[2];
+      }
+    }
+    #endif // defined(WITH_ASSIMP)
   }
   catch (...)
   {

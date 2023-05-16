@@ -17,6 +17,14 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 find_package(OpenCL 2 REQUIRED)
 
+find_package(assimp)
+
+if(assimp_FOUND)
+  include_directories(${ASSIMP_INCLUDE_DIRS})
+  add_definitions(-DWITH_ASSIMP)
+endif(assimp_FOUND)
+
+
 catkin_package(
   CATKIN_DEPENDS ${THIS_PACKAGE_ROS_DEPS}
   DEPENDS Boost OpenCL HDF5 OpenCL
