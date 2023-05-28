@@ -45,7 +45,7 @@
 
 #include "MeshGoalTool.hpp"
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( rviz_map_plugin::MeshGoalTool, rviz::Tool )
 
 namespace rviz_map_plugin{

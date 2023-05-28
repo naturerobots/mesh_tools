@@ -351,5 +351,5 @@ void ClusterLabelDisplay::addLabel(std::string label, std::vector<uint32_t> face
 
 }  // End namespace rviz_map_plugin
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelDisplay, rviz::Display)

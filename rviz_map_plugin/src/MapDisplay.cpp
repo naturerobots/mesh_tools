@@ -386,5 +386,5 @@ void MapDisplay::saveLabel(Cluster cluster)
 
 }  // End namespace rviz_map_plugin
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::MapDisplay, rviz::Display)

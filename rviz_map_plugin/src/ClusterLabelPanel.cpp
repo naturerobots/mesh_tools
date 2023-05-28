@@ -152,5 +152,5 @@ void ClusterLabelPanel::load(const rviz::Config& config)
 
 }  // End namespace rviz_map_plugin
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelPanel, rviz::Panel)
