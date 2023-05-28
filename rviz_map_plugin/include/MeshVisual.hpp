@@ -69,6 +69,7 @@
 #include <rviz/display_context.h>
 #include <rviz/frame_manager.h>
 
+#include <OGRE/Ogre.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreManualObject.h>
@@ -78,16 +79,6 @@
 
 #include <Types.hpp>
 #include <vector>
-
-namespace Ogre
-{
-// Forward declaration
-class Vector3;
-class Quaternion;
-class SceneNode;
-class Entity;
-
-}  // End namespace Ogre
 
 namespace rviz_map_plugin
 {
