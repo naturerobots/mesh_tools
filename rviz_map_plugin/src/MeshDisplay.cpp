@@ -282,13 +282,13 @@ void MeshDisplay::subscribe()
   else
   {
     m_meshSynchronizer = new message_filters::Cache<mesh_msgs::MeshGeometryStamped>(m_meshSubscriber, 10);
-    m_meshSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingGeometry, this, _1));
+    m_meshSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingGeometry, this, boost::placeholders::_1));
 
     m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
-    m_colorsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexColors, this, _1));
+    m_colorsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexColors, this, boost::placeholders::_1));
 
     m_costsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
-    m_costsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexCosts, this, _1));
+    m_costsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexCosts, this, boost::placeholders::_1));
   }
 
   initialServiceCall();
@@ -599,7 +599,7 @@ void MeshDisplay::updateVertexColorsTopic()
 
   m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
   m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
-  m_colorsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexColors, this, _1));
+  m_colorsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexColors, this, boost::placeholders::_1));
 }
 
 void MeshDisplay::updateVertexCostsTopic()
@@ -609,7 +609,7 @@ void MeshDisplay::updateVertexCostsTopic()
 
   m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 4);
   m_costsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
-  m_costsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexCosts, this, _1));
+  m_costsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexCosts, this, boost::placeholders::_1));
 }
 
 void MeshDisplay::updateTopic()
