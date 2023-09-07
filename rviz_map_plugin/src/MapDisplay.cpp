@@ -107,8 +107,13 @@ rviz::Display* MapDisplay::createDisplay(const QString& class_id)
 
 void MapDisplay::onInitialize()
 {
+  std::string name = this->getName().toStdString();
+
   Display* display = createDisplay("rviz_map_plugin/ClusterLabel");
 
+  m_nh = std::make_shared<ros::NodeHandle>("~");
+  m_nh_p = std::make_shared<ros::NodeHandle>("~");
+  
   m_clusterLabelDisplay = static_cast<ClusterLabelDisplay*>(display);
   m_clusterLabelDisplay->setName("ClusterLabel");
   m_clusterLabelDisplay->setModel(model_);
@@ -128,8 +133,6 @@ void MapDisplay::onInitialize()
 
   // Make signal/slot connections
   connect(m_clusterLabelDisplay, SIGNAL(signalAddLabel(Cluster)), this, SLOT(saveLabel(Cluster)));
-
-  updateMap();
 }
 
 void MapDisplay::onEnable()
@@ -147,14 +150,42 @@ void MapDisplay::onDisable()
 // =====================================================================================================================
 // Callbacks triggered from UI events (mostly)
 
+void MapDisplay::load(const rviz::Config& config)
+{
+  std::string name = this->getName().toStdString();
+  std::cout << name << ": LOAD CONFIG..." << std::endl;
+
+  rviz::Config config2 = config;
+
+  { // Override with ros params
+    std::stringstream ss;
+    ss << "rviz_map_plugin/" << name;
+
+    std::string mesh_file;
+    if(m_nh_p->getParam(ss.str(), mesh_file))
+    {
+      config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
+    } else {
+      std::cout << name << ": COULDN'T FOUND MESH TO LOAD" << std::endl;
+    }
+  }
+
+  rviz::Display::load(config2);
+  
+  std::cout << name << ": LOAD CONFIG done." << std::endl;
+}
+
 void MapDisplay::updateMap()
 {
-  ROS_INFO("Map Display: Update");
+  std::string name = this->getName().toStdString();
+  std::cout << name << ": updateMap" << std::endl;
 
   // Load geometry and clusters
   bool successful = loadData();
   if (!successful)
+  {
     return;
+  }
 
   // Update sub-plugins
   m_meshDisplay->setGeometry(m_geometry);
@@ -176,6 +207,8 @@ void MapDisplay::updateMap()
 
   // All good
   setStatus(rviz::StatusProperty::Ok, "Map", "");
+
+  m_map_file_loaded = m_mapFilePath->getFilename();
 }
 
 // =====================================================================================================================
@@ -183,6 +216,30 @@ void MapDisplay::updateMap()
 
 bool MapDisplay::loadData()
 {
+  
+
+  std::string name = this->getName().toStdString();
+  // std::stringstream ss;
+  // ss << "rviz_map_plugin/" << name;
+
+  // std::string mesh_file;
+  // if(m_nh_p->getParam(ss.str(), mesh_file))
+  // {
+  //   std::cout<< name << ": FOUND INITIAL MESH IN PARAMS - " << mesh_file << std::endl;
+  //   m_mapFilePath->setFilename(QString::fromStdString(mesh_file));
+  // } else {
+  //   std::cout << name << ": COULDN'T FOUND MESH TO LOAD" << std::endl;
+  // }
+
+
+  if(m_mapFilePath->getFilename() == m_map_file_loaded)
+  {
+    std::cout << name << "! Tried to load same map twice. Skipping and keeping old data" << std::endl;
+    return true;
+  }
+
+
+
   // Read map file path
   std::string mapFile = m_mapFilePath->getFilename();
   if (mapFile.empty())
@@ -334,6 +391,7 @@ bool MapDisplay::loadData()
     #if defined(WITH_ASSIMP) 
     else 
     {
+      std::cout << "LOADING WITH ASSIMP" << std::endl; 
       // PLY, OBJ, DAE? -> ASSIMP
       // The following lines are a simple way to import the mesh geometry
       // of commonly used mesh file formats.
