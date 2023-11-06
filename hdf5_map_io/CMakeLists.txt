@@ -1,18 +1,25 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8)
 project(hdf5_map_io)
 
 set(CMAKE_CXX_STANDARD 14)
 
-find_package(catkin REQUIRED)
+# DEFAULT RELEASE
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  endif()
+endif()
+
+find_package(ament_cmake REQUIRED)
 find_package(LVR2 REQUIRED)
 find_package(MPI)
 find_package(PkgConfig REQUIRED)
 
-catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES hdf5_map_io
-  DEPENDS LVR2 MPI
-)
+# catkin_package(
+#   INCLUDE_DIRS include
+#   LIBRARIES hdf5_map_io
+#   DEPENDS LVR2 MPI
+# )
 
 # HighFive
 set(HIGHFIVE_EXAMPLES FALSE)
@@ -35,14 +42,15 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  ARCHIVE DESTINATION lib/${PROJECT_NAME}
+  LIBRARY DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  DESTINATION include/${PROJECT_NAME}
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
 
+ament_package()
