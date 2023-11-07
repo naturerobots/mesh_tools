@@ -16,12 +16,10 @@ namespace label_manager
     LabelManager::LabelManager(std::string handle_str) 
     :rclcpp::Node(handle_str) 
     {
-        // TODO: params
-        // if(!nh.getParam("folder_path", folderPath))
-        if(true)
-        {
-            folderPath = "/tmp/label_manager/";
-        }
+        // TODO: check if this is correct
+        this->declare_parameter("folder_path", "/tmp/label_manager/");
+        folderPath = this->get_parameter("folder_path").as_string();
+        
 
         path p(folderPath);
         if(!is_directory(p) && !exists(p))
