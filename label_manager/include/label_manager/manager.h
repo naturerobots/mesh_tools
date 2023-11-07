@@ -2,46 +2,67 @@
 #define LABEL_MANAGER_H_
 
 #include <vector>
+#include <chrono>
+#include <functional>
+#include <memory>
+#include <string>
 
-#include <ros/ros.h>
-#include <mesh_msgs/MeshFaceClusterStamped.h>
-#include <mesh_msgs/GetLabeledClusters.h>
-#include <label_manager/GetLabelGroups.h>
-#include <label_manager/GetLabeledClusterGroup.h>
-#include <label_manager/DeleteLabel.h>
+
+
+#include "mesh_msgs/msg/mesh_face_cluster_stamped.hpp"
+#include "mesh_msgs/srv/get_labeled_clusters.hpp"
+#include "label_manager/srv/get_label_groups.hpp"
+#include "label_manager/srv/get_labeled_cluster_group.hpp"
+#include "label_manager/srv/delete_label.hpp"
+
+#include "rclcpp/rclcpp.hpp"
+
+using namespace std::chrono_literals;
+
 
 namespace label_manager
 {
 
-class LabelManager
+class LabelManager : public rclcpp::Node
 {
 public:
-    LabelManager(ros::NodeHandle& nodeHandle);
+    LabelManager(std::string handle_str = "");
 
 private:
-    ros::NodeHandle nh;
-    ros::Subscriber clusterLabelSub;
-    ros::Publisher newClusterLabelPub;
-    ros::ServiceServer srv_get_labeled_clusters;
-    ros::ServiceServer srv_get_label_groups;
-    ros::ServiceServer srv_get_labeled_cluster_group;
-    ros::ServiceServer srv_delete_label;
+    // Subscriber
+    rclcpp::Subscription<mesh_msgs::msg::MeshFaceClusterStamped>::SharedPtr 
+        clusterLabelSub;
+    
+    // Publisher
+    rclcpp::Publisher<mesh_msgs::msg::MeshFaceCluster>::SharedPtr 
+        newClusterLabelPub;
 
+    // Service (Servers)
+    rclcpp::Service<mesh_msgs::srv::GetLabeledClusters>::SharedPtr 
+        srv_get_labeled_clusters;
+    rclcpp::Service<label_manager::srv::GetLabelGroups>::SharedPtr 
+        srv_get_label_groups;
+    rclcpp::Service<label_manager::srv::GetLabeledClusterGroup>::SharedPtr 
+        srv_get_labeled_cluster_group;
+    rclcpp::Service<label_manager::srv::DeleteLabel>::SharedPtr 
+        srv_delete_label;
+    
     std::string folderPath;
 
-    void clusterLabelCallback(const mesh_msgs::MeshFaceClusterStamped::ConstPtr& msg);
+    void clusterLabelCallback(const mesh_msgs::msg::MeshFaceClusterStamped& msg);
+
     bool service_getLabeledClusters(
-        mesh_msgs::GetLabeledClusters::Request& req,
-        mesh_msgs::GetLabeledClusters::Response& res);
+        const std::shared_ptr<mesh_msgs::srv::GetLabeledClusters::Request> req,
+        std::shared_ptr<mesh_msgs::srv::GetLabeledClusters::Response>      res);
     bool service_getLabelGroups(
-        label_manager::GetLabelGroups::Request& req,
-        label_manager::GetLabelGroups::Response& res);
+        const std::shared_ptr<label_manager::srv::GetLabelGroups::Request> req,
+        std::shared_ptr<label_manager::srv::GetLabelGroups::Response>      res);
     bool service_getLabeledClusterGroup(
-        label_manager::GetLabeledClusterGroup::Request& req,
-        label_manager::GetLabeledClusterGroup::Response& res);
+        const std::shared_ptr<label_manager::srv::GetLabeledClusterGroup::Request> req,
+        std::shared_ptr<label_manager::srv::GetLabeledClusterGroup::Response>      res);
     bool service_deleteLabel(
-        label_manager::DeleteLabel::Request& req,
-        label_manager::DeleteLabel::Response& res);
+        const std::shared_ptr<label_manager::srv::DeleteLabel::Request> req,
+        std::shared_ptr<label_manager::srv::DeleteLabel::Response>      res);
 
     bool writeIndicesToFile(const std::string& fileName, const std::vector<uint>& indices, const bool append);
     std::vector<uint> readIndicesFromFile(const std::string& fileName);
