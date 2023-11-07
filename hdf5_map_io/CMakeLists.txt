@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 3.8)
 project(hdf5_map_io)
 
-set(CMAKE_CXX_STANDARD 14)
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
 # DEFAULT RELEASE
 if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
@@ -14,12 +21,6 @@ find_package(ament_cmake REQUIRED)
 find_package(LVR2 REQUIRED)
 find_package(MPI)
 find_package(PkgConfig REQUIRED)
-
-# catkin_package(
-#   INCLUDE_DIRS include
-#   LIBRARIES hdf5_map_io
-#   DEPENDS LVR2 MPI
-# )
 
 # HighFive
 set(HIGHFIVE_EXAMPLES FALSE)
@@ -47,8 +48,8 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION bin/${PROJECT_NAME}
 )
 
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION include/${PROJECT_NAME}
+install(DIRECTORY include/
+  DESTINATION include
   FILES_MATCHING PATTERN "*.h"
   PATTERN ".svn" EXCLUDE
 )
