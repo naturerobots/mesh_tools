@@ -7,8 +7,6 @@
 #include <memory>
 #include <string>
 
-
-
 #include "mesh_msgs/msg/mesh_face_cluster_stamped.hpp"
 #include "mesh_msgs/srv/get_labeled_clusters.hpp"
 #include "label_manager/srv/get_label_groups.hpp"
@@ -16,8 +14,6 @@
 #include "label_manager/srv/delete_label.hpp"
 
 #include "rclcpp/rclcpp.hpp"
-
-using namespace std::chrono_literals;
 
 
 namespace label_manager

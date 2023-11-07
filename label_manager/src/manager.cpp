@@ -30,7 +30,8 @@ namespace label_manager
         clusterLabelSub = this->create_subscription<mesh_msgs::msg::MeshFaceClusterStamped>(
             "cluster_label", 10, std::bind(&LabelManager::clusterLabelCallback, this, _1));
 
-        newClusterLabelPub = this->create_publisher<mesh_msgs::msg::MeshFaceCluster>("new_cluster_label", 10);
+        newClusterLabelPub = this->create_publisher<mesh_msgs::msg::MeshFaceCluster>(
+            "new_cluster_label", 10);
 
         srv_get_labeled_clusters = this->create_service<mesh_msgs::srv::GetLabeledClusters>(
             "get_labeled_clusters", std::bind(&LabelManager::service_getLabeledClusters, this, _1, _2));

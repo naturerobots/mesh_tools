@@ -1,49 +1,56 @@
 #include <mesh_msgs_hdf5/mesh_msgs_hdf5.h>
 #include <hdf5_map_io/hdf5_map_io.h>
+#include <algorithm>
+
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 namespace mesh_msgs_hdf5 {
 
-hdf5_to_msg::hdf5_to_msg()
+hdf5_to_msg::hdf5_to_msg(std::string handle_str)
+:rclcpp::Node(handle_str)
 {
-    ros::NodeHandle nh("~");
+    // TODO: check if this is correct
+    this->declare_parameter("inputFile", "/tmp/map.h5");
+    inputFile = this->get_parameter("inputFile").as_string();
 
-    if (!nh.getParam("inputFile", inputFile))
-    {
-        inputFile = "/tmp/map.h5";
-    }
+    RCLCPP_INFO_STREAM(this->get_logger(), "Using input file: " << inputFile);
 
-    ROS_INFO_STREAM("Using input file: " << inputFile);
+    srv_get_uuids_ = this->create_service<mesh_msgs::srv::GetUUIDs>(
+        "get_uuids", std::bind(&hdf5_to_msg::service_getUUIDs, this, _1, _2));
+    srv_get_geometry_ = this->create_service<mesh_msgs::srv::GetGeometry>(
+        "get_geometry", std::bind(&hdf5_to_msg::service_getGeometry, this, _1, _2));
+    srv_get_geometry_vertices_ = this->create_service<mesh_msgs::srv::GetGeometry>(
+        "get_geometry_vertices", std::bind(&hdf5_to_msg::service_getGeometryVertices, this, _1, _2));
+    srv_get_geometry_faces_ = this->create_service<mesh_msgs::srv::GetGeometry>(
+        "get_geometry_faces", std::bind(&hdf5_to_msg::service_getGeometryFaces, this, _1, _2));
+     srv_get_geometry_vertex_normals_ = this->create_service<mesh_msgs::srv::GetGeometry>(
+        "get_geometry_vertexnormals", std::bind(&hdf5_to_msg::service_getGeometryVertexNormals, this, _1, _2));
+    srv_get_materials_ = this->create_service<mesh_msgs::srv::GetMaterials>(
+        "get_materials", std::bind(&hdf5_to_msg::service_getMaterials, this, _1, _2));
+    srv_get_texture_ = this->create_service<mesh_msgs::srv::GetTexture>(
+        "get_texture", std::bind(&hdf5_to_msg::service_getTexture, this, _1, _2));
+    srv_get_vertex_colors_ = this->create_service<mesh_msgs::srv::GetVertexColors>(
+        "get_vertex_colors", std::bind(&hdf5_to_msg::service_getVertexColors, this, _1, _2));
+    srv_get_vertex_costs_ = this->create_service<mesh_msgs::srv::GetVertexCosts>(
+        "get_vertex_costs", std::bind(&hdf5_to_msg::service_getVertexCosts, this, _1, _2));
+    srv_get_vertex_cost_layers_ = this->create_service<mesh_msgs::srv::GetVertexCostLayers>(
+        "get_vertex_cost_layers", std::bind(&hdf5_to_msg::service_getVertexCostLayers, this, _1, _2));
 
-    srv_get_geometry_ = node_handle.advertiseService(
-        "get_geometry", &hdf5_to_msg::service_getGeometry, this);
-    srv_get_geometry_vertices_ = node_handle.advertiseService(
-        "get_geometry_vertices", &hdf5_to_msg::service_getGeometryVertices, this);
-    srv_get_geometry_faces_ = node_handle.advertiseService(
-        "get_geometry_faces", &hdf5_to_msg::service_getGeometryFaces, this);
-     srv_get_geometry_vertex_normals_ = node_handle.advertiseService(
-        "get_geometry_vertexnormals", &hdf5_to_msg::service_getGeometryVertexNormals, this);
-    srv_get_materials_ = node_handle.advertiseService(
-        "get_materials", &hdf5_to_msg::service_getMaterials, this);
-    srv_get_texture_ = node_handle.advertiseService(
-        "get_texture", &hdf5_to_msg::service_getTexture, this);
-    srv_get_uuids_ = node_handle.advertiseService(
-        "get_uuids", &hdf5_to_msg::service_getUUIDs, this);
-    srv_get_vertex_colors_ = node_handle.advertiseService(
-        "get_vertex_colors", &hdf5_to_msg::service_getVertexColors, this);
-    srv_get_vertex_costs_ = node_handle.advertiseService(
-        "get_vertex_costs", &hdf5_to_msg::service_getVertexCosts, this);
-    srv_get_vertex_cost_layers_ = node_handle.advertiseService(
-        "get_vertex_cost_layers", &hdf5_to_msg::service_getVertexCostLayers, this);
-
-    pub_geometry_ = node_handle.advertise<mesh_msgs::MeshGeometryStamped>("mesh/geometry", 1, true);
-    pub_vertex_colors_ = node_handle.advertise<mesh_msgs::MeshVertexColorsStamped>("mesh/vertex_colors", 1, true);
-    pub_vertex_costs_ = node_handle.advertise<mesh_msgs::MeshVertexCostsStamped>("mesh/vertex_costs", 1);
+    pub_geometry_ = this->create_publisher<mesh_msgs::msg::MeshGeometryStamped>(
+        "mesh/geometry", 1);
+    pub_vertex_colors_ = this->create_publisher<mesh_msgs::msg::MeshVertexColorsStamped>(
+        "mesh/vertex_colors", 1);
+    pub_vertex_costs_ = this->create_publisher<mesh_msgs::msg::MeshVertexCostsStamped>(
+        "mesh/vertex_costs", 1);
 
 
-    srv_get_labeled_clusters_ = node_handle.advertiseService(
-        "get_labeled_clusters", &hdf5_to_msg::service_getLabeledClusters, this);
+    srv_get_labeled_clusters_ = this->create_service<mesh_msgs::srv::GetLabeledClusters>(
+        "get_labeled_clusters", std::bind(&hdf5_to_msg::service_getLabeledClusters, this, _1, _2));
 
-    sub_cluster_label_ = node_handle.subscribe("cluster_label", 10, &hdf5_to_msg::callback_clusterLabel, this);
+    sub_cluster_label_ = this->create_subscription<mesh_msgs::msg::MeshFaceClusterStamped>(
+        "cluster_label", 10, std::bind(&hdf5_to_msg::callback_clusterLabel, this, _1));
+
 
     loadAndPublishGeometry();
 }
@@ -53,7 +60,7 @@ void hdf5_to_msg::loadAndPublishGeometry()
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // geometry
-    mesh_msgs::MeshGeometryStamped geometryMsg;
+    mesh_msgs::msg::MeshGeometryStamped geometryMsg;
 
     auto vertices = io.getVertices();
     auto faceIds = io.getFaceIds();
@@ -63,18 +70,18 @@ void hdf5_to_msg::loadAndPublishGeometry()
     getFaces(faceIds, geometryMsg);
     getVertexNormals(vertexNormals, geometryMsg);
 
-    pub_geometry_.publish(geometryMsg);
+    pub_geometry_->publish(geometryMsg);
 
     // vertex colors
-    mesh_msgs::MeshVertexColorsStamped vertexColorsMsg;
+    mesh_msgs::msg::MeshVertexColorsStamped vertexColorsMsg;
 
     auto vertexColors = io.getVertexColors();
     getVertexColors(vertexColors, vertexColorsMsg);
 
-    pub_vertex_colors_.publish(vertexColorsMsg);
+    pub_vertex_colors_->publish(vertexColorsMsg);
 
     // vertex costs
-    mesh_msgs::MeshVertexCostsStamped vertexCostsMsg;
+    mesh_msgs::msg::MeshVertexCostsStamped vertexCostsMsg;
     for (std::string costlayer : io.getCostLayers())
     {
         try
@@ -82,19 +89,21 @@ void hdf5_to_msg::loadAndPublishGeometry()
             auto costs = io.getVertexCosts(costlayer);
             getVertexCosts(costs, costlayer, vertexCostsMsg);
 
-            pub_vertex_costs_.publish(vertexCostsMsg);
+            pub_vertex_costs_->publish(vertexCostsMsg);
         }
         catch (const hf::DataSpaceException& e)
         {
-            ROS_WARN_STREAM("Could not load costlayer " << costlayer);
+            RCLCPP_WARN_STREAM(this->get_logger(), "Could not load costlayer " << costlayer);
         }
     }
 }
 
-bool hdf5_to_msg::getVertices(std::vector<float>& vertices, mesh_msgs::MeshGeometryStamped& geometryMsg)
+bool hdf5_to_msg::getVertices(
+    std::vector<float>& vertices,
+    mesh_msgs::msg::MeshGeometryStamped& geometryMsg)
 {
     unsigned int nVertices = vertices.size() / 3;
-    ROS_INFO_STREAM("Found " << nVertices << " vertices");
+    RCLCPP_INFO_STREAM(this->get_logger(), "Found " << nVertices << " vertices");
     geometryMsg.mesh_geometry.vertices.resize(nVertices);
     for (unsigned int i = 0; i < nVertices; i++)
     {
@@ -106,15 +115,17 @@ bool hdf5_to_msg::getVertices(std::vector<float>& vertices, mesh_msgs::MeshGeome
     // Header
     geometryMsg.uuid = mesh_uuid;
     geometryMsg.header.frame_id = "map";
-    geometryMsg.header.stamp = ros::Time::now();
+    geometryMsg.header.stamp = this->get_clock()->now();
 
     return true;
 }
 
-bool hdf5_to_msg::getFaces(std::vector<uint32_t>& faceIds, mesh_msgs::MeshGeometryStamped& geometryMsg)
+bool hdf5_to_msg::getFaces(
+    std::vector<uint32_t>& faceIds,
+    mesh_msgs::msg::MeshGeometryStamped& geometryMsg)
 {
     unsigned int nFaces = faceIds.size() / 3;
-    ROS_INFO_STREAM("Found " << nFaces << " faces");
+    RCLCPP_INFO_STREAM(this->get_logger(), "Found " << nFaces << " faces");
     geometryMsg.mesh_geometry.faces.resize(nFaces);
     for (unsigned int i = 0; i < nFaces; i++)
     {
@@ -126,15 +137,17 @@ bool hdf5_to_msg::getFaces(std::vector<uint32_t>& faceIds, mesh_msgs::MeshGeomet
     // Header
     geometryMsg.uuid = mesh_uuid;
     geometryMsg.header.frame_id = "map";
-    geometryMsg.header.stamp = ros::Time::now();
+    geometryMsg.header.stamp = this->get_clock()->now();
 
     return true;
 }
 
-bool hdf5_to_msg::getVertexNormals(std::vector<float>& vertexNormals, mesh_msgs::MeshGeometryStamped& geometryMsg)
+bool hdf5_to_msg::getVertexNormals(
+    std::vector<float>& vertexNormals,
+    mesh_msgs::msg::MeshGeometryStamped& geometryMsg)
 {
     unsigned int nVertexNormals = vertexNormals.size() / 3;
-    ROS_INFO_STREAM("Found " << nVertexNormals << " vertex normals");
+    RCLCPP_INFO_STREAM(this->get_logger(), "Found " << nVertexNormals << " vertex normals");
     geometryMsg.mesh_geometry.vertex_normals.resize(nVertexNormals);
     for (unsigned int i = 0; i < nVertexNormals; i++)
     {
@@ -146,15 +159,17 @@ bool hdf5_to_msg::getVertexNormals(std::vector<float>& vertexNormals, mesh_msgs:
     // Header
     geometryMsg.uuid = mesh_uuid;
     geometryMsg.header.frame_id = "map";
-    geometryMsg.header.stamp = ros::Time::now();
+    geometryMsg.header.stamp = this->get_clock()->now();
 
     return true;
 }
 
-bool hdf5_to_msg::getVertexColors(std::vector<uint8_t>& vertexColors, mesh_msgs::MeshVertexColorsStamped& vertexColorsMsg)
+bool hdf5_to_msg::getVertexColors(
+    std::vector<uint8_t>& vertexColors,
+    mesh_msgs::msg::MeshVertexColorsStamped& vertexColorsMsg)
 {
     unsigned int nVertices = vertexColors.size() / 3;
-    ROS_INFO_STREAM("Found " << nVertices << " vertices for vertex colors");
+    RCLCPP_INFO_STREAM(this->get_logger(), "Found " << nVertices << " vertices for vertex colors");
     vertexColorsMsg.mesh_vertex_colors.vertex_colors.resize(nVertices);
     for (unsigned int i = 0; i < nVertices; i++)
     {
@@ -171,12 +186,15 @@ bool hdf5_to_msg::getVertexColors(std::vector<uint8_t>& vertexColors, mesh_msgs:
     // Header
     vertexColorsMsg.uuid = mesh_uuid;
     vertexColorsMsg.header.frame_id = "map";
-    vertexColorsMsg.header.stamp = ros::Time::now();
+    vertexColorsMsg.header.stamp = this->get_clock()->now();
 
     return true;
 }
 
-bool hdf5_to_msg::getVertexCosts(std::vector<float>& costs, std::string layer, mesh_msgs::MeshVertexCostsStamped& vertexCostsMsg)
+bool hdf5_to_msg::getVertexCosts(
+    std::vector<float>& costs, 
+    std::string layer,
+    mesh_msgs::msg::MeshVertexCostsStamped& vertexCostsMsg)
 {
     vertexCostsMsg.mesh_vertex_costs.costs.resize(costs.size());
     for (uint32_t i = 0; i < costs.size(); i++)
@@ -187,76 +205,76 @@ bool hdf5_to_msg::getVertexCosts(std::vector<float>& costs, std::string layer, m
     vertexCostsMsg.uuid = mesh_uuid;
     vertexCostsMsg.type = layer;
     vertexCostsMsg.header.frame_id = "map";
-    vertexCostsMsg.header.stamp = ros::Time::now();
+    vertexCostsMsg.header.stamp = this->get_clock()->now();
 
     return true;
 }
 
 bool hdf5_to_msg::service_getUUIDs(
-    mesh_msgs::GetUUIDs::Request& req,
-    mesh_msgs::GetUUIDs::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetUUIDs::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetUUIDs::Response> res)
 {
-    res.uuids.push_back(mesh_uuid);
+    res->uuids.push_back(mesh_uuid);
     return true;
 }
 
 bool hdf5_to_msg::service_getGeometry(
-    mesh_msgs::GetGeometry::Request& req,
-    mesh_msgs::GetGeometry::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetGeometry::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetGeometry::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // Vertices
     auto vertices = io.getVertices();
-    getVertices(vertices, res.mesh_geometry_stamped);
+    getVertices(vertices, res->mesh_geometry_stamped);
 
     // Faces
     auto faceIds = io.getFaceIds();
-    getFaces(faceIds, res.mesh_geometry_stamped);
+    getFaces(faceIds, res->mesh_geometry_stamped);
 
     // Vertex normals
     auto vertexNormals = io.getVertexNormals();
-    getVertexNormals(vertexNormals, res.mesh_geometry_stamped);
+    getVertexNormals(vertexNormals, res->mesh_geometry_stamped);
 
     return true;
 }
 
 bool hdf5_to_msg::service_getGeometryVertices(
-    mesh_msgs::GetGeometry::Request& req,
-    mesh_msgs::GetGeometry::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetGeometry::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetGeometry::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // Vertices
     auto vertices = io.getVertices();
-    return getVertices(vertices, res.mesh_geometry_stamped);
+    return getVertices(vertices, res->mesh_geometry_stamped);
 }
 
 bool hdf5_to_msg::service_getGeometryFaces(
-    mesh_msgs::GetGeometry::Request& req,
-    mesh_msgs::GetGeometry::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetGeometry::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetGeometry::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // Faces
     auto faceIds = io.getFaceIds();
-    return getFaces(faceIds, res.mesh_geometry_stamped);
+    return getFaces(faceIds, res->mesh_geometry_stamped);
 }
 
 bool hdf5_to_msg::service_getGeometryVertexNormals(
-    mesh_msgs::GetGeometry::Request& req,
-    mesh_msgs::GetGeometry::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetGeometry::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetGeometry::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // Vertex normals
     auto vertexNormals = io.getVertexNormals();
-    return getVertexNormals(vertexNormals, res.mesh_geometry_stamped);
+    return getVertexNormals(vertexNormals, res->mesh_geometry_stamped);
 }
 
 bool hdf5_to_msg::service_getMaterials(
-    mesh_msgs::GetMaterials::Request& req,
-    mesh_msgs::GetMaterials::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetMaterials::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetMaterials::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
@@ -266,29 +284,29 @@ bool hdf5_to_msg::service_getMaterials(
     auto materialFaceIndices = io.getMaterialFaceIndices(); // for each face: material index
     unsigned int nMaterials = materials.size();
     unsigned int nFaces = materialFaceIndices.size();
-    ROS_INFO_STREAM("Found " << nMaterials << " materials and " << nFaces << " faces");
-    res.mesh_materials_stamped.mesh_materials.materials.resize(nMaterials);
+    RCLCPP_INFO_STREAM(this->get_logger(), "Found " << nMaterials << " materials and " << nFaces << " faces");
+    res->mesh_materials_stamped.mesh_materials.materials.resize(nMaterials);
     for (uint32_t i = 0; i < nMaterials; i++)
     {
         int texture_index = materials[i].textureIndex;
 
         // has texture
-        res.mesh_materials_stamped
+        res->mesh_materials_stamped
             .mesh_materials
             .materials[i]
             .has_texture = texture_index >= 0;
 
         // texture index
-        res.mesh_materials_stamped.mesh_materials.materials[i]
+        res->mesh_materials_stamped.mesh_materials.materials[i]
             .texture_index = static_cast<uint32_t>(texture_index);
         // color
-        res.mesh_materials_stamped.mesh_materials.materials[i]
+        res->mesh_materials_stamped.mesh_materials.materials[i]
             .color.r = materials[i].r / 255.0f;
-        res.mesh_materials_stamped.mesh_materials.materials[i]
+        res->mesh_materials_stamped.mesh_materials.materials[i]
             .color.g = materials[i].g / 255.0f;
-        res.mesh_materials_stamped.mesh_materials.materials[i]
+        res->mesh_materials_stamped.mesh_materials.materials[i]
             .color.b = materials[i].b / 255.0f;
-        res.mesh_materials_stamped.mesh_materials.materials[i]
+        res->mesh_materials_stamped.mesh_materials.materials[i]
             .color.a = 1;
     }
 
@@ -309,53 +327,53 @@ bool hdf5_to_msg::service_getMaterials(
         materialToFaces[materialIndex].push_back(i);
     }
     // For each material, map contains a list of faces
-    res.mesh_materials_stamped.mesh_materials.clusters.resize(nMaterials);
+    res->mesh_materials_stamped.mesh_materials.clusters.resize(nMaterials);
     for (uint32_t i = 0; i < nMaterials; i++)
     {
         for (uint32_t j = 0; j < materialToFaces[i].size(); j++)
         {
-            res.mesh_materials_stamped.mesh_materials.clusters[i].face_indices.push_back(materialToFaces[i][j]);
+            res->mesh_materials_stamped.mesh_materials.clusters[i].face_indices.push_back(materialToFaces[i][j]);
         }
     }
-    res.mesh_materials_stamped.mesh_materials.cluster_materials.resize(nMaterials);
+    res->mesh_materials_stamped.mesh_materials.cluster_materials.resize(nMaterials);
     for (uint32_t i = 0; i < nMaterials; i++)
     {
-        res.mesh_materials_stamped.mesh_materials.cluster_materials[i] = i;
+        res->mesh_materials_stamped.mesh_materials.cluster_materials[i] = i;
     }
 
     // Vertex Tex Coords
     auto vertexTexCoords = io.getVertexTextureCoords();
     unsigned int nVertices = vertexTexCoords.size() / 3;
-    res.mesh_materials_stamped.mesh_materials.vertex_tex_coords.resize(nVertices);
+    res->mesh_materials_stamped.mesh_materials.vertex_tex_coords.resize(nVertices);
     for (uint32_t i = 0; i < nVertices; i++)
     {
         // coords: u/v/w
         // w is always 0
-        res.mesh_materials_stamped.mesh_materials.vertex_tex_coords[i].u = vertexTexCoords[3 * i];
-        res.mesh_materials_stamped.mesh_materials.vertex_tex_coords[i].v = vertexTexCoords[3 * i + 1];
+        res->mesh_materials_stamped.mesh_materials.vertex_tex_coords[i].u = vertexTexCoords[3 * i];
+        res->mesh_materials_stamped.mesh_materials.vertex_tex_coords[i].v = vertexTexCoords[3 * i + 1];
     }
 
     // Header
-    res.mesh_materials_stamped.uuid = mesh_uuid;
-    res.mesh_materials_stamped.header.frame_id = "map";
-    res.mesh_materials_stamped.header.stamp = ros::Time::now();
+    res->mesh_materials_stamped.uuid = mesh_uuid;
+    res->mesh_materials_stamped.header.frame_id = "map";
+    res->mesh_materials_stamped.header.stamp = this->get_clock()->now();
 
     return true;
 }
 
 bool hdf5_to_msg::service_getTexture(
-    mesh_msgs::GetTexture::Request& req,
-    mesh_msgs::GetTexture::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetTexture::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetTexture::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     for (auto texture : io.getTextures())
     {
-        if (std::stoi(texture.name) == req.texture_index)
+        if (std::stoi(texture.name) == req->texture_index)
         {
-            res.texture.texture_index = req.texture_index;
-            res.texture.uuid = mesh_uuid;
-            sensor_msgs::Image image;
+            res->texture.texture_index = req->texture_index;
+            res->texture.uuid = mesh_uuid;
+            sensor_msgs::msg::Image image;
             sensor_msgs::fillImage( // TODO: only RGB, breaks when using other color channels
                 image,
                 "rgb8",
@@ -365,7 +383,7 @@ bool hdf5_to_msg::service_getTexture(
                 texture.data.data()
             );
 
-            res.texture.image = image;
+            res->texture.image = image;
 
             return true;
         }
@@ -375,39 +393,39 @@ bool hdf5_to_msg::service_getTexture(
 }
 
 bool hdf5_to_msg::service_getVertexColors(
-    mesh_msgs::GetVertexColors::Request& req,
-    mesh_msgs::GetVertexColors::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetVertexColors::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetVertexColors::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // Vertex colors
     auto vertexColors = io.getVertexColors();
-    return getVertexColors(vertexColors, res.mesh_vertex_colors_stamped);
+    return getVertexColors(vertexColors, res->mesh_vertex_colors_stamped);
 }
 
 bool hdf5_to_msg::service_getVertexCosts(
-    mesh_msgs::GetVertexCosts::Request& req,
-    mesh_msgs::GetVertexCosts::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetVertexCosts::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetVertexCosts::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
     
-    auto costs = io.getVertexCosts(req.layer);
-    return getVertexCosts(costs, req.layer, res.mesh_vertex_costs_stamped);
+    auto costs = io.getVertexCosts(req->layer);
+    return getVertexCosts(costs, req->layer, res->mesh_vertex_costs_stamped);
 }
 
 bool hdf5_to_msg::service_getVertexCostLayers(
-    mesh_msgs::GetVertexCostLayers::Request &req,
-    mesh_msgs::GetVertexCostLayers::Response &res)
+    const std::shared_ptr<mesh_msgs::srv::GetVertexCostLayers::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetVertexCostLayers::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
-    res.layers = io.getCostLayers();
+    res->layers = io.getCostLayers();
     return true;
 }
 
 bool hdf5_to_msg::service_getLabeledClusters(
-    mesh_msgs::GetLabeledClusters::Request& req,
-    mesh_msgs::GetLabeledClusters::Response& res)
+    const std::shared_ptr<mesh_msgs::srv::GetLabeledClusters::Request> req,
+    std::shared_ptr<mesh_msgs::srv::GetLabeledClusters::Response> res)
 {
     hdf5_map_io::HDF5MapIO io(inputFile);
 
@@ -421,7 +439,7 @@ bool hdf5_to_msg::service_getLabeledClusters(
         {
             // copy label
             auto faceIds = io.getFaceIdsOfLabel(groups[i], labelsInGroup[j]);
-            mesh_msgs::MeshFaceCluster cluster;
+            mesh_msgs::msg::MeshFaceCluster cluster;
             std::stringstream ss;
             ss << groups[i] << "_" << labelsInGroup[j];
             cluster.label = ss.str();
@@ -430,33 +448,34 @@ bool hdf5_to_msg::service_getLabeledClusters(
             {
                 cluster.face_indices[k] = faceIds[k];
             }
-            res.clusters.push_back(cluster);
+            res->clusters.push_back(cluster);
         }
     }
 
     return true;
 }
 
-void hdf5_to_msg::callback_clusterLabel(const mesh_msgs::MeshFaceClusterStamped::ConstPtr& msg)
+void hdf5_to_msg::callback_clusterLabel(
+    const mesh_msgs::msg::MeshFaceClusterStamped& msg)
 {
-    if (msg->uuid.compare(mesh_uuid) != 0)
+    if (msg.uuid.compare(mesh_uuid) != 0)
     {
-        ROS_ERROR("Invalid mesh UUID");
+        RCLCPP_ERROR(this->get_logger(), "Invalid mesh UUID");
         return;
     }
 
     hdf5_map_io::HDF5MapIO io(inputFile);
 
     // TODO: implement optional override
-    ROS_WARN("Override is enabled by default");
+    RCLCPP_WARN(this->get_logger(), "Override is enabled by default");
 
     // split label id into group and name
     std::vector<std::string> split_results;
-    boost::split(split_results, msg->cluster.label, [](char c){ return c == '_'; });
+    boost::split(split_results, msg.cluster.label, [](char c){ return c == '_'; });
 
     if (split_results.size() != 2)
     {
-        ROS_ERROR("Received illegal cluster name");
+        RCLCPP_ERROR(this->get_logger(), "Received illegal cluster name");
         return;
     }
 
@@ -464,9 +483,9 @@ void hdf5_to_msg::callback_clusterLabel(const mesh_msgs::MeshFaceClusterStamped:
     std::string label_group = split_results[0];
     std::string label_name = split_results[1];
     std::vector<uint32_t> indices;
-    for (size_t i = 0; i < msg->cluster.face_indices.size(); i++)
+    for (size_t i = 0; i < msg.cluster.face_indices.size(); i++)
     {
-        indices.push_back(msg->cluster.face_indices[i]);
+        indices.push_back(msg.cluster.face_indices[i]);
     }
 
     // write to hdf5
@@ -477,9 +496,9 @@ void hdf5_to_msg::callback_clusterLabel(const mesh_msgs::MeshFaceClusterStamped:
 
 int main(int argc, char **args)
 {
-    ros::init(argc, args, "mesh_msgs_hdf5");
-    mesh_msgs_hdf5::hdf5_to_msg hdf5_to_msg;
-    ros::MultiThreadedSpinner spinner(4);
-    spinner.spin();
+    // ros::init(argc, args, "mesh_msgs_hdf5");
+    // mesh_msgs_hdf5::hdf5_to_msg hdf5_to_msg;
+    // ros::MultiThreadedSpinner spinner(4);
+    // spinner.spin();
     return 0;
 }

@@ -10,6 +10,7 @@
   <author email="spuetz@uos.de">Sebastian Pütz</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
   <depend>boost</depend>
   <depend>lvr2</depend>
 

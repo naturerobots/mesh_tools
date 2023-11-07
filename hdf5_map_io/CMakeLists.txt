@@ -18,40 +18,59 @@ if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
 endif()
 
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(LVR2 REQUIRED)
 find_package(MPI)
 find_package(PkgConfig REQUIRED)
 
+
 # HighFive
 set(HIGHFIVE_EXAMPLES FALSE)
 set(HIGHFIVE_UNIT_TESTS FALSE)
+
+find_library(LVR2_LIBRARY NAMES lvr2)
+
 
 include_directories(
   include
   ${LVR2_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME}
+add_library(${PROJECT_NAME} SHARED
   src/hdf5_map_io.cpp
 )
 
-find_library(LVR2_LIBRARY NAMES lvr2)
+target_include_directories(${PROJECT_NAME} PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include>")
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PUBLIC
   ${LVR2_LIBRARY}
   ${MPI_CXX_LIBRARIES}
+  rclcpp::rclcpp
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE "HDF5_MAP_IO_BUILDING_DLL")
+
 install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib/${PROJECT_NAME}
-  LIBRARY DESTINATION lib/${PROJECT_NAME}
-  RUNTIME DESTINATION bin/${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/
   DESTINATION include
-  FILES_MATCHING PATTERN "*.h"
-  PATTERN ".svn" EXCLUDE
+)
+
+ament_export_include_directories("include/${PROJECT_NAME}")
+ament_export_libraries(${PROJECT_NAME})
+
+# Export modern CMake targets
+ament_export_targets(export_${PROJECT_NAME})
+
+ament_export_dependencies(
+  rclcpp
 )
 
 ament_package()
