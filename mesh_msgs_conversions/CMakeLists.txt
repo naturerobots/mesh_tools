@@ -44,14 +44,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include>")
 
-# ament_target_dependencies(${PROJECT_NAME} 
-#   rclcpp 
-#   mesh_msgs
-#   sensor_msgs 
-#   ${LVR2_LIBRARY}
-#   ${OpenCV_LIBRARIES}
-# )
-
 target_link_libraries(${PROJECT_NAME} PUBLIC
   ${LVR2_LIBRARY}
   ${OpenCV_LIBRARIES}
