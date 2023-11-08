@@ -67,14 +67,14 @@
 #include <QApplication>
 #include <QIcon>
 
-#include <ros/ros.h>
-#include <ros/console.h>
+// #include <ros/ros.h>
+// #include <ros/console.h>
 #include <rviz/viewport_mouse_event.h>
 #include <rviz/visualization_manager.h>
 #include <rviz/visualization_frame.h>
 #include <rviz/geometry.h>
 
-#include <rviz/display_context.h>
+#include <rviz_common/display_context.hpp>
 #include <rviz/frame_manager.h>
 #include <rviz/display.h>
 
@@ -133,7 +133,7 @@ class ClusterLabelTool;
  * @class ClusterLabelDisplay
  * @brief Display class for the map plugin
  */
-class ClusterLabelDisplay : public rviz::Display
+class ClusterLabelDisplay : public rviz_common::Display
 {
   Q_OBJECT
 
@@ -266,22 +266,22 @@ private:
   ClusterLabelTool* m_tool;
 
   /// Property for the current active visual
-  rviz::EnumProperty* m_activeVisualProperty;
+  rviz_common::EnumProperty* m_activeVisualProperty;
 
   /// Property to set transparency
-  rviz::FloatProperty* m_alphaProperty;
+  rviz_common::FloatProperty* m_alphaProperty;
 
   /// Property for selecting colors (menu)
-  rviz::Property* m_colorsProperty;
+  rviz_common::Property* m_colorsProperty;
 
   /// Properties for selecting colors (menu-items)
-  std::vector<rviz::ColorProperty*> m_colorProperties;
+  std::vector<rviz_common::ColorProperty*> m_colorProperties;
 
   /// Property to set the brushsize of the sphere brush of the label tool from this package
-  rviz::FloatProperty* m_sphereSizeProperty;
+  rviz_common::FloatProperty* m_sphereSizeProperty;
 
   /// Property to hide or show a phantom visual
-  rviz::BoolProperty* m_phantomVisualProperty;
+  rviz_common::BoolProperty* m_phantomVisualProperty;
 
   /// Index for the visuals
   int m_labelToolVisualIndex = 0;

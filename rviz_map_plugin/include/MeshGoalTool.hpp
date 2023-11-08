@@ -49,7 +49,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/string_property.h>
-#include <rviz/display_context.h>
+#include <rviz_common/display_context.hpp>
 
 #ifndef Q_MOC_RUN
 #include <QObject>
@@ -91,9 +91,9 @@ protected:
   virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation);
 
   /// Property for the topic
-  rviz::StringProperty* topic_property_;
+  rviz_common::StringProperty* topic_property_;
   /// Switch bottom / top for selection
-  rviz::BoolProperty* switch_bottom_top_;
+  rviz_common::BoolProperty* switch_bottom_top_;
   /// Publisher
   ros::Publisher pose_pub_;
   /// Node handle

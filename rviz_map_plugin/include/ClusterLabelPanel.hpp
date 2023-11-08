@@ -50,12 +50,12 @@
 #define CLUSTER_LABEL_PANEL_HPP
 
 #include <Types.hpp>
-#include <ros/ros.h>
+// #include <ros/ros.h>
 #include <QObject>
-#include <rviz/panel.h>
-#include <rviz/tool_manager.h>
+#include <rviz_common/panel.hpp>
+#include <rviz_common/tool_manager.hpp>
 #include <ClusterLabelTool.hpp>
-#include <mesh_msgs/MeshFaceCluster.h>
+#include <mesh_msgs/msg/mesh_face_cluster.hpp>
 
 // Forward declarations
 class QLineEdit;
@@ -72,7 +72,7 @@ namespace rviz_map_plugin
  * @class ClusterLabelPanel
  * @brief Panel for interacting with the label tool
  */
-class ClusterLabelPanel : public rviz::Panel
+class ClusterLabelPanel : public rviz_common::Panel
 {
   Q_OBJECT
 
@@ -92,13 +92,13 @@ public:
    * @brief Load a configuration
    * @input config The configuration
    */
-  virtual void load(const rviz::Config& config);
+  virtual void load(const rviz_common::Config& config);
 
   /**
    * @brief Save a configuration
    * @input config The configuration
    */
-  virtual void save(rviz::Config config) const;
+  virtual void save(rviz_common::Config config) const;
 
 public Q_SLOTS:
 
@@ -141,7 +141,7 @@ protected:
   ClusterLabelTool* m_tool;
 
   /// Node handle
-  ros::NodeHandle m_nodeHandle;
+  // ros::NodeHandle m_nodeHandle;
 };
 
 }  // end namespace rviz_map_plugin

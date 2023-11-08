@@ -53,36 +53,41 @@
 
 #include <MeshDisplay.hpp>
 
-#include <mesh_msgs/GetVertexColors.h>
-#include <mesh_msgs/GetMaterials.h>
-#include <mesh_msgs/GetGeometry.h>
-#include <mesh_msgs/GetTexture.h>
-#include <mesh_msgs/GetUUIDs.h>
+#include <mesh_msgs/srv/get_vertex_colors.hpp>
+#include <mesh_msgs/srv/get_materials.hpp>
+#include <mesh_msgs/srv/get_geometry.hpp>
+#include <mesh_msgs/srv/get_texture.hpp>
+#include <mesh_msgs/srv/get_uui_ds.hpp>
 
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/color_property.h>
-#include <rviz/properties/float_property.h>
-#include <rviz/properties/int_property.h>
-#include <rviz/properties/ros_topic_property.h>
-#include <rviz/properties/enum_property.h>
-#include <rviz/properties/string_property.h>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/color_property.hpp>
+#include <rviz_common/properties/float_property.hpp>
+#include <rviz_common/properties/int_property.hpp>
+#include <rviz_common/properties/ros_topic_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
+#include <rviz_common/properties/string_property.hpp>
+
+#include <rviz_common/display.hpp>
+
 
 namespace rviz_map_plugin
 {
-MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
+MeshDisplay::MeshDisplay() 
+: rviz_common::Display()
+, m_ignoreMsgs(false)
 {
   // mesh topic
-  m_meshTopic = new rviz::RosTopicProperty(
+  m_meshTopic = new rviz_common::RosTopicProperty(
       "Geometry Topic", "", QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshGeometryStamped>()),
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
 
   // buffer size / amount of meshes visualized
-  m_bufferSize = new rviz::IntProperty("Buffer Size", 1, "Number of meshes visualized", this, SLOT(updateBufferSize()));
+  m_bufferSize = new rviz_common::IntProperty("Buffer Size", 1, "Number of meshes visualized", this, SLOT(updateBufferSize()));
   m_bufferSize->setMin(1);
 
   // Display Type
   {
-    m_displayType = new rviz::EnumProperty("Display Type", "Fixed Color", "Select Display Type for Mesh", this,
+    m_displayType = new rviz_common::EnumProperty("Display Type", "Fixed Color", "Select Display Type for Mesh", this,
                                            SLOT(updateMesh()), this);
     m_displayType->addOption("Fixed Color", 0);
     m_displayType->addOption("Vertex Color", 1);
@@ -93,11 +98,11 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
     // Fixed Color
     {
       // face color properties
-      m_facesColor = new rviz::ColorProperty("Faces Color", QColor(0, 255, 0), "The color of the faces.", m_displayType,
+      m_facesColor = new rviz_common::ColorProperty("Faces Color", QColor(0, 255, 0), "The color of the faces.", m_displayType,
                                              SLOT(updateMesh()), this);
 
       // face alpha properties
-      m_facesAlpha = new rviz::FloatProperty("Faces Alpha", 1.0, "The alpha-value of the faces", m_displayType,
+      m_facesAlpha = new rviz_common::FloatProperty("Faces Alpha", 1.0, "The alpha-value of the faces", m_displayType,
                                              SLOT(updateMesh()), this);
       m_facesAlpha->setMin(0);
       m_facesAlpha->setMax(1);
@@ -105,12 +110,12 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
 
     // Vertex Color
     {
-      m_vertexColorsTopic = new rviz::RosTopicProperty(
+      m_vertexColorsTopic = new rviz_common::RosTopicProperty(
           "Vertex Colors Topic", "",
           QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshVertexColorsStamped>()),
           "Vertex color topic to subscribe to.", m_displayType, SLOT(updateVertexColorsTopic()), this);
 
-      m_vertexColorServiceName = new rviz::StringProperty("Vertex Color Service Name", "get_vertex_colors",
+      m_vertexColorServiceName = new rviz_common::StringProperty("Vertex Color Service Name", "get_vertex_colors",
                                                           "Name of the Vertex Color Service to request Vertex Colors "
                                                           "from.",
                                                           m_displayType, SLOT(updateVertexColorService()), this);
@@ -118,48 +123,48 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
 
     // Textures
     {
-      m_showTexturedFacesOnly = new rviz::BoolProperty("Show textured faces only", false, "Show textured faces only",
+      m_showTexturedFacesOnly = new rviz_common::BoolProperty("Show textured faces only", false, "Show textured faces only",
                                                        m_displayType, SLOT(updateMesh()), this);
 
-      m_materialServiceName = new rviz::StringProperty("Material Service Name", "get_materials",
+      m_materialServiceName = new rviz_common::StringProperty("Material Service Name", "get_materials",
                                                        "Name of the Matrial Service to request Materials from.",
                                                        m_displayType, SLOT(updateMaterialAndTextureServices()), this);
 
-      m_textureServiceName = new rviz::StringProperty("Texture Service Name", "get_texture",
+      m_textureServiceName = new rviz_common::StringProperty("Texture Service Name", "get_texture",
                                                       "Name of the Texture Service to request Textures from.",
                                                       m_displayType, SLOT(updateMaterialAndTextureServices()), this);
     }
 
     // Vertex Costs
     {
-      m_costColorType = new rviz::EnumProperty("Color Scale", "Rainbow",
+      m_costColorType = new rviz_common::EnumProperty("Color Scale", "Rainbow",
                                                "Select color scale for vertex costs. Mesh will update when new data "
                                                "arrives.",
                                                m_displayType, SLOT(updateVertexCosts()), this);
       m_costColorType->addOption("Rainbow", 0);
       m_costColorType->addOption("Red Green", 1);
 
-      m_vertexCostsTopic = new rviz::RosTopicProperty(
+      m_vertexCostsTopic = new rviz_common::RosTopicProperty(
           "Vertex Costs Topic", "",
           QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshVertexCostsStamped>()),
           "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateVertexCostsTopic()), this);
 
-      m_selectVertexCostMap = new rviz::EnumProperty("Vertex Costs Type", "-- None --",
+      m_selectVertexCostMap = new rviz_common::EnumProperty("Vertex Costs Type", "-- None --",
                                                      "Select the type of vertex cost map to be displayed. New types "
                                                      "will appear here when a new message arrives.",
                                                      m_displayType, SLOT(updateVertexCosts()), this);
       m_selectVertexCostMap->addOption("-- None --", 0);
 
-      m_costUseCustomLimits = new rviz::BoolProperty("Use Custom limits", false, "Use custom vertex cost limits",
+      m_costUseCustomLimits = new rviz_common::BoolProperty("Use Custom limits", false, "Use custom vertex cost limits",
                                                      m_displayType, SLOT(updateVertexCosts()), this);
 
       // custom cost limits
       {
-        m_costLowerLimit = new rviz::FloatProperty("Vertex Costs Lower Limit", 0.0, "Vertex costs lower limit",
+        m_costLowerLimit = new rviz_common::FloatProperty("Vertex Costs Lower Limit", 0.0, "Vertex costs lower limit",
                                                    m_costUseCustomLimits, SLOT(updateVertexCosts()), this);
         m_costLowerLimit->hide();
 
-        m_costUpperLimit = new rviz::FloatProperty("Vertex Costs Upper Limit", 1.0, "Vertex costs upper limit",
+        m_costUpperLimit = new rviz_common::FloatProperty("Vertex Costs Upper Limit", 1.0, "Vertex costs upper limit",
                                                    m_costUseCustomLimits, SLOT(updateVertexCosts()), this);
         m_costUpperLimit->hide();
       }
@@ -169,13 +174,13 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
   // Wireframe
   {
     m_showWireframe =
-        new rviz::BoolProperty("Show Wireframe", true, "Show Wireframe", this, SLOT(updateWireframe()), this);
+        new rviz_common::BoolProperty("Show Wireframe", true, "Show Wireframe", this, SLOT(updateWireframe()), this);
 
     // wireframe color property
-    m_wireframeColor = new rviz::ColorProperty("Wireframe Color", QColor(0, 0, 0), "The color of the wireframe.",
+    m_wireframeColor = new rviz_common::ColorProperty("Wireframe Color", QColor(0, 0, 0), "The color of the wireframe.",
                                                m_showWireframe, SLOT(updateWireframe()), this);
     // wireframe alpha property
-    m_wireframeAlpha = new rviz::FloatProperty("Wireframe Alpha", 1.0, "The alpha-value of the wireframe",
+    m_wireframeAlpha = new rviz_common::FloatProperty("Wireframe Alpha", 1.0, "The alpha-value of the wireframe",
                                                m_showWireframe, SLOT(updateWireframe()), this);
     m_wireframeAlpha->setMin(0);
     m_wireframeAlpha->setMax(1);
@@ -183,15 +188,15 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
 
   // Normals
   {
-    m_showNormals = new rviz::BoolProperty("Show Normals", true, "Show Normals", this, SLOT(updateNormals()), this);
+    m_showNormals = new rviz_common::BoolProperty("Show Normals", true, "Show Normals", this, SLOT(updateNormals()), this);
 
-    m_normalsColor = new rviz::ColorProperty("Normals Color", QColor(255, 0, 255), "The color of the normals.",
+    m_normalsColor = new rviz_common::ColorProperty("Normals Color", QColor(255, 0, 255), "The color of the normals.",
                                              m_showNormals, SLOT(updateNormalsColor()), this);
-    m_normalsAlpha = new rviz::FloatProperty("Normals Alpha", 1.0, "The alpha-value of the normals", m_showNormals,
+    m_normalsAlpha = new rviz_common::FloatProperty("Normals Alpha", 1.0, "The alpha-value of the normals", m_showNormals,
                                              SLOT(updateNormalsColor()), this);
     m_normalsAlpha->setMin(0);
     m_normalsAlpha->setMax(1);
-    m_scalingFactor = new rviz::FloatProperty("Normals Scaling Factor", 0.1, "Scaling factor of the normals",
+    m_scalingFactor = new rviz_common::FloatProperty("Normals Scaling Factor", 0.1, "Scaling factor of the normals",
                                               m_showNormals, SLOT(updateNormalsSize()), this);
   }
 }
@@ -203,20 +208,20 @@ MeshDisplay::~MeshDisplay()
 void MeshDisplay::onInitialize()
 {
   m_tfMeshFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshGeometryStamped>(
-      *rviz::Display::context_->getTF2BufferPtr(), rviz::Display::fixed_frame_.toStdString(), 2,
-      rviz::Display::update_nh_);
+      *rviz_common::Display::context_->getTF2BufferPtr(), rviz_common::Display::fixed_frame_.toStdString(), 2,
+      rviz_common::Display::update_nh_);
   m_tfMeshFilter->connectInput(m_meshSubscriber);
   context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfMeshFilter, this);
 
   m_tfVertexColorsFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshVertexColorsStamped>(
-      *rviz::Display::context_->getTF2BufferPtr(), rviz::Display::fixed_frame_.toStdString(), 10,
-      rviz::Display::update_nh_);
+      *rviz_common::Display::context_->getTF2BufferPtr(), rviz_common::Display::fixed_frame_.toStdString(), 10,
+      rviz_common::Display::update_nh_);
   m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
   context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexColorsFilter, this);
 
   m_tfVertexCostsFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshVertexCostsStamped>(
-      *rviz::Display::context_->getTF2BufferPtr(), rviz::Display::fixed_frame_.toStdString(), 10,
-      rviz::Display::update_nh_);
+      *rviz_common::Display::context_->getTF2BufferPtr(), rviz_common::Display::fixed_frame_.toStdString(), 10,
+      rviz_common::Display::update_nh_);
   m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
   context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexCostsFilter, this);
 
@@ -267,11 +272,11 @@ void MeshDisplay::subscribe()
     m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 1);
     m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
     m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 4);
-    setStatus(rviz::StatusProperty::Ok, "Topic", "OK");
+    setStatus(rviz_common::StatusProperty::Ok, "Topic", "OK");
   }
   catch (ros::Exception& e)
   {
-    setStatus(rviz::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
+    setStatus(rviz_common::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
   }
 
   // Nothing
@@ -344,7 +349,7 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
     updateNormals();
     updateWireframe();
   }
-  setStatus(rviz::StatusProperty::Ok, "Display", "");
+  setStatus(rviz_common::StatusProperty::Ok, "Display", "");
 }
 
 void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
@@ -631,7 +636,7 @@ void MeshDisplay::updateMaterialAndTextureServices()
   if (!ros::names::validate(m_materialServiceName->getStdString(), error) ||
       !ros::names::validate(m_textureServiceName->getStdString(), error))
   {
-    setStatus(rviz::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
+    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
     return;
   }
 
@@ -644,16 +649,16 @@ void MeshDisplay::updateMaterialAndTextureServices()
     requestMaterials(m_lastUuid);
     if (m_textureClient.exists())
     {
-      setStatus(rviz::StatusProperty::Ok, "Services", "Material and Texture Service OK");
+      setStatus(rviz_common::StatusProperty::Ok, "Services", "Material and Texture Service OK");
     }
     else
     {
-      setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
+      setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
     }
   }
   else
   {
-    setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
+    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
   }
 }
 
@@ -668,7 +673,7 @@ void MeshDisplay::updateVertexColorService()
   std::string error;
   if (!ros::names::validate(m_vertexColorServiceName->getStdString(), error))
   {
-    setStatus(rviz::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
+    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
     return;
   }
 
@@ -677,12 +682,12 @@ void MeshDisplay::updateVertexColorService()
   m_vertexColorClient = n.serviceClient<mesh_msgs::GetVertexColors>(m_vertexColorServiceName->getStdString());
   if (m_vertexColorClient.exists())
   {
-    setStatus(rviz::StatusProperty::Ok, "Services", "Vertex Color Service OK");
+    setStatus(rviz_common::StatusProperty::Ok, "Services", "Vertex Color Service OK");
     requestVertexColors(m_lastUuid);
   }
   else
   {
-    setStatus(rviz::StatusProperty::Warn, "Services", QString("The specified Vertex Color Service doesn't exist."));
+    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Vertex Color Service doesn't exist."));
   }
 }
 
@@ -747,7 +752,7 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
                                                  orientation))
   {
     ROS_ERROR("Error transforming from frame '%s' to frame '%s'", meshMsg->header.frame_id.c_str(),
-              qPrintable(rviz::Display::fixed_frame_));
+              qPrintable(rviz_common::Display::fixed_frame_));
     return;
   }
 
@@ -798,7 +803,7 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
 void MeshDisplay::incomingGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
 {
   m_messagesReceived++;
-  setStatus(rviz::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
+  setStatus(rviz_common::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
   processMessage(meshMsg);
 }
 
@@ -991,5 +996,5 @@ std::shared_ptr<MeshVisual> MeshDisplay::addNewVisual()
 
 }  // End namespace rviz_map_plugin
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::MeshDisplay, rviz::Display)
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::MeshDisplay, rviz_common::Display)

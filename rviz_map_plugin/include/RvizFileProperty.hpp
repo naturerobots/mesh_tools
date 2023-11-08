@@ -49,7 +49,7 @@
 #define RVIZ_FILE_PROPERTY_HPP
 
 #include <string>
-#include <rviz/properties/property.h>
+#include <rviz_common/properties/property.hpp>
 
 namespace rviz
 {

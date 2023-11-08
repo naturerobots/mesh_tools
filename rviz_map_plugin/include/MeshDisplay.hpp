@@ -69,25 +69,25 @@
 #include <QApplication>
 #include <QIcon>
 
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <rviz/viewport_mouse_event.h>
-#include <rviz/visualization_manager.h>
-#include <rviz/visualization_frame.h>
-#include <rviz/geometry.h>
+// #include <ros/ros.h>
+// #include <ros/console.h>
+#include <rviz_common/viewport_mouse_event.hpp>
+#include <rviz_common/visualization_manager.hpp>
+#include <rviz_common/visualization_frame.hpp>
+#include <rviz_rendering/geometry.hpp>
 
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-#include <rviz/display.h>
+#include <rviz_common/display_context.hpp>
+#include <rviz_common/frame_manager_iface.hpp>
+#include <rviz_common/display.hpp>
 
 #ifndef Q_MOC_RUN
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/cache.h>
+// #include <message_filters/subscriber.h>
+// #include <message_filters/time_synchronizer.h>
+// #include <message_filters/cache.h>
 
 #include <tf2_ros/message_filter.h>
 
-#include <rviz/mesh_loader.h>
+#include <rviz_rendering/mesh_loader.hpp>
 
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneNode.h>
@@ -98,7 +98,9 @@
 
 #endif
 
-namespace rviz
+namespace rviz_common
+{
+namespace properties
 {
 // Forward declaration
 class BoolProperty;
@@ -108,8 +110,8 @@ class IntProperty;
 class RosTopicProperty;
 class EnumProperty;
 class StringProperty;
-
-}  // End namespace rviz
+} // end namespace properties
+} // end namespace rviz_common
 
 namespace rviz_map_plugin
 {
@@ -125,7 +127,7 @@ class MeshVisual;
  * @class MeshDisplay
  * @brief Display for showing the mesh in different modes
  */
-class MeshDisplay : public rviz::Display
+class MeshDisplay : public rviz_common::Display
 {
   Q_OBJECT
 
@@ -401,73 +403,73 @@ private:
   std::queue<std::shared_ptr<MeshVisual>> m_visuals;
 
   /// Property to handle topic for meshMsg
-  rviz::RosTopicProperty* m_meshTopic;
+  rviz_common::properties::RosTopicProperty* m_meshTopic;
 
   /// Property to handle buffer size
-  rviz::IntProperty* m_bufferSize;
+  rviz_common::properties::IntProperty* m_bufferSize;
 
   /// Property to select the display type
-  rviz::EnumProperty* m_displayType;
+  rviz_common::properties::EnumProperty* m_displayType;
 
   /// Property to set faces color
-  rviz::ColorProperty* m_facesColor;
+  rviz_common::properties::ColorProperty* m_facesColor;
 
   /// Property to set faces transparency
-  rviz::FloatProperty* m_facesAlpha;
+  rviz_common::properties::FloatProperty* m_facesAlpha;
 
   /// Property to handle topic for vertex colors
-  rviz::RosTopicProperty* m_vertexColorsTopic;
+  rviz_common::properties::RosTopicProperty* m_vertexColorsTopic;
 
   /// Property to handle service name for vertexColors
-  rviz::StringProperty* m_vertexColorServiceName;
+  rviz_common::properties::StringProperty* m_vertexColorServiceName;
 
   /// Property to only show textured faces when texturizing is enabled
-  rviz::BoolProperty* m_showTexturedFacesOnly;
+  rviz_common::properties::BoolProperty* m_showTexturedFacesOnly;
 
   /// Property to handle service name for materials
-  rviz::StringProperty* m_materialServiceName;
+  rviz_common::properties::StringProperty* m_materialServiceName;
 
   /// Property to handle service name for textures
-  rviz::StringProperty* m_textureServiceName;
+  rviz_common::properties::StringProperty* m_textureServiceName;
 
   /// Property for selecting the color type for cost display
-  rviz::EnumProperty* m_costColorType;
+  rviz_common::properties::EnumProperty* m_costColorType;
 
   /// Property to handle topic for vertex cost maps
-  rviz::RosTopicProperty* m_vertexCostsTopic;
+  rviz_common::properties::RosTopicProperty* m_vertexCostsTopic;
 
   /// Property to select different types of vertex cost maps to be shown
-  rviz::EnumProperty* m_selectVertexCostMap;
+  rviz_common::properties::EnumProperty* m_selectVertexCostMap;
 
   /// Property for using custom limits for cost display
-  rviz::BoolProperty* m_costUseCustomLimits;
+  rviz_common::properties::BoolProperty* m_costUseCustomLimits;
 
   /// Property for setting the lower limit of cost display
-  rviz::FloatProperty* m_costLowerLimit;
+  rviz_common::properties::FloatProperty* m_costLowerLimit;
 
   /// Property for setting the upper limit of cost display
-  rviz::FloatProperty* m_costUpperLimit;
+  rviz_common::properties::FloatProperty* m_costUpperLimit;
 
   /// Property to select the normals
-  rviz::BoolProperty* m_showNormals;
+  rviz_common::properties::BoolProperty* m_showNormals;
 
   /// Property to set the color of the normals
-  rviz::ColorProperty* m_normalsColor;
+  rviz_common::properties::ColorProperty* m_normalsColor;
 
   /// Property to set the transparency of the normals
-  rviz::FloatProperty* m_normalsAlpha;
+  rviz_common::properties::FloatProperty* m_normalsAlpha;
 
   /// Property to set the size of the normals
-  rviz::FloatProperty* m_scalingFactor;
+  rviz_common::properties::FloatProperty* m_scalingFactor;
 
   /// Property to select the wireframe
-  rviz::BoolProperty* m_showWireframe;
+  rviz_common::properties::BoolProperty* m_showWireframe;
 
   /// Property to set wireframe color
-  rviz::ColorProperty* m_wireframeColor;
+  rviz_common::properties::ColorProperty* m_wireframeColor;
 
   /// Property to set wireframe transparency
-  rviz::FloatProperty* m_wireframeAlpha;
+  rviz_common::properties::FloatProperty* m_wireframeAlpha;
 
   /// Cache for received vertex cost messages
   std::map<std::string, std::vector<float>> m_costCache;

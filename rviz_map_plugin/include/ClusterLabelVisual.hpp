@@ -50,12 +50,12 @@
 
 #include <Types.hpp>
 
-#include <ros/ros.h>
+// #include <ros/ros.h>
 
-#include <rviz/display.h>
+#include <rviz_common/display.hpp>
 
-#include <mesh_msgs/MeshGeometryStamped.h>
-#include <mesh_msgs/MeshGeometry.h>
+#include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
+#include <mesh_msgs/msg/mesh_geometry.hpp>
 #include <OGRE/OgreColourValue.h>
 #include <OGRE/OgrePrerequisites.h>
 #include <OGRE/OgreMesh.h>
@@ -86,7 +86,7 @@ public:
    * @param context The context that contains the display information.
    * @param labelId The label id (that has to be unique)
    */
-  ClusterLabelVisual(rviz::DisplayContext* context, std::string labelId);
+  ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId);
 
   /**
    * @brief Constructor
@@ -95,7 +95,7 @@ public:
    * @param labelId The label id (that has to be unique)
    * @param geometry A shared pointer to the geometry to which the labels belong
    */
-  ClusterLabelVisual(rviz::DisplayContext* context, std::string labelId, std::shared_ptr<Geometry> geometry);
+  ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId, std::shared_ptr<Geometry> geometry);
 
   /**
    * @brief Destructor
@@ -158,7 +158,7 @@ public:
 private:
   void initMaterial();
 
-  rviz::DisplayContext* m_displayContext;
+  rviz_common::DisplayContext* m_displayContext;
   Ogre::SceneNode* m_sceneNode;
   std::string m_labelId;
 

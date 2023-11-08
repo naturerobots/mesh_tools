@@ -70,7 +70,7 @@ namespace rviz_map_plugin
 {
 MapDisplay::MapDisplay()
 {
-  m_mapFilePath = new rviz::FileProperty("Map file path", "/path/to/map.h5", "Absolute path of the map file", this,
+  m_mapFilePath = new rviz_common::FileProperty("Map file path", "/path/to/map.h5", "Absolute path of the map file", this,
                                          SLOT(updateMap()));
 }
 
@@ -93,14 +93,14 @@ std::shared_ptr<Geometry> MapDisplay::getGeometry()
 // =====================================================================================================================
 // Callbacks
 
-rviz::Display* MapDisplay::createDisplay(const QString& class_id)
+rviz_common::Display* MapDisplay::createDisplay(const QString& class_id)
 {
-  rviz::DisplayFactory* factory = context_->getDisplayFactory();
+  rviz_common::DisplayFactory* factory = context_->getDisplayFactory();
   QString error;
-  rviz::Display* disp = factory->make(class_id, &error);
+  rviz_common::Display* disp = factory->make(class_id, &error);
   if (!disp)
   {
-    return new rviz::FailedDisplay(class_id, error);
+    return new rviz_common::FailedDisplay(class_id, error);
   }
   return disp;
 }
@@ -150,12 +150,12 @@ void MapDisplay::onDisable()
 // =====================================================================================================================
 // Callbacks triggered from UI events (mostly)
 
-void MapDisplay::load(const rviz::Config& config)
+void MapDisplay::load(const rviz_common::Config& config)
 {
   std::string name = this->getName().toStdString();
   std::cout << name << ": LOAD CONFIG..." << std::endl;
 
-  rviz::Config config2 = config;
+  rviz_common::Config config2 = config;
 
   { // Override with ros params
     std::stringstream ss;
@@ -170,7 +170,7 @@ void MapDisplay::load(const rviz::Config& config)
     }
   }
 
-  rviz::Display::load(config2);
+  rviz_common::Display::load(config2);
   
   std::cout << name << ": LOAD CONFIG done." << std::endl;
 }
@@ -206,7 +206,7 @@ void MapDisplay::updateMap()
   m_clusterLabelDisplay->setData(m_geometry, m_clusterList);
 
   // All good
-  setStatus(rviz::StatusProperty::Ok, "Map", "");
+  setStatus(rviz_common::StatusProperty::Ok, "Map", "");
 
   m_map_file_loaded = m_mapFilePath->getFilename();
 }
@@ -245,13 +245,13 @@ bool MapDisplay::loadData()
   if (mapFile.empty())
   {
     ROS_WARN_STREAM("Map Display: No map file path specified!");
-    setStatus(rviz::StatusProperty::Warn, "Map", "No map file path specified!");
+    setStatus(rviz_common::StatusProperty::Warn, "Map", "No map file path specified!");
     return false;
   }
   if (!boost::filesystem::exists(mapFile))
   {
     ROS_WARN_STREAM("Map Display: Specified map file does not exist!");
-    setStatus(rviz::StatusProperty::Warn, "Map", "Specified map file does not exist!");
+    setStatus(rviz_common::StatusProperty::Warn, "Map", "Specified map file does not exist!");
     return false;
   }
   
@@ -439,11 +439,11 @@ bool MapDisplay::loadData()
   catch (...)
   {
     ROS_ERROR_STREAM("An unexpected error occurred while using Pluto Map IO");
-    setStatus(rviz::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
+    setStatus(rviz_common::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
     return false;
   }
 
-  setStatus(rviz::StatusProperty::Ok, "IO", "");
+  setStatus(rviz_common::StatusProperty::Ok, "IO", "");
 
   ROS_INFO("Map Display: Successfully loaded map.");
 
@@ -468,7 +468,7 @@ void MapDisplay::saveLabel(Cluster cluster)
     if (results.size() != 2)
     {
       ROS_ERROR_STREAM("Map Display: Illegal label name '" << label << "'");
-      setStatus(rviz::StatusProperty::Error, "Label", "Illegal label name!");
+      setStatus(rviz_common::StatusProperty::Error, "Label", "Illegal label name!");
       return;
     }
 
@@ -481,7 +481,7 @@ void MapDisplay::saveLabel(Cluster cluster)
     // Add to cluster list
     m_clusterList.push_back(Cluster(label, faces));
 
-    setStatus(rviz::StatusProperty::Ok, "Label", "Successfully saved label");
+    setStatus(rviz_common::StatusProperty::Ok, "Label", "Successfully saved label");
     ROS_INFO_STREAM("Map Display: Successfully added label to map.");
 
     // update the map to show the new label
@@ -489,11 +489,11 @@ void MapDisplay::saveLabel(Cluster cluster)
   }
   catch (...)
   {
-    setStatus(rviz::StatusProperty::Error, "Label", "Error while saving label");
+    setStatus(rviz_common::StatusProperty::Error, "Label", "Error while saving label");
   }
 }
 
 }  // End namespace rviz_map_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::MapDisplay, rviz::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::MapDisplay, rviz_common::Display)

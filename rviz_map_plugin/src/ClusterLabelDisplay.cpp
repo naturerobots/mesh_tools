@@ -92,25 +92,25 @@ Ogre::ColourValue getRainbowColor(float value)
 ClusterLabelDisplay::ClusterLabelDisplay()
 {
   m_activeVisualProperty =
-      new rviz::EnumProperty("Active label", "__NEW__", "Current active label. Can be edited with Cluster Label Tool",
+      new rviz_common::EnumProperty("Active label", "__NEW__", "Current active label. Can be edited with Cluster Label Tool",
                              this, SLOT(changeVisual()), this);
-  m_alphaProperty = new rviz::FloatProperty("Transparency", 1.0f,
+  m_alphaProperty = new rviz_common::FloatProperty("Transparency", 1.0f,
                                             "Transparency of the Labeled Cluster Visualization. 0.0 is fully "
                                             "transparent, 1.0 fully opaque",
                                             this, SLOT(updateColors()), this);
   m_alphaProperty->setMin(0.0f);
   m_alphaProperty->setMax(1.0f);
 
-  m_colorsProperty = new rviz::Property("Colors", "", "colors", this, SLOT(updateColors()), this);
+  m_colorsProperty = new rviz_common::Property("Colors", "", "colors", this, SLOT(updateColors()), this);
   m_colorsProperty->setReadOnly(true);
   m_sphereSizeProperty =
-      new rviz::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
-  m_phantomVisualProperty = new rviz::BoolProperty("Show Phantom", false,
+      new rviz_common::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
+  m_phantomVisualProperty = new rviz_common::BoolProperty("Show Phantom", false,
                                                    "Show a transparent silhouette of the whole mesh to help with "
                                                    "labeling",
                                                    this, SLOT(updatePhantomVisual()), this);
 
-  setStatus(rviz::StatusProperty::Error, "Display", "Cant be used without Map3D plugin");
+  setStatus(rviz_common::StatusProperty::Error, "Display", "Cant be used without Map3D plugin");
 }
 
 ClusterLabelDisplay::~ClusterLabelDisplay()
@@ -149,7 +149,7 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
   if (isEnabled())
     updateMap();
 
-  setStatus(rviz::StatusProperty::Ok, "Display", "");
+  setStatus(rviz_common::StatusProperty::Ok, "Display", "");
 }
 
 // =====================================================================================================================
@@ -224,7 +224,7 @@ void ClusterLabelDisplay::updateMap()
   m_tool->setDisplay(this);
 
   // All good
-  setStatus(rviz::StatusProperty::Ok, "Map", "");
+  setStatus(rviz_common::StatusProperty::Ok, "Map", "");
 }
 
 void ClusterLabelDisplay::updateColors()
@@ -267,7 +267,7 @@ void ClusterLabelDisplay::fillPropertyOptions()
 
     // Add color options
     Ogre::ColourValue rainbowColor = getRainbowColor((((float)i + 1) / m_clusterList.size()));
-    m_colorProperties.emplace_back(new rviz::ColorProperty(
+    m_colorProperties.emplace_back(new rviz_common::ColorProperty(
         QString::fromStdString(m_clusterList[i].name),
         QColor(rainbowColor.r * 255, rainbowColor.g * 255, rainbowColor.b * 255),
         QString::fromStdString(m_clusterList[i].name), m_colorsProperty, SLOT(updateColors()), this));
@@ -318,7 +318,7 @@ void ClusterLabelDisplay::createPhantomVisual()
 void ClusterLabelDisplay::initializeLabelTool()
 {
   // Check if the cluster label tool is already opened
-  rviz::ToolManager* toolManager = context_->getToolManager();
+  rviz_common::ToolManager* toolManager = context_->getToolManager();
   QStringList toolClasses = toolManager->getToolClasses();
   bool foundTool = false;
   for (int i = 0; i < toolClasses.size(); i++)
@@ -352,4 +352,4 @@ void ClusterLabelDisplay::addLabel(std::string label, std::vector<uint32_t> face
 }  // End namespace rviz_map_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelDisplay, rviz::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelDisplay, rviz_common::Display)

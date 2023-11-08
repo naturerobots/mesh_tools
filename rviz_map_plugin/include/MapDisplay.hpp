@@ -69,34 +69,34 @@
 #include <QIcon>
 #include <QString>
 
-#include <ros/ros.h>
-#include <ros/console.h>
-#include <rviz/viewport_mouse_event.h>
-#include <rviz/visualization_manager.h>
-#include <rviz/visualization_frame.h>
-#include <rviz/geometry.h>
+// #include <ros/ros.h>
+// #include <ros/console.h>
+#include <rviz_common/viewport_mouse_event.hpp>
+#include <rviz_common/visualization_manager.hpp>
+#include <rviz_common/visualization_frame.hpp>
+#include <rviz_rendering/geometry.hpp>
 
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-#include <rviz/display.h>
-#include <rviz/config.h>
+#include <rviz_common/display_context.hpp>
+#include <rviz_common/frame_manager_iface.hpp>
+#include <rviz_common/display.hpp>
+#include <rviz_common/config.hpp>
 
-#include <rviz/tool.h>
-#include <rviz/tool_manager.h>
-#include <rviz/display_group.h>
+#include <rviz_common/tool.hpp>
+#include <rviz_common/tool_manager.hpp>
+#include <rviz_common/display_group.hpp>
 
-#include <std_msgs/Int32.h>
-#include <geometry_msgs/Point32.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <mesh_msgs/MeshGeometryStamped.h>
-#include <mesh_msgs/MeshGeometry.h>
-#include <mesh_msgs/GetGeometry.h>
-#include <mesh_msgs/GetLabeledClusters.h>
+#include <std_msgs/msg/int32.hpp>
+#include <geometry_msgs/msg/point32.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
+#include <mesh_msgs/msg/mesh_geometry.hpp>
+#include <mesh_msgs/srv/get_geometry.hpp>
+#include <mesh_msgs/srv/get_labeled_clusters.hpp>
 
 #include <hdf5_map_io/hdf5_map_io.h>
 
 #ifndef Q_MOC_RUN
-#include <rviz/mesh_loader.h>
+#include <rviz_rendering/mesh_loader.h>
 
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneNode.h>
@@ -136,7 +136,7 @@ using std::vector;
  * @class MapDisplay
  * @brief Master display for the Mesh- and Cluster- subdisplays. THis implementation uses HDF5 as it's data source
  */
-class MapDisplay : public rviz::Display
+class MapDisplay : public rviz_common::Display
 {
   Q_OBJECT
 
@@ -151,7 +151,7 @@ public:
    */
   ~MapDisplay();
 
-  virtual void load(const rviz::Config& config);
+  virtual void load(const rviz_common::Config& config);
 
 public Q_SLOTS:
 
@@ -218,7 +218,7 @@ private:
   std::shared_ptr<ros::NodeHandle> m_nh_p;
 
   /// Path to map file
-  rviz::FileProperty* m_mapFilePath;
+  rviz_common::FileProperty* m_mapFilePath;
   std::string m_map_file_loaded;
 
   /// Subdisplay: ClusterLabel (for showing the clusters)
@@ -231,7 +231,7 @@ private:
    * @param class_id The class ID
    * @return Pointer to RViz display
    */
-  rviz::Display* createDisplay(const QString& class_id);
+  rviz_common::Display* createDisplay(const QString& class_id);
 };
 
 }  // end namespace rviz_map_plugin

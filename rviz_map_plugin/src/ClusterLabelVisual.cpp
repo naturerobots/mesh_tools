@@ -47,7 +47,7 @@
 
 #include <ClusterLabelVisual.hpp>
 
-#include <rviz/display_context.h>
+#include <rviz_common/display_context.hpp>
 
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreMaterialManager.h>
@@ -59,12 +59,12 @@
 
 namespace rviz_map_plugin
 {
-ClusterLabelVisual::ClusterLabelVisual(rviz::DisplayContext* context, std::string labelId)
+ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId)
   : m_displayContext(context), m_labelId(labelId)
 {
 }
 
-ClusterLabelVisual::ClusterLabelVisual(rviz::DisplayContext* context, std::string labelId,
+ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId,
                                        std::shared_ptr<Geometry> geometry)
   : m_displayContext(context), m_labelId(labelId), m_geometry(geometry)
 {

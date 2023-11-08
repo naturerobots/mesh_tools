@@ -53,21 +53,21 @@
 #ifndef MESH_VISUAL_HPP
 #define MESH_VISUAL_HPP
 
-#include <mesh_msgs/MeshGeometryStamped.h>
-#include <mesh_msgs/MeshGeometry.h>
-#include <mesh_msgs/MeshVertexColorsStamped.h>
-#include <mesh_msgs/MeshVertexColors.h>
-#include <mesh_msgs/MeshVertexCostsStamped.h>
-#include <mesh_msgs/MeshVertexCosts.h>
-#include <mesh_msgs/MeshMaterialsStamped.h>
-#include <mesh_msgs/MeshMaterials.h>
-#include <mesh_msgs/MeshMaterial.h>
-#include <mesh_msgs/MeshTexture.h>
+#include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
+#include <mesh_msgs/msg/mesh_geometry.hpp>
+#include <mesh_msgs/msg/mesh_vertex_colors_stamped.hpp>
+#include <mesh_msgs/msg/mesh_vertex_colors.hpp>
+#include <mesh_msgs/msg/mesh_vertex_costs_stamped.hpp>
+#include <mesh_msgs/msg/mesh_vertex_costs.hpp>
+#include <mesh_msgs/msg/mesh_materials_stamped.hpp>
+#include <mesh_msgs/msg/mesh_materials.hpp>
+#include <mesh_msgs/msg/mesh_material.hpp>
+#include <mesh_msgs/msg/mesh_texture.hpp>
 
-#include <sensor_msgs/Image.h>
+#include <sensor_msgs/msg/image.h>
 
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
+#include <rviz_common/display_context.hpp>
+#include <rviz_common/frame_manager_iface.hpp>
 
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
@@ -105,7 +105,7 @@ public:
    * @param meshID The mesh id
    * @param randomID random number that will be used as part of the meshes UID
    */
-  MeshVisual(rviz::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID);
+  MeshVisual(rviz_common::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID);
 
   /**
    * @brief Destructor.
@@ -321,7 +321,7 @@ private:
   Ogre::SceneNode* m_sceneNode;
 
   /// The context that contains the display information.
-  rviz::DisplayContext* m_displayContext;
+  rviz_common::DisplayContext* m_displayContext;
 
   /// First ID of the created mesh
   size_t m_prefix;

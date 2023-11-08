@@ -60,7 +60,7 @@
 
 namespace rviz_map_plugin
 {
-ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) : rviz::Panel(parent)
+ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) : rviz_common::Panel(parent)
 {
   QHBoxLayout* clusterNameLayout = new QHBoxLayout();
   clusterNameLayout->addWidget(new QLabel("Cluster Name:"));
@@ -87,7 +87,7 @@ ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) : rviz::Panel(parent)
 void ClusterLabelPanel::onInitialize()
 {
   // Check if the cluster label tool is already opened
-  rviz::ToolManager* toolManager = vis_manager_->getToolManager();
+  rviz_common::ToolManager* toolManager = vis_manager_->getToolManager();
   QStringList toolClasses = toolManager->getToolClasses();
   bool foundTool = false;
   for (int i = 0; i < toolClasses.size(); i++)
@@ -132,15 +132,15 @@ void ClusterLabelPanel::resetFaces()
   m_tool->resetFaces();
 }
 
-void ClusterLabelPanel::save(rviz::Config config) const
+void ClusterLabelPanel::save(rviz_common::Config config) const
 {
-  rviz::Panel::save(config);
+  rviz_common::Panel::save(config);
   config.mapSetValue("ClusterName", m_clusterName);
 }
 
-void ClusterLabelPanel::load(const rviz::Config& config)
+void ClusterLabelPanel::load(const rviz_common::Config& config)
 {
-  rviz::Panel::load(config);
+  rviz_common::Panel::load(config);
   QString clusterName;
   if (config.mapGetString("ClusterName", &clusterName))
     ;
@@ -153,4 +153,4 @@ void ClusterLabelPanel::load(const rviz::Config& config)
 }  // End namespace rviz_map_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelPanel, rviz::Panel)
+PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelPanel, rviz_common::Panel)

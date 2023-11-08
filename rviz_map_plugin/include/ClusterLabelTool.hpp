@@ -70,23 +70,23 @@
 #include <QWidget>
 #include <QFrame>
 
-#include <ros/console.h>
-#include <rviz/viewport_mouse_event.h>
-#include <rviz/visualization_manager.h>
-#include <rviz/geometry.h>
+// #include <ros/console.h>
+#include <rviz_common/viewport_mouse_event.hpp>
+#include <rviz_common/visualization_manager.hpp>
+#include <rviz_rendering/geometry.hpp>
 
-#include <rviz/display_context.h>
-#include <rviz/frame_manager.h>
-#include <rviz/display.h>
+#include <rviz_common/display_context.hpp>
+#include <rviz_common/frame_manager_iface.hpp>
+#include <rviz_common/display.hpp>
 
-#include <rviz/tool.h>
-#include <rviz/tool_manager.h>
-#include <rviz/display_group.h>
+#include <rviz_common/tool.hpp>
+#include <rviz_common/tool_manager.hpp>
+#include <rviz_common/display_group.hpp>
 
-#include <mesh_msgs/MeshFaceClusterStamped.h>
+#include <mesh_msgs/msg/mesh_face_cluster_stamped.hpp>
 
 #ifndef Q_MOC_RUN
-#include <rviz/mesh_loader.h>
+#include <rviz_rendering/mesh_loader.hpp>
 
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneNode.h>
@@ -122,7 +122,7 @@ class ClusterLabelVisual;
  * @class ClusterLabelTool
  * @brief Tool for selecting faces
  */
-class ClusterLabelTool : public rviz::Tool
+class ClusterLabelTool : public rviz_common::Tool
 {
   Q_OBJECT
 public:
@@ -156,7 +156,7 @@ public:
    * @param event The mouse event
    * @return Exit code
    */
-  virtual int processMouseEvent(rviz::ViewportMouseEvent& event);
+  virtual int processMouseEvent(rviz_common::ViewportMouseEvent& event);
 
   /**
    * @brief Connects this tool with a given display
@@ -210,7 +210,7 @@ private:
   float m_sphereSize = 1.0f;
 
   // Selection Box
-  rviz::DisplayContext* m_displayContext;
+  rviz_common::DisplayContext* m_displayContext;
   Ogre::SceneNode* m_sceneNode;
   Ogre::ManualObject* m_selectionBox;
   Ogre::MaterialPtr m_selectionBoxMaterial;
@@ -223,13 +223,13 @@ private:
   std::vector<Ogre::Vector3> m_vertexPositions;
 
   void updateSelectionBox();
-  void selectionBoxStart(rviz::ViewportMouseEvent& event);
-  void selectionBoxMove(rviz::ViewportMouseEvent& event);
-  void selectMultipleFaces(rviz::ViewportMouseEvent& event, bool selectMode);
+  void selectionBoxStart(rviz_common::ViewportMouseEvent& event);
+  void selectionBoxMove(rviz_common::ViewportMouseEvent& event);
+  void selectMultipleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
   void selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume, bool selectMode);
-  void selectSingleFace(rviz::ViewportMouseEvent& event, bool selectMode);
+  void selectSingleFace(rviz_common::ViewportMouseEvent& event, bool selectMode);
   void selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode);
-  void selectSphereFaces(rviz::ViewportMouseEvent& event, bool selectMode);
+  void selectSphereFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
   void selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode);
   boost::optional<std::pair<uint32_t, float>> getClosestIntersectedFaceParallel(Ogre::Ray& ray);
 

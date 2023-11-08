@@ -93,7 +93,7 @@ Ogre::ColourValue getRainbowColor1(float value)
   return Ogre::ColourValue(r, g, b, 1.0f);
 }
 
-MeshVisual::MeshVisual(rviz::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID)
+MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID)
   : m_displayContext(context)
   , m_prefix(displayID)
   , m_postfix(meshID)

@@ -62,7 +62,7 @@
 #include <OGRE/OgreColourValue.h>
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelTool, rviz::Tool)
+PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelTool, rviz_common::Tool)
 
 using std::ifstream;
 using std::stringstream;
@@ -345,7 +345,7 @@ void ClusterLabelTool::updateSelectionBox()
   m_selectionBox->end();
 }
 
-void ClusterLabelTool::selectionBoxStart(rviz::ViewportMouseEvent& event)
+void ClusterLabelTool::selectionBoxStart(rviz_common::ViewportMouseEvent& event)
 {
   m_selectionStart.x = (float)event.x / event.viewport->getActualWidth();
   m_selectionStart.y = (float)event.y / event.viewport->getActualHeight();
@@ -354,14 +354,14 @@ void ClusterLabelTool::selectionBoxStart(rviz::ViewportMouseEvent& event)
   m_selectionBox->setVisible(true);
 }
 
-void ClusterLabelTool::selectionBoxMove(rviz::ViewportMouseEvent& event)
+void ClusterLabelTool::selectionBoxMove(rviz_common::ViewportMouseEvent& event)
 {
   m_selectionStop.x = (float)event.x / event.viewport->getActualWidth();
   m_selectionStop.y = (float)event.y / event.viewport->getActualHeight();
   updateSelectionBox();
 }
 
-void ClusterLabelTool::selectMultipleFaces(rviz::ViewportMouseEvent& event, bool selectMode)
+void ClusterLabelTool::selectMultipleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode)
 {
   m_selectionBox->setVisible(false);
 
@@ -454,7 +454,7 @@ void ClusterLabelTool::selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume
   }
 }
 
-void ClusterLabelTool::selectSingleFace(rviz::ViewportMouseEvent& event, bool selectMode)
+void ClusterLabelTool::selectSingleFace(rviz_common::ViewportMouseEvent& event, bool selectMode)
 {
   Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
       (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
@@ -522,7 +522,7 @@ void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
   }
 }
 
-void ClusterLabelTool::selectSphereFaces(rviz::ViewportMouseEvent& event, bool selectMode)
+void ClusterLabelTool::selectSphereFaces(rviz_common::ViewportMouseEvent& event, bool selectMode)
 {
   Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
       (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
@@ -648,7 +648,7 @@ void ClusterLabelTool::publishLabel(std::string label)
 }
 
 // Handling mouse event and mark the clicked faces
-int ClusterLabelTool::processMouseEvent(rviz::ViewportMouseEvent& event)
+int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
 {
   if (event.leftDown() && event.control())
   {
