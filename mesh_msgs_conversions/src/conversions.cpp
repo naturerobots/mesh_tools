@@ -36,12 +36,12 @@ namespace mesh_msgs_conversions
 
 bool fromMeshBufferToMeshGeometryMessage(
     const lvr2::MeshBufferPtr& buffer,
-    mesh_msgs::MeshGeometry& mesh_geometry
+    mesh_msgs::msg::MeshGeometry& mesh_geometry
 ){
     size_t n_vertices = buffer->numVertices();
     size_t n_faces = buffer->numFaces();
 
-    ROS_DEBUG_STREAM("Copy vertices from MeshBuffer to MeshGeometry.");
+    // RCLCPP_DEBUG_STREAM("Copy vertices from MeshBuffer to MeshGeometry.");
 
     // Copy vertices
     mesh_geometry.vertices.resize(n_vertices);
@@ -53,7 +53,7 @@ bool fromMeshBufferToMeshGeometryMessage(
         mesh_geometry.vertices[i].z = buffer_vertices[i * 3 + 2];
     }
 
-    ROS_DEBUG_STREAM("Copy faces from MeshBuffer to MeshGeometry.");
+    // RCLCPP_DEBUG_STREAM("Copy faces from MeshBuffer to MeshGeometry.");
 
     // Copy faces
     auto buffer_faces = buffer->getFaceIndices();
@@ -69,7 +69,7 @@ bool fromMeshBufferToMeshGeometryMessage(
     auto buffer_vertexnormals = buffer->getVertexNormals();
     if(buffer->hasVertexNormals())
     {
-        ROS_DEBUG_STREAM("Copy normals from MeshBuffer to MeshGeometry.");
+        // RCLCPP_DEBUG_STREAM("Copy normals from MeshBuffer to MeshGeometry.");
 
         mesh_geometry.vertex_normals.resize(n_vertices);
         for (unsigned int i = 0; i < n_vertices; i++) {
@@ -78,20 +78,20 @@ bool fromMeshBufferToMeshGeometryMessage(
             mesh_geometry.vertex_normals[i].z = buffer_vertexnormals[i * 3 + 2];
         }
     }else{
-        ROS_DEBUG_STREAM("No vertex normals given!");
+        // RCLCPP_DEBUG_STREAM("No vertex normals given!");
     }
 
-    ROS_DEBUG_STREAM("Successfully copied the MeshBuffer "
-                         "geometry to the MeshGeometry message.");
+    // RCLCPP_DEBUG_STREAM("Successfully copied the MeshBuffer "
+    //                      "geometry to the MeshGeometry message.");
     return true;
 }
 
 bool fromMeshBufferToMeshMessages(
     const lvr2::MeshBufferPtr& buffer,
-    mesh_msgs::MeshGeometry& mesh_geometry,
-    mesh_msgs::MeshMaterials& mesh_materials,
-    mesh_msgs::MeshVertexColors& mesh_vertex_colors,
-    boost::optional<std::vector<mesh_msgs::MeshTexture>&> texture_cache,
+    mesh_msgs::msg::MeshGeometry& mesh_geometry,
+    mesh_msgs::msg::MeshMaterials& mesh_materials,
+    mesh_msgs::msg::MeshVertexColors& mesh_vertex_colors,
+    boost::optional<std::vector<mesh_msgs::msg::MeshTexture>&> texture_cache,
     std::string mesh_uuid
 )
 {
@@ -198,7 +198,7 @@ bool fromMeshBufferToMeshMessages(
         texture_cache.get().resize(n_textures);
         for (unsigned int i = 0; i < n_textures; i++)
         {
-            sensor_msgs::Image image;
+            sensor_msgs::msg::Image image;
             sensor_msgs::fillImage(
                 image,
                 "rgb8",
@@ -207,7 +207,7 @@ bool fromMeshBufferToMeshMessages(
                 buffer_textures[i].m_width * 3, // step size
                 buffer_textures[i].m_data
             );
-            mesh_msgs::MeshTexture texture;
+            mesh_msgs::msg::MeshTexture texture;
             texture.uuid = mesh_uuid;
             texture.texture_index = i;
             texture.image = image;
@@ -220,14 +220,7 @@ bool fromMeshBufferToMeshMessages(
 }
 
 bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryConstPtr& mesh_geometry_ptr,
-    lvr2::MeshBuffer& buffer)
-{
-    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, buffer);
-}
-
-bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryConstPtr& mesh_geometry_ptr,
+    const std::shared_ptr<mesh_msgs::msg::MeshGeometry> mesh_geometry_ptr,
     lvr2::MeshBufferPtr& buffer_ptr)
 {
     if(!buffer_ptr) buffer_ptr = lvr2::MeshBufferPtr(new lvr2::MeshBuffer);
@@ -235,22 +228,7 @@ bool fromMeshGeometryToMeshBuffer(
 }
 
 bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryPtr& mesh_geometry_ptr,
-    lvr2::MeshBufferPtr& buffer_ptr)
-{
-    if(!buffer_ptr) buffer_ptr = lvr2::MeshBufferPtr(new lvr2::MeshBuffer);
-    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, *buffer_ptr);
-}
-
-bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryPtr& mesh_geometry_ptr,
-    lvr2::MeshBuffer& buffer)
-{
-    return fromMeshGeometryToMeshBuffer(*mesh_geometry_ptr, buffer);
-}
-
-bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometry& mesh_geometry,
+    const mesh_msgs::msg::MeshGeometry& mesh_geometry,
     lvr2::MeshBufferPtr& buffer_ptr)
 {
     if(!buffer_ptr) buffer_ptr = lvr2::MeshBufferPtr(new lvr2::MeshBuffer);
@@ -258,7 +236,7 @@ bool fromMeshGeometryToMeshBuffer(
 }
 
 bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometry& mesh_geometry,
+    const mesh_msgs::msg::MeshGeometry& mesh_geometry,
     lvr2::MeshBuffer& buffer)
 {
 
@@ -372,7 +350,9 @@ void removeDuplicates(lvr2::MeshBuffer& buffer)
 }
 */
  
-static inline bool hasCloudChannel(const sensor_msgs::PointCloud2& cloud, const std::string& field_name)
+static inline bool hasCloudChannel(
+    const sensor_msgs::msg::PointCloud2& cloud, 
+    const std::string& field_name)
 {
     // Get the index we need
     for (size_t d = 0; d < cloud.fields.size(); ++d)
@@ -381,7 +361,9 @@ static inline bool hasCloudChannel(const sensor_msgs::PointCloud2& cloud, const 
     return false;
 }
 
-bool fromPointCloud2ToPointBuffer(const sensor_msgs::PointCloud2& cloud, lvr2::PointBuffer& buffer)
+bool fromPointCloud2ToPointBuffer(
+    const sensor_msgs::msg::PointCloud2& cloud, 
+    lvr2::PointBuffer& buffer)
 {
     size_t size = cloud.height * cloud.width;
 
@@ -536,7 +518,7 @@ bool fromPointCloud2ToPointBuffer(const sensor_msgs::PointCloud2& cloud, lvr2::P
 }
 
 bool fromMeshGeometryMessageToMeshBuffer(
-    const mesh_msgs::MeshGeometry& mesh_geometry,
+    const mesh_msgs::msg::MeshGeometry& mesh_geometry,
     const lvr2::MeshBufferPtr& buffer
 )
 {
@@ -580,20 +562,26 @@ bool fromMeshGeometryMessageToMeshBuffer(
     }
     else
     {
-        ROS_ERROR_STREAM("Number of normals (" << mesh_geometry.vertex_normals.size()
+        // RCLCPP_ERROR_STREAM("Number of normals (" << mesh_geometry.vertex_normals.size()
+        //   << ") must be equal to number of vertices (" << mesh_geometry.vertices.size()
+        //   << "), ignore normals!");
+        std::cerr << "Number of normals (" << mesh_geometry.vertex_normals.size()
           << ") must be equal to number of vertices (" << mesh_geometry.vertices.size()
-          << "), ignore normals!");
+          << "), ignore normals!" << std::endl;
     }
     return true;
 }
 
-void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string frame, sensor_msgs::PointCloud2Ptr& cloud) 
+void PointBufferToPointCloud2(
+    const lvr2::PointBufferPtr& buffer, 
+    std::string frame, 
+    std::shared_ptr<sensor_msgs::msg::PointCloud2>& cloud) 
 { 
   // the offset will be updated by addPointField
-  cloud->header.stamp = ros::Time::now();
+  cloud->header.stamp = rclcpp::Time();
   cloud->header.frame_id = frame;
 
-  ros::Rate r(60);
+//   ros::Rate r(60);
 
   int type;
   std::map<std::string, lvr2::Channel<float> > floatChannels;
@@ -613,9 +601,9 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
     {
       size = channelPair.second.numElements();
       int p_offset = 0;
-      p_offset = addPointField(*cloud, "x", 1, sensor_msgs::PointField::FLOAT32, p_offset);
-      p_offset = addPointField(*cloud, "y", 1, sensor_msgs::PointField::FLOAT32, p_offset);
-      p_offset = addPointField(*cloud, "z", 1, sensor_msgs::PointField::FLOAT32, p_offset);
+      p_offset = addPointField(*cloud, "x", 1, sensor_msgs::msg::PointField::FLOAT32, p_offset);
+      p_offset = addPointField(*cloud, "y", 1, sensor_msgs::msg::PointField::FLOAT32, p_offset);
+      p_offset = addPointField(*cloud, "z", 1, sensor_msgs::msg::PointField::FLOAT32, p_offset);
       p_offset += sizeof(float);
       cloud->point_step = offset;
       for(auto channelPair: uCharChannels)
@@ -623,7 +611,7 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
           if(channelPair.first == "colors")
           {
 
-              offset = addPointField(*cloud, "rgb", channelPair.second.width(), sensor_msgs::PointField::FLOAT32, offset);
+              offset = addPointField(*cloud, "rgb", channelPair.second.width(), sensor_msgs::msg::PointField::FLOAT32, offset);
               cloud->point_step = offset;
           }
       }
@@ -668,7 +656,8 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
   cloud->width = size;
 
  
-  ROS_INFO("Starting conversion.");
+//   RCLCPP_INFO("Starting conversion.");
+  std::cout << "Starting conversion." << std::endl;
   for(auto field: cloud->fields)
   {
     // Points is a special case...
@@ -678,7 +667,7 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
       //auto iter_x  = floatIters.at("x");
       //auto iter_y  = floatIters.at("y");
       //auto iter_z  = floatIters.at("z");
-      #pragma omp parallel for
+
       for(size_t i = 0; i < size; ++i)
       {
         unsigned char* ptr = &(cloud->data[cloud->point_step * i]);
@@ -693,7 +682,7 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
     }
     else
     {
-      if(field.datatype == sensor_msgs::PointField::FLOAT32)
+      if(field.datatype == sensor_msgs::msg::PointField::FLOAT32)
       {
         std::string name = field.name;
         if(name == "rgb")
@@ -701,7 +690,7 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
             name = "colors";
             auto channel = uCharChannels.at(name);
             //auto iter = uCharIters.at(field.name);
-#pragma omp parallel for
+            
             for(size_t i = 0; i < size; ++i)
             {
                 unsigned char* ptr = &(cloud->data[cloud->point_step * i]) + field.offset;
@@ -720,7 +709,7 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
         // ELSE
         auto channel = floatChannels.at(field.name);
         //auto iter = floatIters.at(field.name);
-        #pragma omp parallel for
+        
         for(size_t i = 0; i < size; ++i)
         {
           unsigned char* ptr = &(cloud->data[cloud->point_step * i]) + field.offset;
@@ -731,21 +720,23 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
           }
         }
       }
-      else if (field.datatype == sensor_msgs::PointField::UINT8)
+      else if (field.datatype == sensor_msgs::msg::PointField::UINT8)
       {
       }
     }
   }
-  ROS_INFO("DONE");
+//   RCLCPP_INFO("DONE");
 }
 
-void PointCloud2ToPointBuffer(const sensor_msgs::PointCloud2Ptr& cloud, lvr2::PointBufferPtr& buffer) 
+void PointCloud2ToPointBuffer(
+    const std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud,
+    lvr2::PointBufferPtr& buffer) 
 {
    buffer = lvr2::PointBufferPtr(new lvr2::PointBuffer());
 
   for(auto field : cloud->fields)
   {
-    if(field.datatype == sensor_msgs::PointField::FLOAT32)
+    if(field.datatype == sensor_msgs::msg::PointField::FLOAT32)
     {
       if(field.name == "x" || field.name == "y" || field.name == "z")
       {
@@ -778,7 +769,6 @@ void PointCloud2ToPointBuffer(const sensor_msgs::PointCloud2Ptr& cloud, lvr2::Po
       buffer->setPointArray(points, cloud->width * cloud->height);
       channel = buffer->getChannel<float>("points");
 
-      #pragma omp parallel for
       for(size_t i = 0; i < (cloud->width * cloud->height); ++i)
       {
         unsigned char* ptr = &(cloud->data[cloud->point_step * i]);
@@ -790,17 +780,17 @@ void PointCloud2ToPointBuffer(const sensor_msgs::PointCloud2Ptr& cloud, lvr2::Po
     }
     else
     {
-      if(field.datatype == sensor_msgs::PointField::FLOAT32)
+      if(field.datatype == sensor_msgs::msg::PointField::FLOAT32)
       {
         auto channel = buffer->getChannel<float>(field.name);
 
         if(!channel)
         {
-          ROS_INFO("Channel %s missing", field.name.c_str());
+          std::cout << "Channel " << field.name << " missing" << std::endl;
+        //   RCLCPP_INFO("Channel %s missing", field.name.c_str());
           continue;
         }
 
-        #pragma omp parallel for
         for(size_t i = 0; i < (cloud->width * cloud->height); ++i)
         {
           unsigned char* ptr = &(cloud->data[cloud->point_step * i]) + field.offset;
@@ -810,17 +800,17 @@ void PointCloud2ToPointBuffer(const sensor_msgs::PointCloud2Ptr& cloud, lvr2::Po
           }
         }
       }
-      else if (field.datatype == sensor_msgs::PointField::UINT8)
+      else if (field.datatype == sensor_msgs::msg::PointField::UINT8)
       {
         auto channel = buffer->getChannel<unsigned char>(field.name);
 
         if(!channel)
         {
-          ROS_INFO("Channel %s missing", field.name.c_str());
+        //   RCLCPP_INFO("Channel %s missing", field.name.c_str());
+          std::cout << "Channel " << field.name << " missing" << std::endl; 
           continue;
         }
 
-        #pragma omp parallel for
         for(size_t i = 0; i < (cloud->width * cloud->height); ++i)
         {
           unsigned char* ptr = &(cloud->data[cloud->point_step * i]) + field.offset;
