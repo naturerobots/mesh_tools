@@ -69,6 +69,9 @@
 
 #include <rviz_common/display.hpp>
 
+#include "rclcpp/executor.hpp"
+#include "rmw/rmw.h"
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
@@ -205,6 +208,7 @@ MeshDisplay::MeshDisplay()
 
 MeshDisplay::~MeshDisplay()
 {
+  unsubscribe();
 }
 
 void MeshDisplay::onInitialize()
@@ -278,11 +282,11 @@ void MeshDisplay::subscribe()
     m_meshSubscriber.subscribe(update_nh_, m_meshTopic->getTopicStd(), 1);
     m_vertexColorsSubscriber.subscribe(update_nh_, m_vertexColorsTopic->getTopicStd(), 1);
     m_vertexCostsSubscriber.subscribe(update_nh_, m_vertexCostsTopic->getTopicStd(), 4);
-    setStatus(rviz_common::StatusProperty::Ok, "Topic", "OK");
+    setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
   }
   catch (ros::Exception& e)
   {
-    setStatus(rviz_common::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
+    setStatus(rviz_common::properties::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
   }
 
   // Nothing
@@ -292,14 +296,14 @@ void MeshDisplay::subscribe()
   }
   else
   {
-    m_meshSynchronizer = new message_filters::Cache<mesh_msgs::MeshGeometryStamped>(m_meshSubscriber, 10);
-    m_meshSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingGeometry, this, _1));
+    m_meshSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshGeometryStamped>(m_meshSubscriber, 10);
+    m_meshSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingGeometry, this, _1));
 
-    m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
-    m_colorsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexColors, this, _1));
+    m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
+    m_colorsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexColors, this, _1));
 
-    m_costsSynchronizer = new message_filters::Cache<mesh_msgs::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
-    m_costsSynchronizer->registerCallback(boost::bind(&MeshDisplay::incomingVertexCosts, this, _1));
+    m_costsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
+    m_costsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
   }
 
   initialServiceCall();
@@ -355,7 +359,7 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
     updateNormals();
     updateWireframe();
   }
-  setStatus(rviz_common::StatusProperty::Ok, "Display", "");
+  setStatus(rviz_common::properties::StatusProperty::Ok, "Display", "");
 }
 
 void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
@@ -435,7 +439,7 @@ void MeshDisplay::updateBufferSize()
 
 void MeshDisplay::updateMesh()
 {
-  RCLCPP_INFO("Mesh Display: Update");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Mesh Display: Update");
 
   bool showFaces = false;
   bool showTextures = false;
@@ -638,17 +642,14 @@ void MeshDisplay::updateMaterialAndTextureServices()
   }
 
   // Check if the service names are valid
-  std::string error;
-  if (!ros::names::validate(m_materialServiceName->getStdString(), error) ||
-      !ros::names::validate(m_textureServiceName->getStdString(), error))
+  if (rmw_validate_full_topic_name(m_materialServiceName->getStdString(), nullptr, nullptr) != RMW_TOPIC_VALID ||
+      rmw_validate_full_topic_name(m_textureServiceName->getStdString(), nullptr, nullptr) != RMW_TOPIC_VALID )
   {
-    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
     return;
   }
 
   // Update material and texture service clients
-  ros::NodeHandle n;
-
   m_materialsClient = m_node->create_service<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
   m_textureClient = m_node->create_service<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
 
@@ -657,15 +658,15 @@ void MeshDisplay::updateMaterialAndTextureServices()
     requestMaterials(m_lastUuid);
     if (m_textureClient.exists())
     {
-      setStatus(rviz_common::StatusProperty::Ok, "Services", "Material and Texture Service OK");
+      setStatus(rviz_common::properties::StatusProperty::Ok, "Services", "Material and Texture Service OK");
     }
     else
     {
-      setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
+      setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
     }
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Unable to mesh_msgs::srv::GetMaterials service. Start vision_node first.");
-    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
   }
 }
 
@@ -678,23 +679,23 @@ void MeshDisplay::updateVertexColorService()
 
   // Check if the service name is valid
   std::string error;
-  if (!ros::names::validate(m_vertexColorServiceName->getStdString(), error))
-  {
-    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
+  
+  if (rmw_validate_full_topic_name(m_vertexColorServiceName->getStdString(), nullptr, nullptr) != RMW_TOPIC_VALID)
+  {    
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The service name contains an invalid character."));
     return;
   }
 
   // Update vertex color service client
-  ros::NodeHandle n;
-  m_vertexColorClient = n.serviceClient<mesh_msgs::GetVertexColors>(m_vertexColorServiceName->getStdString());
-  if (m_vertexColorClient.exists())
+  m_vertexColorClient = m_node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  if(m_vertexColorClient->wait_for_service(std::chrono::seconds(5)))
   {
-    setStatus(rviz_common::StatusProperty::Ok, "Services", "Vertex Color Service OK");
+    setStatus(rviz_common::properties::StatusProperty::Ok, "Services", "Vertex Color Service OK");
     requestVertexColors(m_lastUuid);
   }
   else
   {
-    setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Vertex Color Service doesn't exist."));
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The specified Vertex Color Service doesn't exist."));
   }
 }
 
@@ -809,7 +810,7 @@ void MeshDisplay::incomingGeometry(
   const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
   m_messagesReceived++;
-  setStatus(rviz_common::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
+  setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
   processMessage(meshMsg);
 }
 
@@ -835,13 +836,13 @@ void MeshDisplay::incomingVertexColors(
 void MeshDisplay::incomingVertexCosts(
   const mesh_msgs::msg::MeshVertexCostsStamped& costsStamped)
 {
-  if (costsStamped->uuid.compare(m_lastUuid) != 0)
+  if (costsStamped.uuid.compare(m_lastUuid) != 0)
   {
     RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Received vertex costs, but UUIDs dont match!");
     return;
   }
 
-  cacheVertexCosts(costsStamped->type, costsStamped->mesh_vertex_costs.costs);
+  cacheVertexCosts(costsStamped.type, costsStamped.mesh_vertex_costs.costs);
   updateVertexCosts();
 }
 
