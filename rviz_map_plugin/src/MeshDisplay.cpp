@@ -69,17 +69,18 @@
 
 #include <rviz_common/display.hpp>
 
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 namespace rviz_map_plugin
 {
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
-, m_node()
 {
   // mesh topic
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
-      "Geometry Topic", "", QString::fromStdString(ros::message_traits::datatype<mesh_msgs::MeshGeometryStamped>()),
+      "Geometry Topic", "", QString::fromStdString(ros::message_traits::datatype<mesh_msgs::msgs::MeshGeometryStamped>()),
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
 
   // buffer size / amount of meshes visualized
@@ -232,12 +233,15 @@ void MeshDisplay::onInitialize()
 
   // Initialize service clients
   // ros::NodeHandle n;
-  // m_node = 
-  m_vertexColorClient = n.serviceClient<mesh_msgs::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  m_node = std::make_shared<rclcpp::Node>("mesh_display"); // TODO: how to name this? What if multiple MeshDisplay instances exists?  
+  m_vertexColorClient = m_node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  m_materialsClient = m_node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
+  m_textureClient = m_node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
+  m_uuidClient = m_node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
+  m_geometryClient = m_node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
 
-  m_materialsClient = n.serviceClient<mesh_msgs::GetMaterials>(m_materialServiceName->getStdString());
 
-  m_textureClient = n.serviceClient<mesh_msgs::GetTexture>(m_textureServiceName->getStdString());
+
 
   updateMesh();
   updateWireframe();
@@ -644,9 +648,11 @@ void MeshDisplay::updateMaterialAndTextureServices()
 
   // Update material and texture service clients
   ros::NodeHandle n;
-  m_materialsClient = n.serviceClient<mesh_msgs::GetMaterials>(m_materialServiceName->getStdString());
-  m_textureClient = n.serviceClient<mesh_msgs::GetTexture>(m_textureServiceName->getStdString());
-  if (m_materialsClient.exists())
+
+  m_materialsClient = m_node->create_service<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
+  m_textureClient = m_node->create_service<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
+
+  if(m_materialsClient->wait_for_service(std::chrono::seconds(5)))
   {
     requestMaterials(m_lastUuid);
     if (m_textureClient.exists())
@@ -657,9 +663,8 @@ void MeshDisplay::updateMaterialAndTextureServices()
     {
       setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
     }
-  }
-  else
-  {
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Unable to mesh_msgs::srv::GetMaterials service. Start vision_node first.");
     setStatus(rviz_common::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
   }
 }
@@ -703,44 +708,42 @@ void MeshDisplay::initialServiceCall()
     return;
   }
 
-  ros::NodeHandle n;
-  m_uuidClient = n.serviceClient<mesh_msgs::GetUUIDs>("get_uuid");
+  auto req_uuids = std::make_shared<mesh_msgs::srv::GetUUIDs::Request>();
+  auto fut_uuids = m_uuidClient->async_send_request(req_uuids);
 
-  mesh_msgs::GetUUIDs srv_uuids;
-  if (m_uuidClient.call(srv_uuids))
+  if(rclcpp::spin_until_future_complete(m_node->get_node_base_interface(), fut_uuids) == rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    std::vector<std::string> uuids = srv_uuids.response.uuids;
+    auto res_uuids = fut_uuids.get();
 
-    if (uuids.size() > 0)
+    std::vector<std::string> uuids = res_uuids->uuids;
+
+    if(uuids.size() > 0)
     {
       std::string uuid = uuids[0];
 
       RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Initial data available for UUID=" << uuid);
+      
+      // mesh_msgs::srv::GetGeometry srv_geometry;
+      auto req_geometry = std::make_shared<mesh_msgs::srv::GetGeometry::Request>();
+      req_geometry->uuid = uuid;
 
-      m_geometryClient = n.serviceClient<mesh_msgs::GetGeometry>("get_geometry");
-
-      mesh_msgs::GetGeometry srv_geometry;
-      srv_geometry.request.uuid = uuid;
-      if (m_geometryClient.call(srv_geometry))
+      auto fut_geometry = m_geometryClient->async_send_request(req_geometry);
+      if(rclcpp::spin_until_future_complete(m_node->get_node_base_interface(), fut_geometry) == rclcpp::executor::FutureReturnCode::SUCCESS)
       {
+        auto res_geometry = fut_geometry.get();
         RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Found geometry for UUID=" << uuid);
-        mesh_msgs::MeshGeometryStamped::ConstPtr geometry =
-            boost::make_shared<const mesh_msgs::MeshGeometryStamped>(srv_geometry.response.mesh_geometry_stamped);
-        processMessage(geometry);
-      }
-      else
-      {
-        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Could not load geometry. Waiting for callback to trigger ... ");
+        processMessage(srv_geometry.response.mesh_geometry_stamped);
+      } else {
+        RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Failed to receive mesh_msgs::srv::GetGeometry service response");
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Could not load geometry. Waiting for callback to trigger ... "); 
       }
     }
-  }
-  else
-  {
+  } else {
     RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "No initial data available, waiting for callback to trigger ...");
   }
 }
 
-void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
+void MeshDisplay::processMessage(const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
   if (m_ignoreMsgs)
   {
@@ -750,15 +753,15 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
   Ogre::Quaternion orientation;
   Ogre::Vector3 position;
 
-  if (!context_->getFrameManager()->getTransform(meshMsg->header.frame_id, meshMsg->header.stamp, position,
+  if (!context_->getFrameManager()->getTransform(meshMsg.header.frame_id, meshMsg.header.stamp, position,
                                                  orientation))
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Error transforming from frame '%s' to frame '%s'", meshMsg->header.frame_id.c_str(),
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Error transforming from frame '%s' to frame '%s'", meshMsg.header.frame_id.c_str(),
               qPrintable(rviz_common::Display::fixed_frame_));
     return;
   }
 
-  if (!m_lastUuid.empty() && meshMsg->uuid.compare(m_lastUuid) != 0)
+  if (!m_lastUuid.empty() && meshMsg.uuid.compare(m_lastUuid) != 0)
   {
     RCLCPP_WARN(rclcpp::get_logger("rviz_map_plugin"), "Received geometry with new UUID!");
     m_costCache.clear();
@@ -766,11 +769,11 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
     m_selectVertexCostMap->addOption("-- None --", 0);
   }
 
-  m_lastUuid = meshMsg->uuid;
+  m_lastUuid = meshMsg.uuid;
 
   // set Geometry
   std::shared_ptr<Geometry> mesh(std::make_shared<Geometry>());
-  for (const geometry_msgs::Point& v : meshMsg->mesh_geometry.vertices)
+  for (const geometry_msgs::msg::Point& v : meshMsg.mesh_geometry.vertices)
   {
     Vertex vertex;
     vertex.x = v.x;
@@ -778,7 +781,7 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
     vertex.z = v.z;
     mesh->vertices.push_back(vertex);
   }
-  for (const mesh_msgs::MeshTriangleIndices& f : meshMsg->mesh_geometry.faces)
+  for (const mesh_msgs::msg::MeshTriangleIndices& f : meshMsg.mesh_geometry.faces)
   {
     Face face;
     face.vertexIndices[0] = f.vertex_indices[0];
@@ -791,34 +794,36 @@ void MeshDisplay::processMessage(const mesh_msgs::MeshGeometryStamped::ConstPtr&
 
   // set Normals
   std::vector<Normal> normals;
-  for (const geometry_msgs::Point& n : meshMsg->mesh_geometry.vertex_normals)
+  for (const geometry_msgs::msg::Point& n : meshMsg.mesh_geometry.vertex_normals)
   {
     Normal normal(n.x, n.y, n.z);
     normals.push_back(normal);
   }
   setVertexNormals(normals);
 
-  requestVertexColors(meshMsg->uuid);
-  requestMaterials(meshMsg->uuid);
+  requestVertexColors(meshMsg.uuid);
+  requestMaterials(meshMsg.uuid);
 }
 
-void MeshDisplay::incomingGeometry(const mesh_msgs::MeshGeometryStamped::ConstPtr& meshMsg)
+void MeshDisplay::incomingGeometry(
+  const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
   m_messagesReceived++;
   setStatus(rviz_common::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
   processMessage(meshMsg);
 }
 
-void MeshDisplay::incomingVertexColors(const mesh_msgs::MeshVertexColorsStamped::ConstPtr& colorsStamped)
+void MeshDisplay::incomingVertexColors(
+  const mesh_msgs::msg::MeshVertexColorsStamped& colorsStamped)
 {
-  if (colorsStamped->uuid.compare(m_lastUuid) != 0)
+  if (colorsStamped.uuid.compare(m_lastUuid) != 0)
   {
     RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Received vertex colors, but UUIDs dont match!");
     return;
   }
 
   std::vector<Color> vertexColors;
-  for (const std_msgs::ColorRGBA c : colorsStamped->mesh_vertex_colors.vertex_colors)
+  for (const std_msgs::msg::ColorRGBA c : colorsStamped.mesh_vertex_colors.vertex_colors)
   {
     Color color(c.r, c.g, c.b, c.a);
     vertexColors.push_back(color);
@@ -827,7 +832,8 @@ void MeshDisplay::incomingVertexColors(const mesh_msgs::MeshVertexColorsStamped:
   setVertexColors(vertexColors);
 }
 
-void MeshDisplay::incomingVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& costsStamped)
+void MeshDisplay::incomingVertexCosts(
+  const mesh_msgs::msg::MeshVertexCostsStamped& costsStamped)
 {
   if (costsStamped->uuid.compare(m_lastUuid) != 0)
   {
@@ -846,16 +852,19 @@ void MeshDisplay::requestVertexColors(std::string uuid)
     return;
   }
 
-  mesh_msgs::GetVertexColors srv;
-  srv.request.uuid = uuid;
-  if (m_vertexColorClient.call(srv))
+  mesh_msgs::srv::GetVertexColors srv;
+  auto req_vertex_colors = std::make_shared<mesh_msgs::srv::GetVertexColors::Request>();
+  req_vertex_colors->uuid = uuid;
+
+  auto fut_vertex_colors = m_vertexColorClient->async_send_request(req_vertex_colors);
+
+  if(rclcpp::spin_until_future_complete(m_node->get_node_base_interface(), fut_vertex_colors) == rclcpp::executor::FutureReturnCode::SUCCESS)
   {
+    auto res_vertex_colors = fut_vertex_colors.get();
     RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful vertex colors service call!");
-    mesh_msgs::MeshVertexColorsStamped::ConstPtr meshVertexColors =
-        boost::make_shared<const mesh_msgs::MeshVertexColorsStamped>(srv.response.mesh_vertex_colors_stamped);
 
     std::vector<Color> vertexColors;
-    for (const std_msgs::ColorRGBA c : meshVertexColors->mesh_vertex_colors.vertex_colors)
+    for (const std_msgs::msg::ColorRGBA c : res_vertex_colors.mesh_vertex_colors_stamped.mesh_vertex_colors.vertex_colors)
     {
       Color color(c.r, c.g, c.b, c.a);
       vertexColors.push_back(color);
@@ -876,28 +885,34 @@ void MeshDisplay::requestMaterials(std::string uuid)
     return;
   }
 
-  mesh_msgs::GetMaterials srv;
-  srv.request.uuid = uuid;
-  if (m_materialsClient.call(srv))
+  mesh_msgs::srv::GetMaterials srv;
+  auto req_materials = std::make_shared<mesh_msgs::srv::GetMaterials::Request>();
+  req_materials->uuid = uuid;
+
+  auto fut_materials = m_materialsClient->async_send_request(req_materials);
+
+  if(rclcpp::spin_until_future_complete(m_node->get_node_base_interface(), fut_materials) == rclcpp::executor::FutureReturnCode::SUCCESS)
   {
+    auto res_materials = fut_materials.get();
+
     RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful materials service call!");
 
-    mesh_msgs::MeshMaterialsStamped::ConstPtr meshMaterialsStamped =
-        boost::make_shared<const mesh_msgs::MeshMaterialsStamped>(srv.response.mesh_materials_stamped);
+    const mesh_msgs::msg::MeshMaterialsStamped& meshMaterialsStamped =
+        res_materials->mesh_materials_stamped;
 
-    std::vector<Material> materials(meshMaterialsStamped->mesh_materials.materials.size());
-    for (int i = 0; i < meshMaterialsStamped->mesh_materials.materials.size(); i++)
+    std::vector<Material> materials(meshMaterialsStamped.mesh_materials.materials.size());
+    for (int i = 0; i < meshMaterialsStamped.mesh_materials.materials.size(); i++)
     {
-      const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[i];
+      const mesh_msgs::msg::MeshMaterial& mat = meshMaterialsStamped.mesh_materials.materials[i];
       materials[i].textureIndex = mat.texture_index;
       materials[i].color = Color(mat.color.r, mat.color.g, mat.color.b, mat.color.a);
     }
-    for (int i = 0; i < meshMaterialsStamped->mesh_materials.clusters.size(); i++)
+    for (int i = 0; i < meshMaterialsStamped.mesh_materials.clusters.size(); i++)
     {
-      const mesh_msgs::MeshFaceCluster& clu = meshMaterialsStamped->mesh_materials.clusters[i];
+      const mesh_msgs::msg::MeshFaceCluster& clu = meshMaterialsStamped.mesh_materials.clusters[i];
 
-      uint32_t materialIndex = meshMaterialsStamped->mesh_materials.cluster_materials[i];
-      const mesh_msgs::MeshMaterial& mat = meshMaterialsStamped->mesh_materials.materials[materialIndex];
+      uint32_t materialIndex = meshMaterialsStamped.mesh_materials.cluster_materials[i];
+      const mesh_msgs::msg::MeshMaterial& mat = meshMaterialsStamped.mesh_materials.materials[materialIndex];
 
       for (uint32_t face_index : clu.face_indices)
       {
@@ -906,34 +921,39 @@ void MeshDisplay::requestMaterials(std::string uuid)
     }
 
     std::vector<TexCoords> textureCoords;
-    for (const mesh_msgs::MeshVertexTexCoords& coord : meshMaterialsStamped->mesh_materials.vertex_tex_coords)
+    for (const mesh_msgs::msg::MeshVertexTexCoords& coord : meshMaterialsStamped.mesh_materials.vertex_tex_coords)
     {
       textureCoords.push_back(TexCoords(coord.u, coord.v));
     }
 
     setMaterials(materials, textureCoords);
 
-    for (mesh_msgs::MeshMaterial material : meshMaterialsStamped->mesh_materials.materials)
+    for (mesh_msgs::msg::MeshMaterial material : meshMaterialsStamped.mesh_materials.materials)
     {
       if (material.has_texture)
       {
-        mesh_msgs::GetTexture texSrv;
-        texSrv.request.uuid = uuid;
-        texSrv.request.texture_index = material.texture_index;
-        if (m_textureClient.call(texSrv))
+        auto req_texture = std::make_shared<mesh_msgs::srv::GetTexture::Request>();
+
+        req_texture->uuid = uuid;
+        req_texture->texture_index = material.texture_index;
+        
+        auto fut_texture = m_textureClient->async_send_request(req_texture);
+
+        if(rclcpp::spin_until_future_complete(m_node->get_node_base_interface(), fut_texture) == rclcpp::executor::FutureReturnCode::SUCCESS)
         {
+          auto res_texture = fut_texture.get();
           RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful texture service call with index %d!", material.texture_index);
-          mesh_msgs::MeshTexture::ConstPtr textureMsg =
-              boost::make_shared<const mesh_msgs::MeshTexture>(texSrv.response.texture);
+          const mesh_msgs::msg::MeshTexture& textureMsg =
+              res_texture->texture;
 
           Texture texture;
-          texture.width = textureMsg->image.width;
-          texture.height = textureMsg->image.height;
-          texture.channels = textureMsg->image.step;
-          texture.pixelFormat = textureMsg->image.encoding;
-          texture.data = textureMsg->image.data;
+          texture.width = textureMsg.image.width;
+          texture.height = textureMsg.image.height;
+          texture.channels = textureMsg.image.step;
+          texture.pixelFormat = textureMsg.image.encoding;
+          texture.data = textureMsg.image.data;
 
-          addTexture(texture, textureMsg->texture_index);
+          addTexture(texture, textureMsg.texture_index);
         }
         else
         {

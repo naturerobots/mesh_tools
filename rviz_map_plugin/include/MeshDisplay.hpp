@@ -298,25 +298,25 @@ private:
    * @brief Sets data for trianglemesh_visual and updates the mesh.
    * @param meshMsg Message containing geometry information
    */
-  void processMessage(const mesh_msgs::msg::MeshGeometryStamped::ConstPtr& meshMsg);
+  void processMessage(const mesh_msgs::msg::MeshGeometryStamped& meshMsg);
 
   /**
    * @brief Handler for incoming geometry messages. Validate data and update mesh
    * @param meshMsg The geometry
    */
-  void incomingGeometry(const mesh_msgs::msg::MeshGeometryStamped::ConstPtr& meshMsg);
+  void incomingGeometry(const mesh_msgs::msg::MeshGeometryStamped& meshMsg);
 
   /**
    * @brief Handler for incoming vertex color messages. Validate data and update mesh
    * @param colorsStamped The vertex colors
    */
-  void incomingVertexColors(const mesh_msgs::msg::MeshVertexColorsStamped::ConstPtr& colorsStamped);
+  void incomingVertexColors(const mesh_msgs::msg::MeshVertexColorsStamped& colorsStamped);
 
   /**
    * @brief Handler for incoming vertex cost messages. Validate data and update mesh
    * @param costsStamped The vertex costs
    */
-  void incomingVertexCosts(const mesh_msgs::MeshVertexCostsStamped::ConstPtr& costsStamped);
+  void incomingVertexCosts(const mesh_msgs::msg::MeshVertexCostsStamped& costsStamped);
 
   /**
    * @brief Requests vertex colors from the specified service
@@ -351,22 +351,23 @@ private:
   /// if set to true, ignore incoming messages and do not use services to request materials
   bool m_ignoreMsgs;
 
-  rclcpp::Node m_node;
+  std::shared_ptr<rclcpp::Node> m_node;
+
 
   /// Client to request the vertex colors
-  ros::ServiceClient m_vertexColorClient;
+  rclcpp::Client<mesh_msgs::srv::GetVertexColors>::SharedPtr m_vertexColorClient;
 
   /// Client to request the materials
-  ros::ServiceClient m_materialsClient;
+  rclcpp::Client<mesh_msgs::srv::GetMaterials>::SharedPtr m_materialsClient;
 
   /// Client to request the textures
-  ros::ServiceClient m_textureClient;
+  rclcpp::Client<mesh_msgs::srv::GetTexture>::SharedPtr m_textureClient;
 
   /// Client to request the UUID
-  ros::ServiceClient m_uuidClient;
+  rclcpp::Client<mesh_msgs::srv::GetUUIDs>::SharedPtr m_uuidClient;
 
   /// Client to request the geometry
-  ros::ServiceClient m_geometryClient;
+  rclcpp::Client<mesh_msgs::srv::GetGeometry>::SharedPtr m_geometryClient;
 
   /// Subscriber for meshMsg
   message_filters::Subscriber<mesh_msgs::msg::MeshGeometryStamped> m_meshSubscriber;
