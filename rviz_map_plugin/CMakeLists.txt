@@ -12,6 +12,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rmw REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -34,6 +35,12 @@ if(assimp_FOUND)
   add_definitions(-DWITH_ASSIMP)
 endif(assimp_FOUND)
 
+## This setting causes Qt's "MOC" generation to happen automatically.
+# set(CMAKE_AUTOMOC ON)
+find_package(Qt5 COMPONENTS Core Widgets)
+add_definitions(-DQT_NO_KEYWORDS)
+
+
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
@@ -42,61 +49,69 @@ include_directories(
   ${OpenCL_INCLUDE_DIRS}
 )
 
-## This setting causes Qt's "MOC" generation to happen automatically.
-set(CMAKE_AUTOMOC ON)
-
-find_package(Qt5 ${rviz_QT_VERSION} EXACT REQUIRED Core Widgets)
-## make target_link_libraries(${QT_LIBRARIES}) pull in all required dependencies
-set(QT_LIBRARIES Qt5::Widgets)
-
-
-add_definitions(-DQT_NO_KEYWORDS)
-
 set(SOURCE_FILES
-  src/ClusterLabelDisplay.cpp
-  src/ClusterLabelPanel.cpp
-  src/ClusterLabelTool.cpp
-  src/ClusterLabelVisual.cpp
-  src/MapDisplay.cpp
-  src/MeshDisplay.cpp
+  # src/ClusterLabelDisplay.cpp
+  # src/ClusterLabelPanel.cpp
+  # src/ClusterLabelTool.cpp
+  # src/ClusterLabelVisual.cpp
+  # src/MapDisplay.cpp
+  # src/MeshDisplay.cpp
   src/MeshVisual.cpp
-  src/RvizFileProperty.cpp
-  src/MeshPoseTool.cpp
-  src/MeshGoalTool.cpp
+  # src/RvizFileProperty.cpp
+  # src/MeshPoseTool.cpp
+  # src/MeshGoalTool.cpp
 )
+
 
 set(HEADER_FILES
-  include/ClusterLabelDisplay.hpp
-  include/ClusterLabelPanel.hpp
-  include/ClusterLabelVisual.hpp
-  include/MapDisplay.hpp
-  include/MeshDisplay.hpp
+  # include/ClusterLabelDisplay.hpp
+  # include/ClusterLabelPanel.hpp
+  # include/ClusterLabelVisual.hpp
+  # include/MapDisplay.hpp
+  # include/MeshDisplay.hpp
   include/MeshVisual.hpp
-  include/ClusterLabelTool.hpp
-  include/CLUtil.hpp
-  include/RvizFileProperty.hpp
-  include/MeshPoseTool.hpp
-  include/MeshGoalTool.hpp
+  # include/ClusterLabelTool.hpp
+  # include/CLUtil.hpp
+  # include/RvizFileProperty.hpp
+  # include/MeshPoseTool.hpp
+  # include/MeshGoalTool.hpp
 )
 
-add_library(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+qt5_wrap_cpp(RVIZ_MAP_PLUGIN_MOC_FILES "include/MeshVisual.hpp")
 
-target_link_libraries(${PROJECT_NAME}
-  ${QT_LIBRARIES}
-  ${catkin_LIBRARIES}
+
+
+add_library(${PROJECT_NAME} SHARED
+  ${SOURCE_FILES} 
+  ${RVIZ_MAP_PLUGIN_MOC_FILES} 
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+  ${Qt5Widgets_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  ${geometry_msgs_TARGETS}
+  rclcpp::rclcpp
+  rviz_common::rviz_common
+  rviz_ogre_vendor::OgreMain
+  rviz_ogre_vendor::OgreOverlay
+  rviz_rendering::rviz_rendering
+  ${sensor_msgs_TARGETS}
+  tf2::tf2
+  ${tf2_geometry_msgs_TARGETS}
+  tf2_ros::tf2_ros
+  rmw::rmw 
+  ${message_filters_TARGETS}
+  ${mesh_msgs_TARGETS}
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  resource_retriever::resource_retriever#
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
-)
-
-ament_target_dependencies(${PROJECT_NAME} 
-  rclcpp 
-  std_msgs
-  mesh_msgs
-  rviz_common
-  rviz_rendering
-  tf2_ros
-  pluginlib
-  message_filters
 )
 
 

@@ -55,7 +55,7 @@
 #define MESH_DISPLAY_HPP
 
 #include <Types.hpp>
-#include <MeshVisual.hpp>
+// #include <MeshVisual.hpp>
 
 #include <vector>
 #include <memory>
@@ -68,17 +68,18 @@
 #include <QMessageBox>
 #include <QApplication>
 #include <QIcon>
+#include <QObject>
 
-// #include <ros/ros.h>
-// #include <ros/console.h>
+
 #include <rviz_common/viewport_mouse_event.hpp>
 #include <rviz_common/visualization_manager.hpp>
 #include <rviz_common/visualization_frame.hpp>
-#include <rviz_rendering/geometry.hpp>
+// #include <rviz_rendering/geometry.hpp>
 
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/display.hpp>
+
 
 #ifndef Q_MOC_RUN
 #include <message_filters/subscriber.h>
@@ -87,7 +88,7 @@
 
 #include <tf2_ros/message_filter.h>
 
-#include <rviz_rendering/mesh_loader.hpp>
+// #include <rviz_rendering/mesh_loader.hpp>
 
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneNode.h>
@@ -96,7 +97,15 @@
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreColourValue.h>
 
-#endif
+#include <mesh_msgs/srv/get_vertex_colors.hpp>
+#include <mesh_msgs/srv/get_materials.hpp>
+#include <mesh_msgs/srv/get_geometry.hpp>
+#include <mesh_msgs/srv/get_texture.hpp>
+#include <mesh_msgs/srv/get_uui_ds.hpp>
+
+#endif // Q_MOC_RUN
+
+#include "rclcpp/rclcpp.hpp"
 
 namespace rviz_common
 {
@@ -174,7 +183,7 @@ public:
    * @brief Set the geometry
    * @param geometry The geometry
    */
-  void setGeometry(shared_ptr<Geometry> geometry);
+  void setGeometry(std::shared_ptr<Geometry> geometry);
 
   /**
    * @brief Set the vertex colors
@@ -304,19 +313,19 @@ private:
    * @brief Handler for incoming geometry messages. Validate data and update mesh
    * @param meshMsg The geometry
    */
-  void incomingGeometry(const mesh_msgs::msg::MeshGeometryStamped& meshMsg);
+  void incomingGeometry(const mesh_msgs::msg::MeshGeometryStamped::ConstSharedPtr& meshMsg);
 
   /**
    * @brief Handler for incoming vertex color messages. Validate data and update mesh
    * @param colorsStamped The vertex colors
    */
-  void incomingVertexColors(const mesh_msgs::msg::MeshVertexColorsStamped& colorsStamped);
+  void incomingVertexColors(const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorsStamped);
 
   /**
    * @brief Handler for incoming vertex cost messages. Validate data and update mesh
    * @param costsStamped The vertex costs
    */
-  void incomingVertexCosts(const mesh_msgs::msg::MeshVertexCostsStamped& costsStamped);
+  void incomingVertexCosts(const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costsStamped);
 
   /**
    * @brief Requests vertex colors from the specified service
