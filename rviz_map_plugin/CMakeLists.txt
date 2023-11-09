@@ -56,7 +56,7 @@ set(SOURCE_FILES
   # src/ClusterLabelTool.cpp
   # src/ClusterLabelVisual.cpp
   # src/MapDisplay.cpp
-  # src/MeshDisplay.cpp
+  src/MeshDisplay.cpp
   src/MeshVisual.cpp
   # src/RvizFileProperty.cpp
   # src/MeshPoseTool.cpp
@@ -64,12 +64,12 @@ set(SOURCE_FILES
 )
 
 
-set(HEADER_FILES
+set(MOC_HEADER_FILES
   # include/ClusterLabelDisplay.hpp
   # include/ClusterLabelPanel.hpp
   # include/ClusterLabelVisual.hpp
   # include/MapDisplay.hpp
-  # include/MeshDisplay.hpp
+  include/MeshDisplay.hpp
   include/MeshVisual.hpp
   # include/ClusterLabelTool.hpp
   # include/CLUtil.hpp
@@ -78,9 +78,9 @@ set(HEADER_FILES
   # include/MeshGoalTool.hpp
 )
 
-qt5_wrap_cpp(RVIZ_MAP_PLUGIN_MOC_FILES "include/MeshVisual.hpp")
-
-
+foreach(header "${RVIZ_MAP_PLUGIN_MOC_FILES}")
+  qt5_wrap_cpp(RVIZ_MAP_PLUGIN_MOC_FILES "${header}")
+endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   ${SOURCE_FILES} 
@@ -110,7 +110,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-  resource_retriever::resource_retriever#
+  resource_retriever::resource_retriever
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
 )

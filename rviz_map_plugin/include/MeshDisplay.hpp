@@ -55,7 +55,7 @@
 #define MESH_DISPLAY_HPP
 
 #include <Types.hpp>
-// #include <MeshVisual.hpp>
+#include <MeshVisual.hpp>
 
 #include <vector>
 #include <memory>
@@ -73,7 +73,7 @@
 
 #include <rviz_common/viewport_mouse_event.hpp>
 #include <rviz_common/visualization_manager.hpp>
-#include <rviz_common/visualization_frame.hpp>
+// #include <rviz_common/visualization_frame.hpp>
 // #include <rviz_rendering/geometry.hpp>
 
 #include <rviz_common/display_context.hpp>
@@ -88,14 +88,14 @@
 
 #include <tf2_ros/message_filter.h>
 
-// #include <rviz_rendering/mesh_loader.hpp>
+#include <rviz_rendering/mesh_loader.hpp>
 
-#include <OGRE/OgreManualObject.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreStringConverter.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreColourValue.h>
+#include <OgreManualObject.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
+#include <OgreStringConverter.h>
+#include <OgreMaterialManager.h>
+#include <OgreColourValue.h>
 
 #include <mesh_msgs/srv/get_vertex_colors.hpp>
 #include <mesh_msgs/srv/get_materials.hpp>
