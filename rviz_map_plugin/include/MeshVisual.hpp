@@ -69,12 +69,12 @@
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
 
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreManualObject.h>
-#include <OGRE/OgreEntity.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreColourValue.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
+#include <OgreManualObject.h>
+#include <OgreEntity.h>
+#include <OgreMaterialManager.h>
+#include <OgreColourValue.h>
 
 #include <Types.hpp>
 #include <vector>
@@ -82,7 +82,7 @@
 namespace Ogre
 {
 // Forward declaration
-class Vector3;
+// class Vector3;
 class Quaternion;
 class SceneNode;
 class Entity;
