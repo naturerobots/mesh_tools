@@ -60,6 +60,8 @@ using std::array;
 using std::string;
 using std::vector;
 
+
+
 /// Struct for normals
 struct Normal
 {

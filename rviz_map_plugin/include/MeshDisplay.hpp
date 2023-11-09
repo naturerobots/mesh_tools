@@ -79,6 +79,7 @@
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/display.hpp>
+#include <rviz_common/ros_integration/ros_node_abstraction_iface.hpp>
 
 
 #ifndef Q_MOC_RUN
@@ -86,7 +87,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/cache.h>
 
-#include <tf2_ros/message_filter.h>
+#include <RVizMessageFilter.hpp>
 
 #include <rviz_rendering/mesh_loader.hpp>
 
@@ -141,7 +142,7 @@ class MeshDisplay : public rviz_common::Display
   Q_OBJECT
 
 public:
-  /**
+  /**#include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
    * @brief Constructor
    */
   MeshDisplay();
@@ -360,7 +361,12 @@ private:
   /// if set to true, ignore incoming messages and do not use services to request materials
   bool m_ignoreMsgs;
 
-  std::shared_ptr<rclcpp::Node> m_node;
+
+  // TODO: use this instead: 
+  // ros_integration::RosNodeAbstractionIface::WeakPtr m_node;
+  // from
+  // #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
+  // std::shared_ptr<rclcpp::Node> m_node;
 
 
   /// Client to request the vertex colors
@@ -388,13 +394,17 @@ private:
   message_filters::Subscriber<mesh_msgs::msg::MeshVertexCostsStamped> m_vertexCostsSubscriber;
 
   /// Messagefilter for meshMsg
-  tf2_ros::MessageFilter<mesh_msgs::msg::MeshGeometryStamped>* m_tfMeshFilter;
+  
+  
+
+
+  tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshGeometryStamped> m_tfMeshFilter;
 
   /// Messagefilter for vertex colors
-  tf2_ros::MessageFilter<mesh_msgs::msg::MeshVertexColorsStamped>* m_tfVertexColorsFilter;
+  tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshVertexColorsStamped> m_tfVertexColorsFilter;
 
   /// Messagefilter for vertex costs
-  tf2_ros::MessageFilter<mesh_msgs::msg::MeshVertexCostsStamped>* m_tfVertexCostsFilter;
+  tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshVertexCostsStamped> m_tfVertexCostsFilter;
 
   /// Synchronizer for meshMsgs
   message_filters::Cache<mesh_msgs::msg::MeshGeometryStamped>* m_meshSynchronizer;

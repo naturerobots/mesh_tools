@@ -16,6 +16,7 @@ find_package(rmw REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
+find_package(rviz_default_plugins REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(hdf5_map_io REQUIRED)
 find_package(mesh_msgs REQUIRED)
@@ -100,6 +101,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   rviz_ogre_vendor::OgreMain
   rviz_ogre_vendor::OgreOverlay
   rviz_rendering::rviz_rendering
+  rviz_default_plugins::rviz_default_plugins
   ${sensor_msgs_TARGETS}
   tf2::tf2
   ${tf2_geometry_msgs_TARGETS}

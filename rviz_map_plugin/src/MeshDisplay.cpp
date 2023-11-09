@@ -66,7 +66,6 @@
 
 #include "mesh_msgs/msg/mesh_vertex_colors_stamped.hpp"
 #include "mesh_msgs/msg/mesh_geometry_stamped.hpp"
-// #include "mesh_msgs/msg/mesh_geometry_stamped__type_traits.hpp"
 
 
 #include <rviz_common/properties/bool_property.hpp>
@@ -95,7 +94,7 @@ MeshDisplay::MeshDisplay()
 {
   // mesh topic
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
-      "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::data_type<mesh_msgs::msg::MeshGeometryStamped>()),
+      "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
 
   // buffer size / amount of meshes visualized
@@ -129,7 +128,7 @@ MeshDisplay::MeshDisplay()
     {
       m_vertexColorsTopic = new rviz_common::properties::RosTopicProperty(
           "Vertex Colors Topic", "",
-          QString::fromStdString(rosidl_generator_traits::data_type<mesh_msgs::msg::MeshVertexColorsStamped>()),
+          QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshVertexColorsStamped>()),
           "Vertex color topic to subscribe to.", m_displayType, SLOT(updateVertexColorsTopic()), this);
 
       m_vertexColorServiceName = new rviz_common::properties::StringProperty("Vertex Color Service Name", "get_vertex_colors",
@@ -165,7 +164,7 @@ MeshDisplay::MeshDisplay()
 
       m_vertexCostsTopic = new rviz_common::properties::RosTopicProperty(
           "Vertex Costs Topic", "",
-          QString::fromStdString(rosidl_generator_traits::data_type<mesh_msgs::msg::MeshVertexCostsStamped>()),
+          QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshVertexCostsStamped>()),
           "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateVertexCostsTopic()), this);
 
       m_selectVertexCostMap = new rviz_common::properties::EnumProperty("Vertex Costs Type", "-- None --",
@@ -227,32 +226,24 @@ MeshDisplay::~MeshDisplay()
 
 void MeshDisplay::onInitialize()
 {
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
-  // TODO: test this:
-  // auto tf_wrapper = std::dynamic_pointer_cast<transformation::TFWrapper>(
-    // context_->getFrameManager()->getConnector().lock());
-  // ...
-  // tf_wrapper->getBuffer();
-
-
-  // context_->getFrameManager()->getTFClientPtr();
-
-  // m_tfMeshFilter = new tf2_ros::MessageFilter<mesh_msgs::msg::MeshGeometryStamped>(
-  //     *context_->getFrameManager()->getTF2BufferPtr(), rviz_common::Display::fixed_frame_.toStdString(), 2,
-  //     m_node);
-  // m_tfMeshFilter->connectInput(m_meshSubscriber);
+  m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(
+      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 2,
+      node);
+  m_tfMeshFilter->connectInput(m_meshSubscriber);
   // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfMeshFilter, this);
 
-  // m_tfVertexColorsFilter = new tf2_ros::MessageFilter<mesh_msgs::msg::MeshVertexColorsStamped>(
-  //     *context_->getFrameManager()->getTF2BufferPtr(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-  //     m_node);
-  // m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
+  m_tfVertexColorsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexColorsStamped> >(
+      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
+      node);
+  m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
   // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexColorsFilter, this);
 
-  // m_tfVertexCostsFilter = new tf2_ros::MessageFilter<mesh_msgs::MeshVertexCostsStamped>(
-  //     *context_->getFrameManager()->getTF2BufferPtr(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-  //     m_node);
-  // m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
+  m_tfVertexCostsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexCostsStamped> >(
+      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
+      node);
+  m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
   // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexCostsFilter, this);
 
   m_meshSynchronizer = 0;
@@ -261,12 +252,16 @@ void MeshDisplay::onInitialize()
 
   // Initialize service clients
   // ros::NodeHandle n;
-  m_node = rclcpp::Node::make_shared("mesh_display"); // TODO: how to name this? What if multiple MeshDisplay instances exists?  
-  m_vertexColorClient = m_node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
-  m_materialsClient = m_node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
-  m_textureClient = m_node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
-  m_uuidClient = m_node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
-  m_geometryClient = m_node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
+  // m_node = rclcpp::Node::make_shared("mesh_display"); // TODO: how to name this? What if multiple MeshDisplay instances exists?  
+
+  // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+
+
+  m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
+  m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
+  m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
+  m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
 
 
 
@@ -303,13 +298,15 @@ void MeshDisplay::subscribe()
 
   try
   {
+    auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+
     rmw_qos_profile_t qos = rmw_qos_profile_default;
     qos.depth = 1;
-    m_meshSubscriber.subscribe(m_node, m_meshTopic->getTopicStd(), qos);
+    m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), qos);
     qos.depth = 1;
-    m_vertexColorsSubscriber.subscribe(m_node, m_vertexColorsTopic->getTopicStd(), qos);
+    m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
     qos.depth = 4;
-    m_vertexCostsSubscriber.subscribe(m_node, m_vertexCostsTopic->getTopicStd(), qos);
+    m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
     setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
   }
   catch (std::runtime_error& e)
@@ -640,9 +637,11 @@ void MeshDisplay::updateVertexColorsTopic()
   m_vertexColorsSubscriber.unsubscribe();
   delete m_colorsSynchronizer;
 
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+
   rmw_qos_profile_t qos = rmw_qos_profile_default;
   qos.depth = 1;
-  m_vertexColorsSubscriber.subscribe(m_node, m_vertexColorsTopic->getTopicStd(), qos);
+  m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
   m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
   m_colorsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexColors, this, _1));
 }
@@ -652,9 +651,11 @@ void MeshDisplay::updateVertexCostsTopic()
   m_vertexCostsSubscriber.unsubscribe();
   delete m_costsSynchronizer;
 
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+
   rmw_qos_profile_t qos = rmw_qos_profile_default;
   qos.depth = 4;
-  m_vertexCostsSubscriber.subscribe(m_node, m_vertexCostsTopic->getTopicStd(), qos);
+  m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
   m_costsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
   m_costsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
 }
@@ -682,8 +683,9 @@ void MeshDisplay::updateMaterialAndTextureServices()
   }
 
   // Update material and texture service clients
-  m_materialsClient = m_node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
-  m_textureClient = m_node->create_client<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
+  m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
 
   if(m_materialsClient->wait_for_service(std::chrono::seconds(5)))
   {
@@ -720,7 +722,8 @@ void MeshDisplay::updateVertexColorService()
   }
 
   // Update vertex color service client
-  m_vertexColorClient = m_node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
   if(m_vertexColorClient->wait_for_service(std::chrono::seconds(5)))
   {
     setStatus(rviz_common::properties::StatusProperty::Ok, "Services", "Vertex Color Service OK");
@@ -745,7 +748,8 @@ void MeshDisplay::initialServiceCall()
   auto req_uuids = std::make_shared<mesh_msgs::srv::GetUUIDs::Request>();
   auto fut_uuids = m_uuidClient->async_send_request(req_uuids);
 
-  if(rclcpp::spin_until_future_complete(m_node, fut_uuids) == rclcpp::FutureReturnCode::SUCCESS)
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  if(rclcpp::spin_until_future_complete(node, fut_uuids) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto res_uuids = fut_uuids.get();
 
@@ -762,7 +766,8 @@ void MeshDisplay::initialServiceCall()
       req_geometry->uuid = uuid;
 
       auto fut_geometry = m_geometryClient->async_send_request(req_geometry);
-      if(rclcpp::spin_until_future_complete(m_node, fut_geometry) == rclcpp::FutureReturnCode::SUCCESS)
+      auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+      if(rclcpp::spin_until_future_complete(node, fut_geometry) == rclcpp::FutureReturnCode::SUCCESS)
       {
         auto res_geometry = fut_geometry.get();
         RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Found geometry for UUID=" << uuid);
@@ -891,7 +896,8 @@ void MeshDisplay::requestVertexColors(std::string uuid)
 
   auto fut_vertex_colors = m_vertexColorClient->async_send_request(req_vertex_colors);
 
-  if(rclcpp::spin_until_future_complete(m_node, fut_vertex_colors) == rclcpp::FutureReturnCode::SUCCESS)
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  if(rclcpp::spin_until_future_complete(node, fut_vertex_colors) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto res_vertex_colors = fut_vertex_colors.get();
     RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful vertex colors service call!");
@@ -923,8 +929,8 @@ void MeshDisplay::requestMaterials(std::string uuid)
   req_materials->uuid = uuid;
 
   auto fut_materials = m_materialsClient->async_send_request(req_materials);
-
-  if(rclcpp::spin_until_future_complete(m_node, fut_materials) == rclcpp::FutureReturnCode::SUCCESS)
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  if(rclcpp::spin_until_future_complete(node, fut_materials) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto res_materials = fut_materials.get();
 
@@ -972,7 +978,8 @@ void MeshDisplay::requestMaterials(std::string uuid)
         
         auto fut_texture = m_textureClient->async_send_request(req_texture);
 
-        if(rclcpp::spin_until_future_complete(m_node, fut_texture) == rclcpp::FutureReturnCode::SUCCESS)
+        auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+        if(rclcpp::spin_until_future_complete(node, fut_texture) == rclcpp::FutureReturnCode::SUCCESS)
         {
           auto res_texture = fut_texture.get();
           RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful texture service call with index %d!", material.texture_index);
