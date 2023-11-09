@@ -35,7 +35,7 @@ class hdf5_to_msg : public rclcpp::Node
 {
 
  public:
-  hdf5_to_msg(std::string handle_str = "mesh_msgs_hdf5");
+  hdf5_to_msg();
 
  protected:
   void loadAndPublishGeometry();

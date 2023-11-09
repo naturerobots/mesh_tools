@@ -2,13 +2,17 @@
 #include <hdf5_map_io/hdf5_map_io.h>
 #include <algorithm>
 
+#include "rclcpp/executors.hpp"
+#include "rclcpp/executors/multi_threaded_executor.hpp"
+
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-namespace mesh_msgs_hdf5 {
+namespace mesh_msgs_hdf5 
+{
 
-hdf5_to_msg::hdf5_to_msg(std::string handle_str)
-:rclcpp::Node(handle_str)
+hdf5_to_msg::hdf5_to_msg()
+:rclcpp::Node("mesh_msgs_hdf5")
 {
     // TODO: check if this is correct
     this->declare_parameter("inputFile", "/tmp/map.h5");
@@ -494,11 +498,12 @@ void hdf5_to_msg::callback_clusterLabel(
 
 } // namespace mesh_msgs_hdf5
 
-int main(int argc, char **args)
+int main(int argc, char **argv)
 {
-    // ros::init(argc, args, "mesh_msgs_hdf5");
-    // mesh_msgs_hdf5::hdf5_to_msg hdf5_to_msg;
-    // ros::MultiThreadedSpinner spinner(4);
-    // spinner.spin();
+    rclcpp::init(argc, argv);
+    rclcpp::ExecutorOptions opts;
+    rclcpp::executors::MultiThreadedExecutor executor(opts, 4);
+    executor.add_node(std::make_shared<mesh_msgs_hdf5::hdf5_to_msg>());
+    executor.spin();
     return 0;
 }
