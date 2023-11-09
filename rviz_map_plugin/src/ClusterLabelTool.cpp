@@ -91,7 +91,7 @@ ClusterLabelTool::~ClusterLabelTool()
 // context_ are set.  It should be called only once per instantiation.
 void ClusterLabelTool::onInitialize()
 {
-  ROS_DEBUG("ClusterLabelTool: Call Init");
+  RCLCPP_DEBUG("ClusterLabelTool: Call Init");
   m_sceneNode = context_->getSceneManager()->getRootSceneNode()->createChildSceneNode();
 
   m_selectionBox = context_->getSceneManager()->createManualObject("ClusterLabelTool_SelectionBox");
@@ -115,28 +115,28 @@ void ClusterLabelTool::onInitialize()
   try
   {
     // Initialize OpenCL
-    ROS_DEBUG("Get platforms");
+    RCLCPP_DEBUG("Get platforms");
     vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
     for (auto const& platform : platforms)
     {
-      ROS_DEBUG("Found platform: %s", platform.getInfo<CL_PLATFORM_NAME>().c_str());
-      ROS_DEBUG("platform version: %s", platform.getInfo<CL_PLATFORM_VERSION>().c_str());
+      RCLCPP_DEBUG("Found platform: %s", platform.getInfo<CL_PLATFORM_NAME>().c_str());
+      RCLCPP_DEBUG("platform version: %s", platform.getInfo<CL_PLATFORM_VERSION>().c_str());
     }
-    ROS_DEBUG(" ");
+    RCLCPP_DEBUG(" ");
 
     vector<cl::Device> consideredDevices;
     for (auto const& platform : platforms)
     {
-      ROS_DEBUG("Get devices of %s: ", platform.getInfo<CL_PLATFORM_NAME>().c_str());
+      RCLCPP_DEBUG("Get devices of %s: ", platform.getInfo<CL_PLATFORM_NAME>().c_str());
       cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platform)(), 0 };
       m_clContext = cl::Context(CL_DEVICE_TYPE_ALL, properties);
       vector<cl::Device> devices = m_clContext.getInfo<CL_CONTEXT_DEVICES>();
       for (auto const& device : devices)
       {
-        ROS_DEBUG("Found device: %s", device.getInfo<CL_DEVICE_NAME>().c_str());
-        ROS_DEBUG("Device work units: %d", device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>());
-        ROS_DEBUG("Device work group size: %lu", device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>());
+        RCLCPP_DEBUG("Found device: %s", device.getInfo<CL_DEVICE_NAME>().c_str());
+        RCLCPP_DEBUG("Device work units: %d", device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>());
+        RCLCPP_DEBUG("Device work group size: %lu", device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>());
 
         std::string device_info = device.getInfo<CL_DEVICE_VERSION>();
         // getVersion extracts the version number with major in the upper 16 bits and minor in the lower 16 bits
@@ -148,7 +148,7 @@ void ClusterLabelTool::onInitialize()
         // use bitwise AND to extract the number in the lower 16 bits
         cl_uint minorVersion = version & 0x0000FFFF;
 
-        ROS_INFO("Found a device with OpenCL version: %u.%u", majorVersion, minorVersion);
+        RCLCPP_INFO("Found a device with OpenCL version: %u.%u", majorVersion, minorVersion);
 
         // find all devices that support at least OpenCL version 1.2
         if (majorVersion >= 1 && minorVersion >= 2)
@@ -158,7 +158,7 @@ void ClusterLabelTool::onInitialize()
         }
       }
     }
-    ROS_DEBUG(" ");
+    RCLCPP_DEBUG(" ");
 
     cl::Platform platform;
     // Preferably choose the first compatible device of type GPU
@@ -183,22 +183,22 @@ void ClusterLabelTool::onInitialize()
     if (!deviceFound)
     {
       // Panic if no compatible device was found
-      ROS_ERROR("No device with compatible OpenCL version found (minimum 2.0)");
+      RCLCPP_ERROR("No device with compatible OpenCL version found (minimum 2.0)");
       ros::requestShutdown();
     }
 
     cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platform)(), 0 };
     m_clContext = cl::Context(CL_DEVICE_TYPE_ALL, properties);
 
-    ROS_INFO("Using device %s of platform %s", m_clDevice.getInfo<CL_DEVICE_NAME>().c_str(),
+    RCLCPP_INFO("Using device %s of platform %s", m_clDevice.getInfo<CL_DEVICE_NAME>().c_str(),
              platform.getInfo<CL_PLATFORM_NAME>().c_str());
-    ROS_DEBUG(" ");
+    RCLCPP_DEBUG(" ");
 
     // Read kernel file
     ifstream in(ros::package::getPath("rviz_map_plugin") + CL_RAY_CAST_KERNEL_FILE);
     std::string cast_rays_kernel(static_cast<stringstream const&>(stringstream() << in.rdbuf()).str());
 
-    ROS_DEBUG("Got kernel: %s%s", ros::package::getPath("rviz_map_plugin").c_str(), CL_RAY_CAST_KERNEL_FILE);
+    RCLCPP_DEBUG("Got kernel: %s%s", ros::package::getPath("rviz_map_plugin").c_str(), CL_RAY_CAST_KERNEL_FILE);
 
     m_clProgramSources = cl::Program::Sources(1, { cast_rays_kernel.c_str(), cast_rays_kernel.length() });
 
@@ -206,11 +206,11 @@ void ClusterLabelTool::onInitialize()
     try
     {
       m_clProgram.build({ m_clDevice });
-      ROS_INFO("Successfully built program.");
+      RCLCPP_INFO("Successfully built program.");
     }
     catch (cl::Error& err)
     {
-      ROS_ERROR("Error building: %s", m_clProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(m_clDevice).c_str());
+      RCLCPP_ERROR("Error building: %s", m_clProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(m_clDevice).c_str());
 
       ros::shutdown();
       exit(1);
@@ -221,8 +221,8 @@ void ClusterLabelTool::onInitialize()
   }
   catch (cl::Error err)
   {
-    ROS_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
-    ROS_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
+    RCLCPP_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
+    RCLCPP_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
     ros::requestShutdown();
     exit(1);
   }
@@ -318,8 +318,8 @@ void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
   }
   catch (cl::Error err)
   {
-    ROS_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
-    ROS_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
+    RCLCPP_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
+    RCLCPP_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
     ros::shutdown();
     exit(1);
   }
@@ -421,8 +421,8 @@ void ClusterLabelTool::selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume
   }
   catch (cl::Error err)
   {
-    ROS_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
-    ROS_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
+    RCLCPP_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
+    RCLCPP_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
   }
 
   for (int faceId = 0; faceId < m_meshGeometry->faces.size(); faceId++)
@@ -482,8 +482,8 @@ void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
   }
   catch (cl::Error err)
   {
-    ROS_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
-    ROS_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
+    RCLCPP_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
+    RCLCPP_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
   }
 
   int closestFaceId = -1;
@@ -518,7 +518,7 @@ void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
 
     m_visual->setFacesInCluster(tmpFaceList);
 
-    ROS_DEBUG("selectSingleFaceParallel() found face with id %d", closestFaceId);
+    RCLCPP_DEBUG("selectSingleFaceParallel() found face with id %d", closestFaceId);
   }
 }
 
@@ -553,8 +553,8 @@ void ClusterLabelTool::selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode
     }
     catch (cl::Error err)
     {
-      ROS_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
-      ROS_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
+      RCLCPP_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
+      RCLCPP_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
     }
 
     for (int faceId = 0; faceId < m_meshGeometry->faces.size(); faceId++)
@@ -605,8 +605,8 @@ boost::optional<std::pair<uint32_t, float>> ClusterLabelTool::getClosestIntersec
   }
   catch (cl::Error err)
   {
-    ROS_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
-    ROS_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
+    RCLCPP_ERROR_STREAM(err.what() << ": " << CLUtil::getErrorString(err.err()));
+    RCLCPP_WARN_STREAM("(" << CLUtil::getErrorDescription(err.err()) << ")");
   }
 
   uint32_t closestFaceId;
@@ -635,7 +635,7 @@ boost::optional<std::pair<uint32_t, float>> ClusterLabelTool::getClosestIntersec
 
 void ClusterLabelTool::publishLabel(std::string label)
 {
-  ROS_DEBUG_STREAM("Label Tool: Publish label '" << label << "'");
+  RCLCPP_DEBUG_STREAM("Label Tool: Publish label '" << label << "'");
 
   vector<uint32_t> faces;
   for (uint32_t i = 0; i < m_faceSelectedArray.size(); i++)

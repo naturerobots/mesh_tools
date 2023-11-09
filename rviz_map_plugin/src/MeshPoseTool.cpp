@@ -92,7 +92,7 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
 
   if (event.leftDown())
   {
-    ROS_ASSERT(state_ == Position);
+    RCLCPP_ASSERT(state_ == Position);
 
     Ogre::Vector3 pos, ori;
     if (selectTriangle(event, pos, ori))

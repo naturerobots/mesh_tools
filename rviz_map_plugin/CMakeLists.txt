@@ -19,6 +19,7 @@ find_package(hdf5_map_io REQUIRED)
 find_package(mesh_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(message_filters REQUIRED)
 
 
 find_package(Boost REQUIRED COMPONENTS system)
@@ -95,6 +96,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rviz_rendering
   tf2_ros
   pluginlib
+  message_filters
 )
 
 

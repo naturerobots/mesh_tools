@@ -163,7 +163,7 @@ ClusterLabelVisual::~ClusterLabelVisual()
 
   if (!m_mesh.isNull())
   {
-    ROS_DEBUG("ClusterLabelVisual::~ClusterLabelVisual: Destroying SubMesh: %s", m_labelId.c_str());
+    RCLCPP_DEBUG("ClusterLabelVisual::~ClusterLabelVisual: Destroying SubMesh: %s", m_labelId.c_str());
 
     try
     {
@@ -171,13 +171,13 @@ ClusterLabelVisual::~ClusterLabelVisual()
     }
     catch (...)
     {
-      ROS_ERROR("Exception in Visual destructor");
+      RCLCPP_ERROR("Exception in Visual destructor");
     }
   }
 
   if (m_sceneNode->numAttachedObjects() == 0)
   {
-    ROS_INFO("ClusterLabelVisual::~ClusterLabelVisual: Delete scene node");
+    RCLCPP_INFO("ClusterLabelVisual::~ClusterLabelVisual: Delete scene node");
     m_displayContext->getSceneManager()->destroySceneNode(m_sceneNode);
   }
 }
@@ -201,7 +201,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
 
   if (!m_geometry)
   {
-    ROS_WARN("ClusterLabelVisual::setFacesInCluster: MeshGeometry not set!");
+    RCLCPP_WARN("ClusterLabelVisual::setFacesInCluster: MeshGeometry not set!");
     return;
   }
 
@@ -212,7 +212,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
     m_subMesh->indexData->indexCount = 0;
     m_subMesh->indexData->indexStart = 0;
     m_material->getTechnique(0)->removeAllPasses();
-    ROS_DEBUG("ClusterLabelVisual::setFacesInCluster: faces empty!");
+    RCLCPP_DEBUG("ClusterLabelVisual::setFacesInCluster: faces empty!");
     return;
   }
 

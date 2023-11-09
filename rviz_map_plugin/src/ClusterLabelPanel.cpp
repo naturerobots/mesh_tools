@@ -122,13 +122,13 @@ void ClusterLabelPanel::updateClusterName()
 
 void ClusterLabelPanel::publish()
 {
-  ROS_INFO("Label Panel: Publish");
+  RCLCPP_INFO("Label Panel: Publish");
   m_tool->publishLabel(m_clusterName.toStdString());
 }
 
 void ClusterLabelPanel::resetFaces()
 {
-  ROS_INFO("Label panel: Reset");
+  RCLCPP_INFO("Label panel: Reset");
   m_tool->resetFaces();
 }
 

@@ -27,6 +27,7 @@
   <depend>hdf5_map_io</depend>
   <depend>tf2_ros</depend>
   <depend>pluginlib</depend>
+  <depend>message_filters</depend>
   <depend>ocl-icd-opencl-dev</depend>
   <depend>opencl-headers</depend>
   <exec_depend>libqt5-core</exec_depend>

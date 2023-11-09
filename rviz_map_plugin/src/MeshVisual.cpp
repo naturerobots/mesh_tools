@@ -104,7 +104,7 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
   , m_texture_coords_enabled(false)
   , m_normalsScalingFactor(1)
 {
-  ROS_INFO("Creating MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
+  RCLCPP_INFO("Creating MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
   // get or create the scene node
   Ogre::SceneManager* sceneManager = m_displayContext->getSceneManager();
@@ -115,12 +115,12 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
   std::string sceneId = strstream.str();
   if (sceneManager->hasSceneNode(sceneId))
   {
-    // ROS_INFO("Attaching to scene: %s", sceneId);
+    // RCLCPP_INFO("Attaching to scene: %s", sceneId);
     m_sceneNode = (Ogre::SceneNode*)(rootNode->getChild(sceneId));
   }
   else
   {
-    // ROS_INFO("Creating new scene: %s", sceneId);
+    // RCLCPP_INFO("Creating new scene: %s", sceneId);
     m_sceneNode = rootNode->createChildSceneNode(sceneId);
   }
 
@@ -158,7 +158,7 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
 
 MeshVisual::~MeshVisual()
 {
-  ROS_INFO("Destroying MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
+  RCLCPP_INFO("Destroying MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
   reset();
 
@@ -189,7 +189,7 @@ MeshVisual::~MeshVisual()
 
 void MeshVisual::reset()
 {
-  ROS_INFO("Resetting MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
+  RCLCPP_INFO("Resetting MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
   std::stringstream sstm;
 
@@ -554,7 +554,7 @@ void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const
   float range = maxCost - minCost;
   if (range <= 0)
   {
-    ROS_ERROR("Illegal vertex cost limits!");
+    RCLCPP_ERROR("Illegal vertex cost limits!");
     return;
   }
 
@@ -651,7 +651,7 @@ void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector
       // if the image was only default constructed, in which case its width will be 0
       if (m_images.size() < textureIndex + 1 || m_images[textureIndex].getWidth() == 0)
       {
-        ROS_DEBUG("Texture with index %u not loaded yet", textureIndex);
+        RCLCPP_DEBUG("Texture with index %u not loaded yet", textureIndex);
       }
       else
       {
@@ -780,7 +780,7 @@ bool MeshVisual::setGeometry(const Geometry& mesh)
   // check if there are enough vertices given
   if (mesh.vertices.size() < 3)
   {
-    ROS_WARN("Received not enough vertices, can't create mesh!");
+    RCLCPP_WARN("Received not enough vertices, can't create mesh!");
     return false;
   }
 
@@ -804,12 +804,12 @@ bool MeshVisual::setNormals(const vector<Normal>& normals)
   // check if there are vertex normals for each vertex
   if (normals.size() == m_geometry.vertices.size())
   {
-    ROS_INFO("Received %lu vertex normals.", normals.size());
+    RCLCPP_INFO("Received %lu vertex normals.", normals.size());
     m_vertex_normals_enabled = true;
   }
   else if (normals.size() > 0)
   {
-    ROS_WARN("Received not as much vertex normals as vertices, ignoring vertex normals!");
+    RCLCPP_WARN("Received not as much vertex normals as vertices, ignoring vertex normals!");
     return false;
   }
 
@@ -833,12 +833,12 @@ bool MeshVisual::setVertexColors(const vector<Color>& vertexColors)
   // check if there are vertex colors for each vertex
   if (vertexColors.size() == m_geometry.vertices.size())
   {
-    ROS_INFO("Received %lu vertex colors.", vertexColors.size());
+    RCLCPP_INFO("Received %lu vertex colors.", vertexColors.size());
     m_vertex_colors_enabled = true;
   }
   else
   {
-    ROS_WARN("Received not as much vertex colors as vertices, ignoring the vertex colors!");
+    RCLCPP_WARN("Received not as much vertex colors as vertices, ignoring the vertex colors!");
     return false;
   }
 
@@ -857,19 +857,19 @@ bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costC
   //   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
   //   if (m_meshUuid != vertexCostsMsg->uuid)
   //   {
-  //     ROS_WARN("Can't add vertex costs, uuids do not match.");
+  //     RCLCPP_WARN("Can't add vertex costs, uuids do not match.");
   //     return false;
   //   }
 
   // check if there are vertex costs for each vertex
   if (vertexCosts.size() == m_geometry.vertices.size())
   {
-    ROS_DEBUG("Received %lu vertex costs.", vertexCosts.size());
+    RCLCPP_DEBUG("Received %lu vertex costs.", vertexCosts.size());
     m_vertex_costs_enabled = true;
   }
   else
   {
-    ROS_WARN("Received not as much vertex costs as vertices, ignoring the vertex costs!");
+    RCLCPP_WARN("Received not as much vertex costs as vertices, ignoring the vertex costs!");
     return false;
   }
 
@@ -886,19 +886,19 @@ bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costC
   //   // check if these MeshVertexCosts belong to the current mesh and were not already loaded
   //   if (m_meshUuid != vertexCostsMsg->uuid)
   //   {
-  //     ROS_WARN("Can't add vertex costs, uuids do not match.");
+  //     RCLCPP_WARN("Can't add vertex costs, uuids do not match.");
   //     return false;
   //   }
 
   // check if there are vertex costs for each vertex
   if (vertexCosts.size() == m_geometry.vertices.size())
   {
-    ROS_DEBUG("Received %lu vertex costs.", vertexCosts.size());
+    RCLCPP_DEBUG("Received %lu vertex costs.", vertexCosts.size());
     m_vertex_costs_enabled = true;
   }
   else
   {
-    ROS_WARN("Received not as much vertex costs as vertices, ignoring the vertex costs!");
+    RCLCPP_WARN("Received not as much vertex costs as vertices, ignoring the vertex costs!");
     return false;
   }
 
@@ -914,12 +914,12 @@ bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<Te
   // check if there is a material index for each cluster
   if (materials.size() >= 0)
   {
-    ROS_INFO("Received %lu materials.", materials.size());
+    RCLCPP_INFO("Received %lu materials.", materials.size());
     m_materials_enabled = true;  // enable materials
   }
   else
   {
-    ROS_WARN("Received zero materials, ignoring materials!");
+    RCLCPP_WARN("Received zero materials, ignoring materials!");
     return false;
   }
 
@@ -927,13 +927,13 @@ bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<Te
   // check if there are texture coords for each vertex
   if (texCoords.size() == m_geometry.vertices.size())
   {
-    ROS_INFO("Received %lu texture coords.", texCoords.size());
+    RCLCPP_INFO("Received %lu texture coords.", texCoords.size());
     m_texture_coords_enabled = true;  // enable texture coords
     m_textures_enabled = true;        // enable textures
   }
   else if (texCoords.size() > 0)
   {
-    ROS_WARN("Received not as much texture coords as vertices, ignoring texture coords!");
+    RCLCPP_WARN("Received not as much texture coords as vertices, ignoring texture coords!");
   }
 
   enteringTexturedTriangleMesh(m_geometry, materials, texCoords);
@@ -962,7 +962,7 @@ bool MeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
   }
   else
   {
-    ROS_WARN("Can't load image into texture material, material does not exist!");
+    RCLCPP_WARN("Can't load image into texture material, material does not exist!");
     return false;
   }
 }
@@ -978,7 +978,7 @@ Ogre::PixelFormat MeshVisual::getOgrePixelFormatFromRosString(std::string encodi
     return Ogre::PF_BYTE_RGB;
   }
 
-  ROS_WARN("Unknown texture encoding! Using Ogre::PF_UNKNOWN");
+  RCLCPP_WARN("Unknown texture encoding! Using Ogre::PF_UNKNOWN");
   return Ogre::PF_UNKNOWN;
 }
 

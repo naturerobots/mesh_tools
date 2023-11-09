@@ -85,7 +85,7 @@ std::shared_ptr<Geometry> MapDisplay::getGeometry()
 {
   if (!m_geometry)
   {
-    ROS_ERROR("Map Display: Geometry requested, but none available!");
+    RCLCPP_ERROR("Map Display: Geometry requested, but none available!");
   }
   return m_geometry;
 }
@@ -244,33 +244,33 @@ bool MapDisplay::loadData()
   std::string mapFile = m_mapFilePath->getFilename();
   if (mapFile.empty())
   {
-    ROS_WARN_STREAM("Map Display: No map file path specified!");
+    RCLCPP_WARN_STREAM("Map Display: No map file path specified!");
     setStatus(rviz_common::StatusProperty::Warn, "Map", "No map file path specified!");
     return false;
   }
   if (!boost::filesystem::exists(mapFile))
   {
-    ROS_WARN_STREAM("Map Display: Specified map file does not exist!");
+    RCLCPP_WARN_STREAM("Map Display: Specified map file does not exist!");
     setStatus(rviz_common::StatusProperty::Warn, "Map", "Specified map file does not exist!");
     return false;
   }
   
-  ROS_INFO_STREAM("Map Display: Loading data for map '" << mapFile << "'");
+  RCLCPP_INFO_STREAM("Map Display: Loading data for map '" << mapFile << "'");
 
   try
   {
     if (boost::filesystem::extension(mapFile).compare(".h5") == 0)
     {
-      ROS_INFO("Map Display: Load HDF5 map");
+      RCLCPP_INFO("Map Display: Load HDF5 map");
       // Open file IO
       hdf5_map_io::HDF5MapIO map_io(mapFile);
 
-      ROS_INFO("Map Display: Load geometry");
+      RCLCPP_INFO("Map Display: Load geometry");
 
       // Read geometry
       m_geometry = std::make_shared<Geometry>(Geometry(map_io.getVertices(), map_io.getFaceIds()));
 
-      ROS_INFO("Map Display: Load textures");
+      RCLCPP_INFO("Map Display: Load textures");
 
       // Read textures
       vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
@@ -288,7 +288,7 @@ bool MapDisplay::loadData()
         m_textures[textureIndex].pixelFormat = "rgb8";
       }
 
-      ROS_INFO("Map Display: Load materials");
+      RCLCPP_INFO("Map Display: Load materials");
 
       // Read materials
       vector<hdf5_map_io::MapMaterial> materials = map_io.getMaterials();
@@ -322,7 +322,7 @@ bool MapDisplay::loadData()
         m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
       }
 
-      ROS_INFO("Map Display: Load vertex colors");
+      RCLCPP_INFO("Map Display: Load vertex colors");
 
       // Read vertex colors
       vector<uint8_t> colors = map_io.getVertexColors();
@@ -334,7 +334,7 @@ bool MapDisplay::loadData()
         m_colors.push_back(Color(colors[i + 0] / 255.0f, colors[i + 1] / 255.0f, colors[i + 2] / 255.0f, 1.0));
       }
 
-      ROS_INFO("Map Display: Load vertex normals");
+      RCLCPP_INFO("Map Display: Load vertex normals");
 
       // Read vertex normals
       vector<float> normals = map_io.getVertexNormals();
@@ -345,7 +345,7 @@ bool MapDisplay::loadData()
         m_normals.push_back(Normal(normals[i + 0], normals[i + 1], normals[i + 2]));
       }
 
-      ROS_INFO("Map Display: Load texture coordinates");
+      RCLCPP_INFO("Map Display: Load texture coordinates");
 
       // Read tex cords
       vector<float> texCoords = map_io.getVertexTextureCoords();
@@ -356,7 +356,7 @@ bool MapDisplay::loadData()
         m_texCoords.push_back(TexCoords(texCoords[i], texCoords[i + 1]));
       }
 
-      ROS_INFO("Map Display: Load clusters");
+      RCLCPP_INFO("Map Display: Load clusters");
 
       // Read labels
       m_clusterList.clear();
@@ -384,7 +384,7 @@ bool MapDisplay::loadData()
           }
           catch (const hf::DataSpaceException& e)
           {
-              ROS_WARN_STREAM("Could not load channel " << costlayer << " as a costlayer!");
+              RCLCPP_WARN_STREAM("Could not load channel " << costlayer << " as a costlayer!");
           }
       }
     }
@@ -438,14 +438,14 @@ bool MapDisplay::loadData()
   }
   catch (...)
   {
-    ROS_ERROR_STREAM("An unexpected error occurred while using Pluto Map IO");
+    RCLCPP_ERROR_STREAM("An unexpected error occurred while using Pluto Map IO");
     setStatus(rviz_common::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
     return false;
   }
 
   setStatus(rviz_common::StatusProperty::Ok, "IO", "");
 
-  ROS_INFO("Map Display: Successfully loaded map.");
+  RCLCPP_INFO("Map Display: Successfully loaded map.");
 
   return true;
 }
@@ -458,7 +458,7 @@ void MapDisplay::saveLabel(Cluster cluster)
   std::string label = cluster.name;
   std::vector<uint32_t> faces = cluster.faces;
 
-  ROS_INFO_STREAM("Map Display: add label '" << label << "'");
+  RCLCPP_INFO_STREAM("Map Display: add label '" << label << "'");
 
   try
   {
@@ -467,7 +467,7 @@ void MapDisplay::saveLabel(Cluster cluster)
     boost::split(results, label, [](char c) { return c == '_'; });
     if (results.size() != 2)
     {
-      ROS_ERROR_STREAM("Map Display: Illegal label name '" << label << "'");
+      RCLCPP_ERROR_STREAM("Map Display: Illegal label name '" << label << "'");
       setStatus(rviz_common::StatusProperty::Error, "Label", "Illegal label name!");
       return;
     }
@@ -482,7 +482,7 @@ void MapDisplay::saveLabel(Cluster cluster)
     m_clusterList.push_back(Cluster(label, faces));
 
     setStatus(rviz_common::StatusProperty::Ok, "Label", "Successfully saved label");
-    ROS_INFO_STREAM("Map Display: Successfully added label to map.");
+    RCLCPP_INFO_STREAM("Map Display: Successfully added label to map.");
 
     // update the map to show the new label
     updateMap();

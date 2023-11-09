@@ -96,7 +96,7 @@
 #include <hdf5_map_io/hdf5_map_io.h>
 
 #ifndef Q_MOC_RUN
-#include <rviz_rendering/mesh_loader.h>
+#include <rviz_rendering/mesh_loader.hpp>
 
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneNode.h>

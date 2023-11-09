@@ -57,6 +57,8 @@
 #include <rviz/properties/enum_property.h>
 #include <rviz/properties/string_property.h>
 
+#include "rclcpp/rclcpp.hpp"
+
 namespace rviz_map_plugin
 {
 Ogre::ColourValue getRainbowColor(float value)
@@ -92,9 +94,9 @@ Ogre::ColourValue getRainbowColor(float value)
 ClusterLabelDisplay::ClusterLabelDisplay()
 {
   m_activeVisualProperty =
-      new rviz_common::EnumProperty("Active label", "__NEW__", "Current active label. Can be edited with Cluster Label Tool",
+      new rviz_common::properties::EnumProperty("Active label", "__NEW__", "Current active label. Can be edited with Cluster Label Tool",
                              this, SLOT(changeVisual()), this);
-  m_alphaProperty = new rviz_common::FloatProperty("Transparency", 1.0f,
+  m_alphaProperty = new rviz_common::properties::FloatProperty("Transparency", 1.0f,
                                             "Transparency of the Labeled Cluster Visualization. 0.0 is fully "
                                             "transparent, 1.0 fully opaque",
                                             this, SLOT(updateColors()), this);
@@ -105,7 +107,7 @@ ClusterLabelDisplay::ClusterLabelDisplay()
   m_colorsProperty->setReadOnly(true);
   m_sphereSizeProperty =
       new rviz_common::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
-  m_phantomVisualProperty = new rviz_common::BoolProperty("Show Phantom", false,
+  m_phantomVisualProperty = new rviz_common::properties::BoolProperty("Show Phantom", false,
                                                    "Show a transparent silhouette of the whole mesh to help with "
                                                    "labeling",
                                                    this, SLOT(updatePhantomVisual()), this);
@@ -124,7 +126,7 @@ std::shared_ptr<Geometry> ClusterLabelDisplay::getGeometry()
 {
   if (!m_geometry)
   {
-    ROS_ERROR("Label Display: Geometry requested, but none available!");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: Geometry requested, but none available!");
   }
   return m_geometry;
 }
@@ -133,7 +135,7 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
 {
   if (has_data)
   {
-    ROS_WARN("Label Display: already has data, but setData() was called again!");
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: already has data, but setData() was called again!");
   }
 
   // Copy data
@@ -142,7 +144,7 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
   m_clusterList.insert(m_clusterList.begin(), Cluster("__NEW__", vector<uint32_t>()));
 
   // Set flag
-  ROS_INFO("Label Display: received data");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: received data");
   has_data = true;
 
   // Draw visuals
@@ -180,11 +182,11 @@ void ClusterLabelDisplay::changeVisual()
 {
   if (m_activeVisualProperty->getStdString().empty())
   {
-    ROS_ERROR("Label Display: Should change visual but no visual selected!");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: Should change visual but no visual selected!");
     return;
   }
 
-  ROS_INFO_STREAM("Label Display: Changed active visual to '" << m_activeVisualProperty->getStdString() << "'");
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: Changed active visual to '" << m_activeVisualProperty->getStdString() << "'");
 
   m_activeVisualId = m_activeVisualProperty->getOptionInt();
 
@@ -194,11 +196,11 @@ void ClusterLabelDisplay::changeVisual()
 
 void ClusterLabelDisplay::updateMap()
 {
-  ROS_INFO("Label Display: Update");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: Update");
 
   if (!has_data)
   {
-    ROS_WARN("Label Display: No data available! Can't show map");
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: No data available! Can't show map");
     return;
   }
 
@@ -293,7 +295,7 @@ void ClusterLabelDisplay::createVisualsFromClusterList()
     ss << "ClusterLabelVisual_" << i;
 
     auto visual = std::make_shared<ClusterLabelVisual>(context_, ss.str(), m_geometry);
-    ROS_DEBUG_STREAM("Label Display: Create visual for label '" << m_clusterList[i].name << "'");
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "Label Display: Create visual for label '" << m_clusterList[i].name << "'");
     visual->setFacesInCluster(m_clusterList[i].faces);
     visual->setColor(getRainbowColor((++colorIndex / m_clusterList.size())), m_alphaProperty->getFloat());
     m_visuals.push_back(visual);
@@ -344,7 +346,7 @@ void ClusterLabelDisplay::notifyLabelTool()
 
 void ClusterLabelDisplay::addLabel(std::string label, std::vector<uint32_t> faces)
 {
-  ROS_INFO_STREAM("Cluster Label Display: add label '" << label << "'");
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "Cluster Label Display: add label '" << label << "'");
 
   Q_EMIT signalAddLabel(Cluster(label, faces));
 }
