@@ -54,7 +54,7 @@ set(SOURCE_FILES
   # src/MapDisplay.cpp
   src/MeshDisplay.cpp
   src/MeshVisual.cpp
-  # src/RvizFileProperty.cpp
+  src/RvizFileProperty.cpp
   # src/MeshPoseTool.cpp
   # src/MeshGoalTool.cpp
 )
@@ -69,7 +69,7 @@ set(MOC_HEADER_FILES
   include/MeshVisual.hpp
   # include/ClusterLabelTool.hpp
   # include/CLUtil.hpp
-  # include/RvizFileProperty.hpp
+  include/RvizFileProperty.hpp
   # include/MeshPoseTool.hpp
   # include/MeshGoalTool.hpp
 )

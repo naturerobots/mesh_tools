@@ -49,17 +49,21 @@
 #define RVIZ_FILE_PROPERTY_HPP
 
 #include <string>
-#include <rviz_common/properties/property.hpp>
+#include <rviz_common/properties/file_picker_property.hpp>
 
 namespace rviz
 {
-class FileProperty : public Property
+class FileProperty : public rviz_common::properties::FilePickerProperty
 {
   Q_OBJECT
 public:
-  FileProperty(const QString& name = QString(), const QString& default_value = QString(),
-               const QString& description = QString(), Property* parent = nullptr, const char* changed_slot = nullptr,
-               QObject* receiver = nullptr);
+  FileProperty(
+    const QString& name = QString(), 
+    const QString& default_value = QString(),
+    const QString& description = QString(),
+    Property* parent = nullptr,
+    const char* changed_slot = nullptr,
+    QObject* receiver = nullptr);
 
   std::string getFilename()
   {

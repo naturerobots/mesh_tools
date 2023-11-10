@@ -53,17 +53,20 @@ namespace rviz
 {
 FileProperty::FileProperty(const QString& name, const QString& default_value, const QString& description,
                            Property* parent, const char* changed_slot, QObject* receiver)
-  : Property(name, default_value, description, parent, changed_slot, receiver)
+  : rviz_common::properties::FilePickerProperty(
+        name, default_value, description, parent, changed_slot, receiver)
 {
 }
 
-QWidget* FileProperty::createEditor(QWidget* parent, const QStyleOptionViewItem&)
+QWidget* FileProperty::createEditor(
+  QWidget* parent, 
+  const QStyleOptionViewItem&)
 {
   QFileDialog* editor = new QFileDialog(nullptr);
 
   QStringList filenameFilters;
+  filenameFilters << tr("*");
   filenameFilters << tr("*.h5");
-  #if defined(WITH_ASSIMP)
   filenameFilters << tr("*.ply");
   filenameFilters << tr("*.obj");
   filenameFilters << tr("*.dae");
@@ -72,8 +75,6 @@ QWidget* FileProperty::createEditor(QWidget* parent, const QStyleOptionViewItem&
   filenameFilters << tr("*.3ds");
   filenameFilters << tr("*.fbx");
   filenameFilters << tr("*.blend");
-  #endif
-  filenameFilters << tr("*");
   editor->setNameFilters(filenameFilters);
 
   editor->setViewMode(QFileDialog::Detail);

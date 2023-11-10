@@ -40,6 +40,7 @@
  *  MeshPoseTool.cpp
  *
  *	authors:  Sebastian Pütz <spuetz@uos.de>
+ *            Alexander Mock <amock@uos.de>
  *
  */
 
@@ -48,17 +49,51 @@
 #include <OgreSceneNode.h>
 #include <OgreViewport.h>
 
-#include <rviz/geometry.h>
-#include <rviz/ogre_helpers/arrow.h>
-#include <rviz/viewport_mouse_event.h>
-#include <rviz/load_resource.h>
-#include <rviz/render_panel.h>
+#include <rviz_rendering/geometry.hpp>
+#include <rviz_rendering/objects/arrow.hpp>
+
+// #include "rviz_rendering/render_window.hpp"
+
+#include <rviz_common/viewport_mouse_event.hpp>
+#include <rviz_common/load_resource.hpp>
+#include <rviz_common/render_panel.hpp>
 #include <rviz_common/display_context.hpp>
+
+// method is private :(
+#include <rviz_rendering/viewport_projection_finder.hpp>
+
+#include <cassert>
 
 #include "rviz_mesh_tools_plugins/MeshPoseTool.hpp"
 
+
+
 namespace rviz_mesh_tools_plugins
 {
+
+bool getViewportProjectionOnPlane(
+  rviz_rendering::RenderWindow* render_window,
+  int x, int y,
+  const Ogre::Plane& plane,
+  Ogre::Vector3& intersection_point)
+{
+  auto viewport = rviz_rendering::RenderWindowOgreAdapter::getOgreViewport(render_window);
+  int width = viewport->getActualWidth();
+  int height = viewport->getActualHeight();
+  Ogre::Ray mouse_ray = viewport->getCamera()->getCameraToViewportRay(
+    static_cast<float>(x) / static_cast<float>(width),
+    static_cast<float>(y) / static_cast<float>(height));
+
+  auto intersection = mouse_ray.intersects(plane);
+  if (!intersection.first) 
+  {
+    return false;
+  }
+
+  intersection_point = mouse_ray.getPoint(intersection.second);
+  return true;
+}
+
 MeshPoseTool::MeshPoseTool() : rviz_common::Tool(), arrow_(NULL)
 {
 }
@@ -70,7 +105,7 @@ MeshPoseTool::~MeshPoseTool()
 
 void MeshPoseTool::onInitialize()
 {
-  arrow_ = new rviz_common::Arrow(scene_manager_, NULL, 2.0f, 0.2f, 0.5f, 0.35f);
+  arrow_ = new rviz_rendering::Arrow(scene_manager_, NULL, 2.0f, 0.2f, 0.5f, 0.35f);
   arrow_->setColor(0.0f, 1.0f, 0.0f, 1.0f);
   arrow_->getSceneNode()->setVisible(false);
 }
@@ -92,7 +127,9 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
 
   if (event.leftDown())
   {
-    RCLCPP_ASSERT(state_ == Position);
+    // TODO: check if there is a proper ROS2 equivalent
+    // RCLCPP_ASSERT(state_ == Position);
+    assert(state_ == Position);
 
     Ogre::Vector3 pos, ori;
     if (selectTriangle(event, pos, ori))
@@ -110,7 +147,14 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
     {
       Ogre::Vector3 cur_pos;
       Ogre::Plane plane(ori_, pos_);
-      if (rviz_common::getPointOnPlaneFromWindowXY(event.viewport, plane, event.x, event.y, cur_pos))
+
+      auto render_window = event.panel->getRenderWindow();
+
+      Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
+        (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
+
+
+      if (getViewportProjectionOnPlane(render_window, event.x, event.y, plane, cur_pos))
       {
         // right hand coordinate system
         // x to the right, y to the top, and -z into the scene
@@ -134,9 +178,20 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   {
     if (state_ == Orientation)
     {
+      // rviz_rendering::project3DPointToViewportXY
       Ogre::Vector3 cur_pos;
       Ogre::Plane plane(ori_, pos_);
-      if (rviz_common::getPointOnPlaneFromWindowXY(event.viewport, plane, event.x, event.y, cur_pos))
+
+      // Start point on triangle is given.
+      // When releasing the left mouse button we search for
+      // the end point on the (infinite-sized) plane of the triangle
+      // 
+      // ROS1: rviz::getPointOnPlaneFromWindowXY(event.viewport, plane, event.x, event.y, cur_pos)
+      // ROS2: ? 
+
+      auto render_window = event.panel->getRenderWindow();
+
+      if (getViewportProjectionOnPlane(render_window, event.x, event.y, plane, cur_pos))
       {
         // arrow foreward negative z
         Ogre::Vector3 z_axis = -(cur_pos - pos_);

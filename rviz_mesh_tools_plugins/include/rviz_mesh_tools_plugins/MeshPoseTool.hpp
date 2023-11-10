@@ -52,7 +52,13 @@
 
 #include <QCursor>
 #include <rviz_common/tool.hpp>
-#include <rviz_common/ogre_helpers/arrow.hpp>
+// #include <rviz_rendering/objects/arrow.hpp>
+
+// Forward declare types
+namespace rviz_rendering 
+{
+  class Arrow;
+}
 
 namespace rviz_mesh_tools_plugins
 {
@@ -80,7 +86,7 @@ protected:
 
   bool selectTriangle(rviz_common::ViewportMouseEvent& event, Ogre::Vector3& position, Ogre::Vector3& orientation);
 
-  rviz_common::Arrow* arrow_;
+  rviz_rendering::Arrow* arrow_;
   enum State
   {
     Position,
