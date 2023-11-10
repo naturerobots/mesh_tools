@@ -51,7 +51,7 @@
  *    Malte kleine Piening <malte@klpiening.de>
  */
 
-#include <MeshDisplay.hpp>
+#include <rviz_mesh_map_plugin/MeshDisplay.hpp>
 
 #include <chrono>
 #include <cstdlib>
@@ -86,7 +86,7 @@ using namespace std::chrono_literals;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
@@ -256,15 +256,11 @@ void MeshDisplay::onInitialize()
 
   // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
-
   m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
   m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
   m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
   m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
   m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
-
-
-
 
   updateMesh();
   updateWireframe();
@@ -464,7 +460,7 @@ void MeshDisplay::updateBufferSize()
 
 void MeshDisplay::updateMesh()
 {
-  RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Mesh Display: Update");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Mesh Display: Update");
 
   bool showFaces = false;
   bool showTextures = false;
@@ -549,7 +545,7 @@ void MeshDisplay::updateMesh()
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
   if (!visual)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Mesh display: no visual available, can't draw mesh! (maybe no data has been received yet?)");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_map_plugin"), "Mesh display: no visual available, can't draw mesh! (maybe no data has been received yet?)");
     return;
   }
 
@@ -700,7 +696,7 @@ void MeshDisplay::updateMaterialAndTextureServices()
       setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The specified Texture Service doesn't exist."));
     }
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Unable to mesh_msgs::srv::GetMaterials service. Start vision_node first.");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_map_plugin"), "Unable to mesh_msgs::srv::GetMaterials service. Start vision_node first.");
     setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The specified Material Service doesn't exist."));
   }
 }
@@ -759,7 +755,7 @@ void MeshDisplay::initialServiceCall()
     {
       std::string uuid = uuids[0];
 
-      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Initial data available for UUID=" << uuid);
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_map_plugin"), "Initial data available for UUID=" << uuid);
       
       // mesh_msgs::srv::GetGeometry srv_geometry;
       auto req_geometry = std::make_shared<mesh_msgs::srv::GetGeometry::Request>();
@@ -770,15 +766,15 @@ void MeshDisplay::initialServiceCall()
       if(rclcpp::spin_until_future_complete(node, fut_geometry) == rclcpp::FutureReturnCode::SUCCESS)
       {
         auto res_geometry = fut_geometry.get();
-        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Found geometry for UUID=" << uuid);
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_map_plugin"), "Found geometry for UUID=" << uuid);
         processMessage(res_geometry->mesh_geometry_stamped);
       } else {
-        RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Failed to receive mesh_msgs::srv::GetGeometry service response");
-        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Could not load geometry. Waiting for callback to trigger ... "); 
+        RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_map_plugin"), "Failed to receive mesh_msgs::srv::GetGeometry service response");
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_map_plugin"), "Could not load geometry. Waiting for callback to trigger ... "); 
       }
     }
   } else {
-    RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "No initial data available, waiting for callback to trigger ...");
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "No initial data available, waiting for callback to trigger ...");
   }
 }
 
@@ -795,14 +791,14 @@ void MeshDisplay::processMessage(const mesh_msgs::msg::MeshGeometryStamped& mesh
   if (!context_->getFrameManager()->getTransform(meshMsg.header.frame_id, meshMsg.header.stamp, position,
                                                  orientation))
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Error transforming from frame '%s' to frame '%s'", meshMsg.header.frame_id.c_str(),
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_map_plugin"), "Error transforming from frame '%s' to frame '%s'", meshMsg.header.frame_id.c_str(),
               qPrintable(rviz_common::Display::fixed_frame_));
     return;
   }
 
   if (!m_lastUuid.empty() && meshMsg.uuid.compare(m_lastUuid) != 0)
   {
-    RCLCPP_WARN(rclcpp::get_logger("rviz_map_plugin"), "Received geometry with new UUID!");
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_map_plugin"), "Received geometry with new UUID!");
     m_costCache.clear();
     m_selectVertexCostMap->clearOptions();
     m_selectVertexCostMap->addOption("-- None --", 0);
@@ -857,7 +853,7 @@ void MeshDisplay::incomingVertexColors(
 {
   if (colorsStamped->uuid.compare(m_lastUuid) != 0)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Received vertex colors, but UUIDs dont match!");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_map_plugin"), "Received vertex colors, but UUIDs dont match!");
     return;
   }
 
@@ -876,7 +872,7 @@ void MeshDisplay::incomingVertexCosts(
 {
   if (costsStamped->uuid.compare(m_lastUuid) != 0)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_map_plugin"), "Received vertex costs, but UUIDs dont match!");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_map_plugin"), "Received vertex costs, but UUIDs dont match!");
     return;
   }
 
@@ -900,7 +896,7 @@ void MeshDisplay::requestVertexColors(std::string uuid)
   if(rclcpp::spin_until_future_complete(node, fut_vertex_colors) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto res_vertex_colors = fut_vertex_colors.get();
-    RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful vertex colors service call!");
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Successful vertex colors service call!");
 
     std::vector<Color> vertexColors;
     for (const std_msgs::msg::ColorRGBA c : res_vertex_colors->mesh_vertex_colors_stamped.mesh_vertex_colors.vertex_colors)
@@ -913,7 +909,7 @@ void MeshDisplay::requestVertexColors(std::string uuid)
   }
   else
   {
-    RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Failed vertex colors service call!");
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Failed vertex colors service call!");
   }
 }
 
@@ -934,7 +930,7 @@ void MeshDisplay::requestMaterials(std::string uuid)
   {
     auto res_materials = fut_materials.get();
 
-    RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful materials service call!");
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Successful materials service call!");
 
     const mesh_msgs::msg::MeshMaterialsStamped& meshMaterialsStamped =
         res_materials->mesh_materials_stamped;
@@ -982,7 +978,7 @@ void MeshDisplay::requestMaterials(std::string uuid)
         if(rclcpp::spin_until_future_complete(node, fut_texture) == rclcpp::FutureReturnCode::SUCCESS)
         {
           auto res_texture = fut_texture.get();
-          RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Successful texture service call with index %d!", material.texture_index);
+          RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Successful texture service call with index %d!", material.texture_index);
           const mesh_msgs::msg::MeshTexture& textureMsg =
               res_texture->texture;
 
@@ -997,31 +993,31 @@ void MeshDisplay::requestMaterials(std::string uuid)
         }
         else
         {
-          RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Failed texture service call with index %d!", material.texture_index);
+          RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Failed texture service call with index %d!", material.texture_index);
         }
       }
     }
   }
   else
   {
-    RCLCPP_INFO(rclcpp::get_logger("rviz_map_plugin"), "Failed materials service call!");
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_map_plugin"), "Failed materials service call!");
   }
 }
 
 void MeshDisplay::cacheVertexCosts(std::string layer, const std::vector<float>& costs)
 {
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "Cache vertex cost map '" << layer << "' for UUID ");
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_map_plugin"), "Cache vertex cost map '" << layer << "' for UUID ");
 
   // insert into cache
   auto it = m_costCache.find(layer);
   if (it != m_costCache.end())
   {
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "The cost layer \"" << layer << "\" has been updated.");
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_map_plugin"), "The cost layer \"" << layer << "\" has been updated.");
     m_costCache.erase(layer);
   }
   else
   {
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_map_plugin"), "The cost layer \"" << layer << "\" has been added.");
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_map_plugin"), "The cost layer \"" << layer << "\" has been added.");
     m_selectVertexCostMap->addOptionStd(layer, m_selectVertexCostMap->numChildren());
   }
 
@@ -1056,7 +1052,7 @@ std::shared_ptr<MeshVisual> MeshDisplay::addNewVisual()
   return m_visuals.back();
 }
 
-}  // End namespace rviz_map_plugin
+}  // End namespace rviz_mesh_map_plugin
 
 #include <pluginlib/class_list_macros.hpp>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::MeshDisplay, rviz_common::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_mesh_map_plugin::MeshDisplay, rviz_common::Display)

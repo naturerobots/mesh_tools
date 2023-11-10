@@ -49,7 +49,7 @@
 #ifndef CLUSTER_LABEL_DISPLAY_HPP
 #define CLUSTER_LABEL_DISPLAY_HPP
 
-#include <Types.hpp>
+#include <rviz_mesh_map_plugin/Types.hpp>
 
 #include <vector>
 #include <map>
@@ -117,7 +117,7 @@ class StringProperty;
 
 }  // End namespace rviz
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 using std::map;
 using std::shared_ptr;
@@ -292,6 +292,6 @@ private:
   
 };
 
-}  // end namespace rviz_map_plugin
+}  // end namespace rviz_mesh_map_plugin
 
 #endif

@@ -2,7 +2,7 @@
  *  Software License Agreement (BSD License)
  *
  *  Robot Operating System code by the University of Osnabrück
- *  Copyright (c) 2021, University of Osnabrück
+ *  Copyright (c) 2015, University of Osnabrück
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -37,61 +37,69 @@
  *
  *
  *
- *  RvizFileProperty.cpp
+ *  MeshGoalTool.hpp
  *
- *
- *  authors:
- *
- *    Malte kleine Piening <malte@klpiening.de>
+ *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  */
 
-#include "RvizFileProperty.hpp"
+#ifndef MESH_GOAL_TOOL_HPP
+#define MESH_GOAL_TOOL_HPP
 
-#include <QFileDialog>
+#include <rviz_mesh_map_plugin/MeshPoseTool.hpp>
+#include <geometry_msgs/PoseStamped.h>
+#include <rviz/properties/bool_property.h>
+#include <rviz/properties/string_property.h>
+#include <rviz_common/display_context.hpp>
 
-namespace rviz
+#ifndef Q_MOC_RUN
+#include <QObject>
+#endif
+
+namespace rviz_mesh_map_plugin
 {
-FileProperty::FileProperty(const QString& name, const QString& default_value, const QString& description,
-                           Property* parent, const char* changed_slot, QObject* receiver)
-  : Property(name, default_value, description, parent, changed_slot, receiver)
+/**
+ * @class MeshGoalTool
+ * @brief Tool for publishing a goal within a mesh
+ */
+class MeshGoalTool : public MeshPoseTool
 {
-}
+  Q_OBJECT
+public:
+  /**
+   * @brief Constructor
+   */
+  MeshGoalTool();
 
-QWidget* FileProperty::createEditor(QWidget* parent, const QStyleOptionViewItem&)
-{
-  QFileDialog* editor = new QFileDialog(nullptr);
+  /**
+   * @brief Callback that is executed when tool is initialized
+   */
+  virtual void onInitialize();
 
-  QStringList filenameFilters;
-  filenameFilters << tr("*.h5");
-  #if defined(WITH_ASSIMP)
-  filenameFilters << tr("*.ply");
-  filenameFilters << tr("*.obj");
-  filenameFilters << tr("*.dae");
-  filenameFilters << tr("*.stl");
-  filenameFilters << tr("*.3d");
-  filenameFilters << tr("*.3ds");
-  filenameFilters << tr("*.fbx");
-  filenameFilters << tr("*.blend");
-  #endif
-  filenameFilters << tr("*");
-  editor->setNameFilters(filenameFilters);
+private Q_SLOTS:
 
-  editor->setViewMode(QFileDialog::Detail);
+  /**
+   * @brief Updates the topic on which the goal will be published
+   */
+  void updateTopic();
 
-  if (editor->exec())
-  {
-    QStringList fileNames = editor->selectedFiles();
-    if (fileNames.size() == 0)
-    {
-      setStdFilename("");
-    }
-    else
-    {
-      setFilename(fileNames.at(0));
-    }
-  }
+protected:
+  /**
+   * @brief When goal is set, publish result
+   * @param position Position
+   * @param orientation Orientation
+   */
+  virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation);
 
-  return nullptr;
-}
+  /// Property for the topic
+  rviz_common::StringProperty* topic_property_;
+  /// Switch bottom / top for selection
+  rviz_common::BoolProperty* switch_bottom_top_;
+  /// Publisher
+  ros::Publisher pose_pub_;
+  /// Node handle
+  ros::NodeHandle nh_;
+};
 
-}  // namespace rviz
+} /* namespace rviz_mesh_map_plugin */
+
+#endif

@@ -45,7 +45,7 @@
  *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
  */
 
-#include <ClusterLabelVisual.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelVisual.hpp>
 
 #include <rviz_common/display_context.hpp>
 
@@ -57,7 +57,7 @@
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSubMesh.h>
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId)
   : m_displayContext(context), m_labelId(labelId)
@@ -271,4 +271,4 @@ void ClusterLabelVisual::initMaterial()
   m_material->setDepthWriteEnabled(false);
 }
 
-}  // End namespace rviz_map_plugin
+}  // End namespace rviz_mesh_map_plugin

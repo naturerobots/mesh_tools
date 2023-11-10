@@ -53,7 +53,7 @@
 #include <array>
 #include <boost/optional.hpp>
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 using boost::optional;
 using std::array;
@@ -176,4 +176,4 @@ struct Material
   vector<uint32_t> faceIndices;
 };
 
-}  // namespace rviz_map_plugin
+}  // namespace rviz_mesh_map_plugin

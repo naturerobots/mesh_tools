@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>rviz_map_plugin</name>
+  <name>rviz_mesh_map_plugin</name>
   <description>
     RViz display types and tools for the mesh_msgs package.
   </description>
@@ -14,11 +14,13 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <license>BSD-3</license>
-  <url>https://github.com/uos/mesh_tools/tree/master/rviz_map_plugin</url>
+  <url>https://github.com/uos/mesh_tools/tree/master/rviz_mesh_map_plugin</url>
   
   <buildtool_depend>ament_cmake</buildtool_depend>
   
-  <depend>qtbase5-dev</depend>
+  <build_depend>qtbase5-dev</build_depend>
+  <build_depend>rviz_ogre_vendor</build_depend>
+
   <depend>rclcpp</depend>
   <depend>rviz_common</depend>
   <depend>rviz_rendering</depend>
@@ -30,12 +32,13 @@
   <depend>message_filters</depend>
   <depend>ocl-icd-opencl-dev</depend>
   <depend>opencl-headers</depend>
+  
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>rviz_ogre_vendor</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
-    <rviz plugin="${prefix}/rviz_plugin.xml"/>
   </export>
 </package>

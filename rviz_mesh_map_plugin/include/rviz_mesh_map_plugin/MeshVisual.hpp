@@ -76,7 +76,7 @@
 #include <OgreMaterialManager.h>
 #include <OgreColourValue.h>
 
-#include <Types.hpp>
+#include <rviz_mesh_map_plugin/Types.hpp>
 #include <vector>
 
 namespace Ogre
@@ -88,7 +88,7 @@ class Entity;
 
 }  // End namespace Ogre
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 /**
  * @brief Class to display mesh data in the main panel of rviz.
@@ -379,6 +379,6 @@ private:
   /// raw normals
   std::vector<Normal> m_geometryNormals;
 };
-}  // End namespace rviz_map_plugin
+}  // End namespace rviz_mesh_map_plugin
 
 #endif

@@ -1,5 +1,5 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package rviz_map_plugin
+Changelog for package rviz_mesh_map_plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1.1.0 (2021-10-27)
@@ -21,7 +21,7 @@ Changelog for package rviz_map_plugin
 * MeshDisplay now woring with MeshMap
 * added properties to MeshDisplay
 * added Map3D file dialog property
-* added textured mesh display for mesh msgs visualization to rviz_map_plugin
+* added textured mesh display for mesh msgs visualization to rviz_mesh_map_plugin
 * combined mesh-plugin and map-plugin texture mesh visuals
 * fixed mpi error
 * resolved catkin lint problems

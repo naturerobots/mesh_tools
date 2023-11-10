@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(rviz_map_plugin)
+project(rviz_mesh_map_plugin)
 
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
@@ -24,24 +24,19 @@ find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 
-
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
+find_package(assimp REQUIRED)
+
+# This needs to be optional for non CL devices
 find_package(OpenCL 2)
 
-
-find_package(assimp)
-
-if(assimp_FOUND)
-  include_directories(${ASSIMP_INCLUDE_DIRS})
-  add_definitions(-DWITH_ASSIMP)
-endif(assimp_FOUND)
+include_directories(${ASSIMP_INCLUDE_DIRS})
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 # set(CMAKE_AUTOMOC ON)
 find_package(Qt5 COMPONENTS Core Widgets)
 add_definitions(-DQT_NO_KEYWORDS)
-
 
 include_directories(
   include
@@ -79,13 +74,13 @@ set(MOC_HEADER_FILES
   # include/MeshGoalTool.hpp
 )
 
-foreach(header "${RVIZ_MAP_PLUGIN_MOC_FILES}")
-  qt5_wrap_cpp(RVIZ_MAP_PLUGIN_MOC_FILES "${header}")
+foreach(header "${RVIZ_MESH_MAP_PLUGIN_MOC_FILES}")
+  qt5_wrap_cpp(RVIZ_MESH_MAP_PLUGIN_MOC_FILES "${header}")
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   ${SOURCE_FILES} 
-  ${RVIZ_MAP_PLUGIN_MOC_FILES} 
+  ${RVIZ_MESH_MAP_PLUGIN_MOC_FILES} 
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -95,37 +90,45 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-  ${geometry_msgs_TARGETS}
-  rclcpp::rclcpp
-  rviz_common::rviz_common
   rviz_ogre_vendor::OgreMain
   rviz_ogre_vendor::OgreOverlay
-  rviz_rendering::rviz_rendering
-  rviz_default_plugins::rviz_default_plugins
-  ${sensor_msgs_TARGETS}
-  tf2::tf2
-  ${tf2_geometry_msgs_TARGETS}
-  tf2_ros::tf2_ros
-  rmw::rmw 
-  ${message_filters_TARGETS}
-  ${mesh_msgs_TARGETS}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-  resource_retriever::resource_retriever
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE "RVIZ_MESH_MAP_PLUGIN_BUILDING_LIBRARY")#
+
+pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
+
+ament_target_dependencies(${PROJECT_NAME}
+  PUBLIC
+  rclcpp
+  rmw
+  rviz_common
+  rviz_rendering
+  std_msgs
+  hdf5_map_io
+  mesh_msgs
+  resource_retriever
+  tf2_ros
+  message_filters
+)
 
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION lib/${PROJECT_NAME}
   LIBRARY DESTINATION lib/${PROJECT_NAME}
   RUNTIME DESTINATION bin/${PROJECT_NAME}
 )
-install(FILES
-  rviz_plugin.xml
-  DESTINATION share/${PROJECT_NAME})
+
+
+
+# install(FILES
+#   plugins_description.xml
+#   DESTINATION share/${PROJECT_NAME})
+
 
 install(DIRECTORY icons/
   DESTINATION share/${PROJECT_NAME}/icons)

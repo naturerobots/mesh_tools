@@ -45,10 +45,10 @@
  *
  */
 
-#include <ClusterLabelTool.hpp>
-#include <ClusterLabelVisual.hpp>
-#include <ClusterLabelDisplay.hpp>
-#include <CLUtil.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelTool.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelVisual.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelDisplay.hpp>
+#include <rviz_mesh_map_plugin/CLUtil.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -59,15 +59,15 @@
 
 #include <rviz/properties/color_property.h>
 
-#include <OGRE/OgreColourValue.h>
+#include <OgreColourValue.h>
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelTool, rviz_common::Tool)
+PLUGINLIB_EXPORT_CLASS(rviz_mesh_map_plugin::ClusterLabelTool, rviz_common::Tool)
 
 using std::ifstream;
 using std::stringstream;
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 #define CL_RAY_CAST_KERNEL_FILE "/include/kernels/cast_rays.cl"
 
@@ -195,10 +195,10 @@ void ClusterLabelTool::onInitialize()
     RCLCPP_DEBUG(" ");
 
     // Read kernel file
-    ifstream in(ros::package::getPath("rviz_map_plugin") + CL_RAY_CAST_KERNEL_FILE);
+    ifstream in(ros::package::getPath("rviz_mesh_map_plugin") + CL_RAY_CAST_KERNEL_FILE);
     std::string cast_rays_kernel(static_cast<stringstream const&>(stringstream() << in.rdbuf()).str());
 
-    RCLCPP_DEBUG("Got kernel: %s%s", ros::package::getPath("rviz_map_plugin").c_str(), CL_RAY_CAST_KERNEL_FILE);
+    RCLCPP_DEBUG("Got kernel: %s%s", ros::package::getPath("rviz_mesh_map_plugin").c_str(), CL_RAY_CAST_KERNEL_FILE);
 
     m_clProgramSources = cl::Program::Sources(1, { cast_rays_kernel.c_str(), cast_rays_kernel.length() });
 
@@ -734,4 +734,4 @@ void ClusterLabelTool::resetVisual()
   m_visual.reset();
 }
 
-}  // End namespace rviz_map_plugin
+}  // End namespace rviz_mesh_map_plugin

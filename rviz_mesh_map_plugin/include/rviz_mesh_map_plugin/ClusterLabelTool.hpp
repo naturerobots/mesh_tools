@@ -53,7 +53,7 @@
 #define CL_HPP_MINIMUM_OPENCL_VERSION 110
 #define CL_HPP_ENABLE_EXCEPTIONS
 
-#include <Types.hpp>
+#include <rviz_mesh_map_plugin/Types.hpp>
 
 #include <CL/cl2.hpp>
 
@@ -70,7 +70,7 @@
 #include <QWidget>
 #include <QFrame>
 
-// #include <ros/console.h>
+
 #include <rviz_common/viewport_mouse_event.hpp>
 #include <rviz_common/visualization_manager.hpp>
 #include <rviz_rendering/geometry.hpp>
@@ -88,16 +88,16 @@
 #ifndef Q_MOC_RUN
 #include <rviz_rendering/mesh_loader.hpp>
 
-#include <OGRE/OgreManualObject.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreEntity.h>
-#include <OGRE/OgreStringConverter.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreRay.h>
-#include <OGRE/OgreSceneQuery.h>
+#include <OgreManualObject.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
+#include <OgreEntity.h>
+#include <OgreStringConverter.h>
+#include <OgreMaterialManager.h>
+#include <OgreRay.h>
+#include <OgreSceneQuery.h>
 
-#endif
+#endif // Q_MOC_RUN
 
 namespace rviz
 {
@@ -112,7 +112,7 @@ namespace Ogre
 class Vector3;
 }  // namespace Ogre
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 // Forward declarations
 class ClusterLabelDisplay;
@@ -259,6 +259,6 @@ private:
   cl::Kernel m_clKernelBox;
   cl::Kernel m_clKernelDirAndDist;
 };
-}  // end namespace rviz_map_plugin
+}  // end namespace rviz_mesh_map_plugin
 
 #endif

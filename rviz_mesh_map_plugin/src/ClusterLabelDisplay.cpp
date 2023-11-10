@@ -46,9 +46,9 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-#include <ClusterLabelDisplay.hpp>
-#include <ClusterLabelVisual.hpp>
-#include <ClusterLabelTool.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelDisplay.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelVisual.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelTool.hpp>
 
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/color_property.h>
@@ -59,7 +59,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 Ogre::ColourValue getRainbowColor(float value)
 {
@@ -335,7 +335,7 @@ void ClusterLabelDisplay::initializeLabelTool()
 
   if (!foundTool)
   {
-    m_tool = static_cast<ClusterLabelTool*>(context_->getToolManager()->addTool("rviz_map_plugin/ClusterLabel"));
+    m_tool = static_cast<ClusterLabelTool*>(context_->getToolManager()->addTool("rviz_mesh_map_plugin/ClusterLabel"));
   }
 }
 
@@ -351,7 +351,7 @@ void ClusterLabelDisplay::addLabel(std::string label, std::vector<uint32_t> face
   Q_EMIT signalAddLabel(Cluster(label, faces));
 }
 
-}  // End namespace rviz_map_plugin
+}  // End namespace rviz_mesh_map_plugin
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelDisplay, rviz_common::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_mesh_map_plugin::ClusterLabelDisplay, rviz_common::Display)

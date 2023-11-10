@@ -48,7 +48,7 @@
 #ifndef CLUSTER_LABEL_VISUAL_HPP
 #define CLUSTER_LABEL_VISUAL_HPP
 
-#include <Types.hpp>
+#include <rviz_mesh_map_plugin/Types.hpp>
 
 // #include <ros/ros.h>
 
@@ -71,7 +71,7 @@ class SceneNode;
 class Mesh;
 }  // End namespace Ogre
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 /**
  * @class ClusterLabelVisual
@@ -172,6 +172,6 @@ private:
   std::vector<uint32_t> m_faces;
 };
 
-}  // end namespace rviz_map_plugin
+}  // end namespace rviz_mesh_map_plugin
 
 #endif

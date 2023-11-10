@@ -44,17 +44,17 @@
  *
  *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
+ *    Alexander Mock <amock@uos.de>
  */
 
 #ifndef CLUSTER_LABEL_PANEL_HPP
 #define CLUSTER_LABEL_PANEL_HPP
 
-#include <Types.hpp>
-// #include <ros/ros.h>
+#include <rviz_mesh_map_plugin/Types.hpp>
 #include <QObject>
 #include <rviz_common/panel.hpp>
 #include <rviz_common/tool_manager.hpp>
-#include <ClusterLabelTool.hpp>
+#include <rviz_mesh_map_plugin/ClusterLabelTool.hpp>
 #include <mesh_msgs/msg/mesh_face_cluster.hpp>
 
 // Forward declarations
@@ -66,7 +66,7 @@ namespace rviz
 class Tool;
 }
 
-namespace rviz_map_plugin
+namespace rviz_mesh_map_plugin
 {
 /**
  * @class ClusterLabelPanel
@@ -144,6 +144,6 @@ protected:
   // ros::NodeHandle m_nodeHandle;
 };
 
-}  // end namespace rviz_map_plugin
+}  // end namespace rviz_mesh_map_plugin
 
 #endif
