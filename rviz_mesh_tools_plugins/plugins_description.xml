@@ -1,4 +1,4 @@
-<library path="lib/librviz_mesh_tools_plugins">
+<library path="rviz_mesh_tools_plugins">
   <class name="rviz_mesh_tools_plugins/ClusterLabel"
          type="rviz_mesh_tools_plugins::ClusterLabelPanel"
          base_class_type="rviz_common::Panel">
