@@ -55,9 +55,9 @@
 #include <rviz/render_panel.h>
 #include <rviz_common/display_context.hpp>
 
-#include "rviz_mesh_map_plugin/MeshPoseTool.hpp"
+#include "rviz_mesh_tools_plugins/MeshPoseTool.hpp"
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 MeshPoseTool::MeshPoseTool() : rviz_common::Tool(), arrow_(NULL)
 {
@@ -294,4 +294,4 @@ void MeshPoseTool::getRawManualObjectData(const Ogre::ManualObject* mesh, const 
   indexBuffer->unlock();
 }
 
-}  // namespace rviz_mesh_map_plugin
+}  // namespace rviz_mesh_tools_plugins

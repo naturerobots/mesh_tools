@@ -50,7 +50,7 @@
 
 #include <CL/cl2.hpp>
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 /**
  * @class CLUtil
@@ -471,6 +471,6 @@ public:
   };
 };
 
-}  // end namespace rviz_mesh_map_plugin
+}  // end namespace rviz_mesh_tools_plugins
 
 #endif

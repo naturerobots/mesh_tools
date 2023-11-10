@@ -46,9 +46,9 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-#include <rviz_mesh_map_plugin/MapDisplay.hpp>
-#include <rviz_mesh_map_plugin/ClusterLabelVisual.hpp>
-#include <rviz_mesh_map_plugin/ClusterLabelTool.hpp>
+#include <rviz_mesh_tools_plugins/MapDisplay.hpp>
+#include <rviz_mesh_tools_plugins/ClusterLabelVisual.hpp>
+#include <rviz_mesh_tools_plugins/ClusterLabelTool.hpp>
 
 #include <rviz/properties/bool_property.h>
 #include <rviz/properties/color_property.h>
@@ -65,7 +65,7 @@
 #include <assimp/scene.h>
 
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 MapDisplay::MapDisplay()
 {
@@ -108,7 +108,7 @@ void MapDisplay::onInitialize()
 {
   std::string name = this->getName().toStdString();
 
-  Display* display = createDisplay("rviz_mesh_map_plugin/ClusterLabel");
+  Display* display = createDisplay("rviz_mesh_tools_plugins/ClusterLabel");
 
   m_nh = std::make_shared<ros::NodeHandle>("~");
   m_nh_p = std::make_shared<ros::NodeHandle>("~");
@@ -120,7 +120,7 @@ void MapDisplay::onInitialize()
   addChild(m_clusterLabelDisplay);
   m_clusterLabelDisplay->initialize(context_);
 
-  Display* meshDisplay = createDisplay("rviz_mesh_map_plugin/Mesh");
+  Display* meshDisplay = createDisplay("rviz_mesh_tools_plugins/Mesh");
 
   m_meshDisplay = static_cast<MeshDisplay*>(meshDisplay);
   addChild(m_meshDisplay);
@@ -158,7 +158,7 @@ void MapDisplay::load(const rviz_common::Config& config)
 
   { // Override with ros params
     std::stringstream ss;
-    ss << "rviz_mesh_map_plugin/" << name;
+    ss << "rviz_mesh_tools_plugins/" << name;
 
     std::string mesh_file;
     if(m_nh_p->getParam(ss.str(), mesh_file))
@@ -219,7 +219,7 @@ bool MapDisplay::loadData()
 
   std::string name = this->getName().toStdString();
   // std::stringstream ss;
-  // ss << "rviz_mesh_map_plugin/" << name;
+  // ss << "rviz_mesh_tools_plugins/" << name;
 
   // std::string mesh_file;
   // if(m_nh_p->getParam(ss.str(), mesh_file))
@@ -492,7 +492,7 @@ void MapDisplay::saveLabel(Cluster cluster)
   }
 }
 
-}  // End namespace rviz_mesh_map_plugin
+}  // End namespace rviz_mesh_tools_plugins
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_mesh_map_plugin::MapDisplay, rviz_common::Display)
+PLUGINLIB_EXPORT_CLASS(rviz_mesh_tools_plugins::MapDisplay, rviz_common::Display)

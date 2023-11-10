@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(rviz_mesh_map_plugin)
+project(rviz_mesh_tools_plugins)
 
 # Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
@@ -74,13 +74,13 @@ set(MOC_HEADER_FILES
   # include/MeshGoalTool.hpp
 )
 
-foreach(header "${RVIZ_MESH_MAP_PLUGIN_MOC_FILES}")
-  qt5_wrap_cpp(RVIZ_MESH_MAP_PLUGIN_MOC_FILES "${header}")
+foreach(header "${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES}")
+  qt5_wrap_cpp(RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES "${header}")
 endforeach()
 
 add_library(${PROJECT_NAME} SHARED
   ${SOURCE_FILES} 
-  ${RVIZ_MESH_MAP_PLUGIN_MOC_FILES} 
+  ${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES} 
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -99,7 +99,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
   ${HDF5_HL_LIBRARIES}
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE "RVIZ_MESH_MAP_PLUGIN_BUILDING_LIBRARY")#
+target_compile_definitions(${PROJECT_NAME} PRIVATE "RVIZ_MESH_TOOLS_PLUGINS_BUILDING_LIBRARY")#
 
 pluginlib_export_plugin_description_file(rviz_common plugins_description.xml)
 
@@ -117,20 +117,43 @@ ament_target_dependencies(${PROJECT_NAME}
   message_filters
 )
 
-install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION lib/${PROJECT_NAME}
-  LIBRARY DESTINATION lib/${PROJECT_NAME}
-  RUNTIME DESTINATION bin/${PROJECT_NAME}
+# Export old-style CMake variables
+ament_export_include_directories("include/${PROJECT_NAME}")
+
+# Export modern CMake targets
+ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
+
+ament_export_dependencies(
+  rclcpp
+  rmw
+  rviz_common
+  rviz_rendering
+  std_msgs
+  hdf5_map_io
+  mesh_msgs
+  resource_retriever
+  tf2_ros
+  message_filters
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include/${PROJECT_NAME}
 )
 
 
 
-# install(FILES
-#   plugins_description.xml
-#   DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/icons"
+  DESTINATION share/${PROJECT_NAME})
 
-
-install(DIRECTORY icons/
-  DESTINATION share/${PROJECT_NAME}/icons)
-
-ament_package()
+ament_package(
+  CONFIG_EXTRAS "rviz_mesh_tools_plugins-extras.cmake"
+)

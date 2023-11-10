@@ -2,7 +2,7 @@
  *  Software License Agreement (BSD License)
  *
  *  Robot Operating System code by the University of Osnabrück
- *  Copyright (c) 2015, University of Osnabrück
+ *  Copyright (c) 2021, University of Osnabrück
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -37,60 +37,61 @@
  *
  *
  *
- *  MeshPoseTool.hpp
+ *  RvizFileProperty.cpp
  *
- *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
+ *
+ *  authors:
+ *
+ *    Malte kleine Piening <malte@klpiening.de>
  */
 
-#ifndef MESH_POSE_TOOL_HPP
-#define MESH_POSE_TOOL_HPP
+#include "rviz_mesh_tools_plugins/RvizFileProperty.hpp"
 
-#include <OgreVector3.h>
-#include <OgreQuaternion.h>
-#include <OgreManualObject.h>
-#include <OgreRay.h>
+#include <QFileDialog>
 
-#include <QCursor>
-#include <rviz_common/tool.hpp>
-#include <rviz_common/ogre_helpers/arrow.hpp>
-
-namespace rviz_mesh_map_plugin
+namespace rviz
 {
-class MeshPoseTool : public rviz_common::Tool
+FileProperty::FileProperty(const QString& name, const QString& default_value, const QString& description,
+                           Property* parent, const char* changed_slot, QObject* receiver)
+  : Property(name, default_value, description, parent, changed_slot, receiver)
 {
-public:
-  MeshPoseTool();
-  virtual ~MeshPoseTool();
+}
 
-  virtual void onInitialize();
+QWidget* FileProperty::createEditor(QWidget* parent, const QStyleOptionViewItem&)
+{
+  QFileDialog* editor = new QFileDialog(nullptr);
 
-  virtual void activate();
-  virtual void deactivate();
+  QStringList filenameFilters;
+  filenameFilters << tr("*.h5");
+  #if defined(WITH_ASSIMP)
+  filenameFilters << tr("*.ply");
+  filenameFilters << tr("*.obj");
+  filenameFilters << tr("*.dae");
+  filenameFilters << tr("*.stl");
+  filenameFilters << tr("*.3d");
+  filenameFilters << tr("*.3ds");
+  filenameFilters << tr("*.fbx");
+  filenameFilters << tr("*.blend");
+  #endif
+  filenameFilters << tr("*");
+  editor->setNameFilters(filenameFilters);
 
-  virtual int processMouseEvent(rviz_common::ViewportMouseEvent& event);
+  editor->setViewMode(QFileDialog::Detail);
 
-protected:
-  virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation) = 0;
-
-  void getRawManualObjectData(const Ogre::ManualObject* mesh, const size_t sectionNumber, size_t& vertexCount,
-                              Ogre::Vector3*& vertices, size_t& indexCount, unsigned long*& indices);
-
-  bool getPositionAndOrientation(const Ogre::ManualObject* mesh, const Ogre::Ray& ray, Ogre::Vector3& position,
-                                 Ogre::Vector3& orientation);
-
-  bool selectTriangle(rviz_common::ViewportMouseEvent& event, Ogre::Vector3& position, Ogre::Vector3& orientation);
-
-  rviz_common::Arrow* arrow_;
-  enum State
+  if (editor->exec())
   {
-    Position,
-    Orientation
-  };
-  State state_;
-  Ogre::Vector3 pos_;
-  Ogre::Vector3 ori_;
-};
+    QStringList fileNames = editor->selectedFiles();
+    if (fileNames.size() == 0)
+    {
+      setStdFilename("");
+    }
+    else
+    {
+      setFilename(fileNames.at(0));
+    }
+  }
 
-} /* namespace rviz_mesh_map_plugin */
+  return nullptr;
+}
 
-#endif
+}  // namespace rviz

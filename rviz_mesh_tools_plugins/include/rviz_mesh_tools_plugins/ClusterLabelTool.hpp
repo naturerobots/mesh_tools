@@ -53,7 +53,7 @@
 #define CL_HPP_MINIMUM_OPENCL_VERSION 110
 #define CL_HPP_ENABLE_EXCEPTIONS
 
-#include <rviz_mesh_map_plugin/Types.hpp>
+#include <rviz_mesh_tools_plugins/Types.hpp>
 
 #include <CL/cl2.hpp>
 
@@ -112,7 +112,7 @@ namespace Ogre
 class Vector3;
 }  // namespace Ogre
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 // Forward declarations
 class ClusterLabelDisplay;
@@ -259,6 +259,6 @@ private:
   cl::Kernel m_clKernelBox;
   cl::Kernel m_clKernelDirAndDist;
 };
-}  // end namespace rviz_mesh_map_plugin
+}  // end namespace rviz_mesh_tools_plugins
 
 #endif

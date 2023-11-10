@@ -49,8 +49,8 @@
 #ifndef MAP_DISPLAY_HPP
 #define MAP_DISPLAY_HPP
 
-#include <rviz_mesh_map_plugin/Types.hpp>
-#include <rviz_mesh_map_plugin/RvizFileProperty.hpp>
+#include <rviz_mesh_tools_plugins/Types.hpp>
+#include <rviz_mesh_tools_plugins/RvizFileProperty.hpp>
 
 #include <vector>
 #include <memory>
@@ -108,8 +108,8 @@
 
 #endif
 
-#include <rviz_mesh_map_plugin/ClusterLabelDisplay.hpp>
-#include <rviz_mesh_map_plugin/MeshDisplay.hpp>
+#include <rviz_mesh_tools_plugins/ClusterLabelDisplay.hpp>
+#include <rviz_mesh_tools_plugins/MeshDisplay.hpp>
 
 namespace rviz
 {
@@ -123,7 +123,7 @@ class StringProperty;
 
 }  // End namespace rviz
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 using std::shared_ptr;
 using std::string;
@@ -220,9 +220,9 @@ private:
   std::string m_map_file_loaded;
 
   /// Subdisplay: ClusterLabel (for showing the clusters)
-  rviz_mesh_map_plugin::ClusterLabelDisplay* m_clusterLabelDisplay;
+  rviz_mesh_tools_plugins::ClusterLabelDisplay* m_clusterLabelDisplay;
   /// Subdisplay: MeshDisplay (for showing the mesh)
-  rviz_mesh_map_plugin::MeshDisplay* m_meshDisplay;
+  rviz_mesh_tools_plugins::MeshDisplay* m_meshDisplay;
 
   /**
    * @brief Create a RViz display from it's unique class_id
@@ -232,6 +232,6 @@ private:
   rviz_common::Display* createDisplay(const QString& class_id);
 };
 
-}  // end namespace rviz_mesh_map_plugin
+}  // end namespace rviz_mesh_tools_plugins
 
 #endif

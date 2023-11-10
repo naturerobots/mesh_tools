@@ -43,12 +43,12 @@
  */
 
 
-#include "rviz_mesh_map_plugin/MeshGoalTool.hpp"
+#include "rviz_mesh_tools_plugins/MeshGoalTool.hpp"
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS( rviz_mesh_map_plugin::MeshGoalTool, rviz_common::Tool )
+PLUGINLIB_EXPORT_CLASS( rviz_mesh_tools_plugins::MeshGoalTool, rviz_common::Tool )
 
-namespace rviz_mesh_map_plugin{
+namespace rviz_mesh_tools_plugins{
 MeshGoalTool::MeshGoalTool()
 {
   shortcut_key_ = 'm';

@@ -46,7 +46,7 @@
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
  */
 
-#include <rviz_mesh_map_plugin/ClusterLabelPanel.hpp>
+#include <rviz_mesh_tools_plugins/ClusterLabelPanel.hpp>
 
 #include <QPainter>
 #include <QLineEdit>
@@ -58,7 +58,7 @@
 
 #include <rviz/tool_manager.h>
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) : rviz_common::Panel(parent)
 {
@@ -102,7 +102,7 @@ void ClusterLabelPanel::onInitialize()
 
   if (!foundTool)
   {
-    m_tool = static_cast<ClusterLabelTool*>(vis_manager_->getToolManager()->addTool("rviz_mesh_map_plugin/ClusterLabel"));
+    m_tool = static_cast<ClusterLabelTool*>(vis_manager_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel"));
   }
 }
 
@@ -150,7 +150,7 @@ void ClusterLabelPanel::load(const rviz_common::Config& config)
   }
 }
 
-}  // End namespace rviz_mesh_map_plugin
+}  // End namespace rviz_mesh_tools_plugins
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(rviz_mesh_map_plugin::ClusterLabelPanel, rviz_common::Panel)
+PLUGINLIB_EXPORT_CLASS(rviz_mesh_tools_plugins::ClusterLabelPanel, rviz_common::Panel)

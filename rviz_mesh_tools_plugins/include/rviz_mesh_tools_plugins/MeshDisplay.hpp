@@ -54,8 +54,8 @@
 #ifndef MESH_DISPLAY_HPP
 #define MESH_DISPLAY_HPP
 
-#include <rviz_mesh_map_plugin/Types.hpp>
-#include <rviz_mesh_map_plugin/MeshVisual.hpp>
+#include <rviz_mesh_tools_plugins/Types.hpp>
+#include <rviz_mesh_tools_plugins/MeshVisual.hpp>
 
 #include <vector>
 #include <memory>
@@ -85,7 +85,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/cache.h>
 
-#include <rviz_mesh_map_plugin/RVizMessageFilter.hpp>
+#include <rviz_mesh_tools_plugins/RVizMessageFilter.hpp>
 
 #include <rviz_rendering/mesh_loader.hpp>
 
@@ -121,7 +121,7 @@ class StringProperty;
 } // end namespace properties
 } // end namespace rviz_common
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 using std::shared_ptr;
 using std::string;
@@ -495,6 +495,6 @@ private:
   std::map<std::string, std::vector<float>> m_costCache;
 };
 
-}  // end namespace rviz_mesh_map_plugin
+}  // end namespace rviz_mesh_tools_plugins
 
 #endif

@@ -37,69 +37,60 @@
  *
  *
  *
- *  MeshGoalTool.hpp
+ *  MeshPoseTool.hpp
  *
  *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  */
 
-#ifndef MESH_GOAL_TOOL_HPP
-#define MESH_GOAL_TOOL_HPP
+#ifndef MESH_POSE_TOOL_HPP
+#define MESH_POSE_TOOL_HPP
 
-#include <rviz_mesh_map_plugin/MeshPoseTool.hpp>
-#include <geometry_msgs/PoseStamped.h>
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/string_property.h>
-#include <rviz_common/display_context.hpp>
+#include <OgreVector3.h>
+#include <OgreQuaternion.h>
+#include <OgreManualObject.h>
+#include <OgreRay.h>
 
-#ifndef Q_MOC_RUN
-#include <QObject>
-#endif
+#include <QCursor>
+#include <rviz_common/tool.hpp>
+#include <rviz_common/ogre_helpers/arrow.hpp>
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
-/**
- * @class MeshGoalTool
- * @brief Tool for publishing a goal within a mesh
- */
-class MeshGoalTool : public MeshPoseTool
+class MeshPoseTool : public rviz_common::Tool
 {
-  Q_OBJECT
 public:
-  /**
-   * @brief Constructor
-   */
-  MeshGoalTool();
+  MeshPoseTool();
+  virtual ~MeshPoseTool();
 
-  /**
-   * @brief Callback that is executed when tool is initialized
-   */
   virtual void onInitialize();
 
-private Q_SLOTS:
+  virtual void activate();
+  virtual void deactivate();
 
-  /**
-   * @brief Updates the topic on which the goal will be published
-   */
-  void updateTopic();
+  virtual int processMouseEvent(rviz_common::ViewportMouseEvent& event);
 
 protected:
-  /**
-   * @brief When goal is set, publish result
-   * @param position Position
-   * @param orientation Orientation
-   */
-  virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation);
+  virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation) = 0;
 
-  /// Property for the topic
-  rviz_common::StringProperty* topic_property_;
-  /// Switch bottom / top for selection
-  rviz_common::BoolProperty* switch_bottom_top_;
-  /// Publisher
-  ros::Publisher pose_pub_;
-  /// Node handle
-  ros::NodeHandle nh_;
+  void getRawManualObjectData(const Ogre::ManualObject* mesh, const size_t sectionNumber, size_t& vertexCount,
+                              Ogre::Vector3*& vertices, size_t& indexCount, unsigned long*& indices);
+
+  bool getPositionAndOrientation(const Ogre::ManualObject* mesh, const Ogre::Ray& ray, Ogre::Vector3& position,
+                                 Ogre::Vector3& orientation);
+
+  bool selectTriangle(rviz_common::ViewportMouseEvent& event, Ogre::Vector3& position, Ogre::Vector3& orientation);
+
+  rviz_common::Arrow* arrow_;
+  enum State
+  {
+    Position,
+    Orientation
+  };
+  State state_;
+  Ogre::Vector3 pos_;
+  Ogre::Vector3 ori_;
 };
 
-} /* namespace rviz_mesh_map_plugin */
+} /* namespace rviz_mesh_tools_plugins */
 
 #endif

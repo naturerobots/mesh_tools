@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>rviz_mesh_map_plugin</name>
+  <name>rviz_mesh_tools_plugins</name>
   <description>
     RViz display types and tools for the mesh_msgs package.
   </description>
@@ -14,7 +14,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <license>BSD-3</license>
-  <url>https://github.com/uos/mesh_tools/tree/master/rviz_mesh_map_plugin</url>
+  <url>https://github.com/uos/mesh_tools/tree/master/rviz_mesh_tools_plugins</url>
   
   <buildtool_depend>ament_cmake</buildtool_depend>
   

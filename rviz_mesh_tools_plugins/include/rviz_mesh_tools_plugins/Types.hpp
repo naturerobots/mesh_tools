@@ -44,6 +44,7 @@
  *
  *    Kristin Schmidt <krschmidt@uni-osnabrueck.de>
  *    Jan Philipp Vogtherr <jvogtherr@uni-osnabrueck.de>
+ *    Alexander Mock <amock@uos.de>
  */
 
 #pragma once
@@ -53,7 +54,7 @@
 #include <array>
 #include <boost/optional.hpp>
 
-namespace rviz_mesh_map_plugin
+namespace rviz_mesh_tools_plugins
 {
 using boost::optional;
 using std::array;
@@ -176,4 +177,4 @@ struct Material
   vector<uint32_t> faceIndices;
 };
 
-}  // namespace rviz_mesh_map_plugin
+}  // namespace rviz_mesh_tools_plugins
