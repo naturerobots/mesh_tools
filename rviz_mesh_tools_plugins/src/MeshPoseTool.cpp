@@ -48,6 +48,8 @@
 #include <OgreRay.h>
 #include <OgreSceneNode.h>
 #include <OgreViewport.h>
+#include <OgreSceneManager.h>
+#include <OgreCamera.h>
 
 #include <rviz_rendering/geometry.hpp>
 #include <rviz_rendering/objects/arrow.hpp>
@@ -58,9 +60,12 @@
 #include <rviz_common/load_resource.hpp>
 #include <rviz_common/render_panel.hpp>
 #include <rviz_common/display_context.hpp>
+#include <rviz_common/view_controller.hpp>
 
 // method is private :(
-#include <rviz_rendering/viewport_projection_finder.hpp>
+// #include <rviz_rendering/viewport_projection_finder.hpp>
+#include <rviz_common/interaction/selection_manager_iface.hpp>
+#include <rviz_common/interaction/view_picker_iface.hpp>
 
 #include <cassert>
 
@@ -71,28 +76,28 @@
 namespace rviz_mesh_tools_plugins
 {
 
-bool getViewportProjectionOnPlane(
-  rviz_rendering::RenderWindow* render_window,
-  int x, int y,
-  const Ogre::Plane& plane,
-  Ogre::Vector3& intersection_point)
-{
-  auto viewport = rviz_rendering::RenderWindowOgreAdapter::getOgreViewport(render_window);
-  int width = viewport->getActualWidth();
-  int height = viewport->getActualHeight();
-  Ogre::Ray mouse_ray = viewport->getCamera()->getCameraToViewportRay(
-    static_cast<float>(x) / static_cast<float>(width),
-    static_cast<float>(y) / static_cast<float>(height));
+// bool getViewportProjectionOnPlane(
+//   rviz_rendering::RenderWindow* render_window,
+//   int x, int y,
+//   const Ogre::Plane& plane,
+//   Ogre::Vector3& intersection_point)
+// {
+//   auto viewport = rviz_rendering::RenderWindowOgreAdapter::getOgreViewport(render_window);
+//   int width = viewport->getActualWidth();
+//   int height = viewport->getActualHeight();
+//   Ogre::Ray mouse_ray = viewport->getCamera()->getCameraToViewportRay(
+//     static_cast<float>(x) / static_cast<float>(width),
+//     static_cast<float>(y) / static_cast<float>(height));
 
-  auto intersection = mouse_ray.intersects(plane);
-  if (!intersection.first) 
-  {
-    return false;
-  }
+//   auto intersection = mouse_ray.intersects(plane);
+//   if (!intersection.first) 
+//   {
+//     return false;
+//   }
 
-  intersection_point = mouse_ray.getPoint(intersection.second);
-  return true;
-}
+//   intersection_point = mouse_ray.getPoint(intersection.second);
+//   return true;
+// }
 
 MeshPoseTool::MeshPoseTool() : rviz_common::Tool(), arrow_(NULL)
 {
@@ -131,46 +136,130 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
     // RCLCPP_ASSERT(state_ == Position);
     assert(state_ == Position);
 
-    Ogre::Vector3 pos, ori;
-    if (selectTriangle(event, pos, ori))
+    auto picker = context_->getViewPicker();
+
+    Ogre::Vector3 cur_pos;
+    if(picker->get3DPoint(event.panel, event.x, event.y, cur_pos))
     {
-      pos_ = pos;
-      ori_ = ori;
-      arrow_->setPosition(pos_);
-      state_ = Orientation;
-      flags |= Render;
+      pos_start_ = cur_pos;
+
+
+      std::vector<Ogre::Vector3> results;
+      unsigned patch_size = smooth_normal_width_;
+      bool success = picker->get3DPatch(event.panel, event.x, event.y, patch_size, patch_size, true, results);
+
+      unsigned patch_middle = (patch_size * patch_size) / 2;
+      if(success && results.size() > 7)
+      {
+        // std::cout << "Found " << results.size() << " results" << std::endl;
+
+        // PCA
+        // compute centroid
+        Ogre::Vector3 centroid(0.0, 0.0, 0.0);
+        for(size_t i=0; i<results.size(); i++)
+        {
+          centroid += results[i];
+        }
+        centroid /= static_cast<float>(results.size());
+
+        Ogre::Matrix3 cov;
+        cov[0][0] = 0.0; cov[0][1] = 0.0; cov[0][2] = 0.0;
+        cov[1][0] = 0.0; cov[1][1] = 0.0; cov[1][2] = 0.0;
+        cov[2][0] = 0.0; cov[2][1] = 0.0; cov[2][2] = 0.0;
+
+        for(size_t i=0; i<results.size(); i++)
+        {
+          Ogre::Vector3 dir = results[i] - centroid;
+          cov[0][0] += dir.x * dir.x;
+          cov[0][1] += dir.x * dir.y;
+          cov[0][2] += dir.x * dir.z;
+          cov[1][0] += dir.y * dir.x;
+          cov[1][1] += dir.y * dir.y;
+          cov[1][2] += dir.y * dir.z;
+          cov[2][0] += dir.z * dir.x;
+          cov[2][1] += dir.z * dir.y;
+          cov[2][2] += dir.z * dir.z;
+        }
+
+        cov = cov * Ogre::Real(1.0 / static_cast<float>(results.size()));
+
+        float eig_vals[3];
+        Ogre::Vector3 eig_vecs[3];
+        cov.EigenSolveSymmetric(eig_vals, eig_vecs);
+
+        // std::cout << "Eigen Analysis: " << std::endl;
+
+
+        // for(size_t i=0; i<3; i++)
+        // {
+        //   std::cout << i << ". " << eig_vals[i] << std::endl;
+        //   std::cout << eig_vecs[i] << std::endl;
+        // }
+
+        normal_start_ = eig_vecs[2];
+        pos_start_ = results[patch_middle];
+
+        normal_start_.normalise();
+
+        // flip normal to cam
+
+        Ogre::Vector3 cam_pos = event.panel->getViewController()->getCamera()->getRealPosition();
+        Ogre::Vector3 dir_to_cam = cam_pos - pos_start_;
+        dir_to_cam.normalise();
+
+        // there should be a function doing the dot product
+        float scalar = dir_to_cam.x * normal_start_.x 
+                    + dir_to_cam.y * normal_start_.y 
+                    + dir_to_cam.z * normal_start_.z;
+
+        if(scalar < 0)
+        {
+          normal_start_ = -normal_start_;
+        }
+        
+        arrow_->setPosition(pos_start_);
+        state_ = Orientation;
+      }
     }
+
   }
   else if (event.type == QEvent::MouseMove && event.left())
   {
     if (state_ == Orientation)
     {
+      auto picker = context_->getViewPicker();
+
       Ogre::Vector3 cur_pos;
-      Ogre::Plane plane(ori_, pos_);
-
-      auto render_window = event.panel->getRenderWindow();
-
-      Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
-        (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
-
-
-      if (getViewportProjectionOnPlane(render_window, event.x, event.y, plane, cur_pos))
+      if(picker->get3DPoint(event.panel, event.x, event.y, cur_pos))
       {
-        // right hand coordinate system
-        // x to the right, y to the top, and -z into the scene
-        // arrow foreward negative z
-        Ogre::Vector3 z_axis = -(cur_pos - pos_);
-        Ogre::Vector3 y_axis = ori_;
-        Ogre::Vector3 x_axis = y_axis.crossProduct(z_axis);
+        // if valid override last pos
+        if( (cur_pos - pos_start_).squaredLength() > 0.001 * 0.001)
+        {
+          pos_last_ = cur_pos;
+        }
 
-        x_axis.normalise();
-        y_axis.normalise();
-        z_axis.normalise();
+        // if last pos is valid compute orientation
+        if( (pos_last_ - pos_start_).squaredLength() > 0.001 * 0.001 )
+        {
+          // compute orientation
+          Ogre::Vector3 dir_front = pos_last_ - pos_start_;
+          dir_front.normalise();
+          // std::cout << "Dir Front: " << dir_front << std::endl;
 
-        arrow_->getSceneNode()->setVisible(true);
-        arrow_->setOrientation(Ogre::Quaternion(x_axis, y_axis, z_axis));
+          Ogre::Vector3 dir_left = normal_start_.crossProduct(dir_front);
+          dir_left.normalise();
+          // std::cout << "Dir Left: " << dir_left << std::endl;
 
-        flags |= Render;
+          Ogre::Vector3 dir_up = dir_front.crossProduct(dir_left);
+          dir_up.normalise();
+          // std::cout << "Dir Up: " << dir_up << std::endl; 
+
+
+          arrow_->getSceneNode()->setVisible(true);
+          arrow_->setOrientation(Ogre::Quaternion(dir_up, dir_left, -dir_front));
+
+          flags |= Render;
+        }
       }
     }
   }
@@ -178,33 +267,43 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   {
     if (state_ == Orientation)
     {
-      // rviz_rendering::project3DPointToViewportXY
+
+      auto picker = context_->getViewPicker();
+
       Ogre::Vector3 cur_pos;
-      Ogre::Plane plane(ori_, pos_);
-
-      // Start point on triangle is given.
-      // When releasing the left mouse button we search for
-      // the end point on the (infinite-sized) plane of the triangle
-      // 
-      // ROS1: rviz::getPointOnPlaneFromWindowXY(event.viewport, plane, event.x, event.y, cur_pos)
-      // ROS2: ? 
-
-      auto render_window = event.panel->getRenderWindow();
-
-      if (getViewportProjectionOnPlane(render_window, event.x, event.y, plane, cur_pos))
+      if(picker->get3DPoint(event.panel, event.x, event.y, cur_pos))
       {
-        // arrow foreward negative z
-        Ogre::Vector3 z_axis = -(cur_pos - pos_);
-        Ogre::Vector3 y_axis = ori_;
-        Ogre::Vector3 x_axis = y_axis.crossProduct(z_axis);
+        // if valid override last pos
+        if( (cur_pos - pos_start_).squaredLength() > 0.001 * 0.001)
+        {
+          pos_last_ = cur_pos;
+        }
 
-        x_axis.normalise();
-        y_axis.normalise();
-        z_axis.normalise();
+        // if last pos is valid compute orientation
+        if( (pos_last_ - pos_start_).squaredLength() > 0.001 * 0.001 )
+        {
+          // compute orientation
+          Ogre::Vector3 dir_front = pos_last_ - pos_start_;
+          dir_front.normalise();
+          // std::cout << "Dir Front: " << dir_front << std::endl;
+          
 
-        onPoseSet(pos_, Ogre::Quaternion(x_axis, y_axis, z_axis));
+          Ogre::Vector3 dir_left = dir_front.crossProduct(normal_start_);
+          dir_left.normalise();
+          // std::cout << "Dir Left: " << dir_left << std::endl;
 
-        flags |= (Finished | Render);
+          Ogre::Vector3 dir_up = dir_front.crossProduct(dir_left);
+          dir_up.normalise();
+          // std::cout << "Dir Up: " << dir_up << std::endl; 
+
+          arrow_->getSceneNode()->setVisible(true);
+          arrow_->setOrientation(Ogre::Quaternion(dir_up, dir_left, -dir_front));
+          
+          onPoseSet(pos_start_, Ogre::Quaternion(dir_up, dir_left, -dir_front));
+
+          flags |= (Finished | Render);
+          state_ = Position;
+        }
       }
     }
   }
@@ -212,14 +311,50 @@ int MeshPoseTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   return flags;
 }
 
-bool MeshPoseTool::selectTriangle(rviz_common::ViewportMouseEvent& event, Ogre::Vector3& position,
-                                  Ogre::Vector3& triangle_normal)
+bool MeshPoseTool::selectTriangle(
+  rviz_common::ViewportMouseEvent& event, 
+  Ogre::Vector3& position,
+  Ogre::Vector3& triangle_normal)
 {
-  Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
-      (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
+  // Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
+  //     (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
+
+  // rviz_common::interaction::Picked pick_result;
+
+  // auto manager = context_->getSelectionManager();
+
+  // bool hit = manager->pick(
+  //   event.panel->getRenderWindow(),
+  //   event.x, event.y,
+  //   pick_result);
+  
+  // if(hit)
+  // {
+  //   std::cout << "HIT" << std::endl;
+  // } else {
+  //   std::cout << "NO HIT" << std::endl;
+  // }
+
+
+  auto picker = context_->getViewPicker();
+
+  Ogre::Vector3 int_point;
+  if(picker->get3DPoint(event.panel, event.x, event.y, int_point))
+  {
+    std::cout << "HIT!" << std::endl;
+  } else {
+    std::cout << "NOT HIT :(" << std::endl;
+  }
+
+  
+
+
+  Ogre::Ray ray;
 
   Ogre::RaySceneQuery* query =
       context_->getSceneManager()->createRayQuery(ray, Ogre::SceneManager::WORLD_GEOMETRY_TYPE_MASK);
+  
+  
   query->setSortByDistance(true);
 
   Ogre::RaySceneQueryResult& result = query->execute();
@@ -241,8 +376,10 @@ bool MeshPoseTool::selectTriangle(rviz_common::ViewportMouseEvent& event, Ogre::
   return false;
 }
 
-bool MeshPoseTool::getPositionAndOrientation(const Ogre::ManualObject* mesh, const Ogre::Ray& ray,
-                                             Ogre::Vector3& position, Ogre::Vector3& orientation)
+bool MeshPoseTool::getPositionAndOrientation(
+  const Ogre::ManualObject* mesh, 
+  const Ogre::Ray& ray,
+  Ogre::Vector3& position, Ogre::Vector3& orientation)
 {
   Ogre::Real dist = -1.0f;
   Ogre::Vector3 a, b, c;
@@ -338,7 +475,6 @@ void MeshPoseTool::getRawManualObjectData(const Ogre::ManualObject* mesh, const 
     {
       index = static_cast<unsigned long>(pLong[i]);
     }
-
     else
     {
       index = static_cast<unsigned long>(pShort[i]);

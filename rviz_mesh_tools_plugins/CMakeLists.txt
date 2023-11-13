@@ -60,8 +60,8 @@ set(SOURCE_FILES
   src/MeshDisplay.cpp
   src/MeshVisual.cpp
   src/RvizFileProperty.cpp
-  # src/MeshPoseTool.cpp
-  # src/MeshGoalTool.cpp
+  src/MeshPoseTool.cpp
+  src/MeshGoalTool.cpp
 )
 
 
@@ -75,8 +75,8 @@ set(MOC_HEADER_FILES
   include/rviz_mesh_tools_plugins/ClusterLabelTool.hpp
   include/rviz_mesh_tools_plugins/CLUtil.hpp
   include/rviz_mesh_tools_plugins/RvizFileProperty.hpp
-  # include/rviz_mesh_tools_plugins/MeshPoseTool.hpp
-  # include/rviz_mesh_tools_plugins/MeshGoalTool.hpp
+  include/rviz_mesh_tools_plugins/MeshPoseTool.hpp
+  include/rviz_mesh_tools_plugins/MeshGoalTool.hpp
 )
 
 # foreach(header "${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES}")

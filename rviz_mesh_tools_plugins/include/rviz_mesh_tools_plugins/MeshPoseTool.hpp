@@ -93,8 +93,11 @@ protected:
     Orientation
   };
   State state_;
-  Ogre::Vector3 pos_;
-  Ogre::Vector3 ori_;
+  Ogre::Vector3 pos_start_;
+  Ogre::Vector3 normal_start_;
+  Ogre::Vector3 pos_last_;
+  // smooth normal in pixel coordinates > 2
+  unsigned smooth_normal_width_ = 9;
 };
 
 } /* namespace rviz_mesh_tools_plugins */

@@ -45,37 +45,43 @@
 
 #include "rviz_mesh_tools_plugins/MeshGoalTool.hpp"
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS( rviz_mesh_tools_plugins::MeshGoalTool, rviz_common::Tool )
 
-namespace rviz_mesh_tools_plugins{
+namespace rviz_mesh_tools_plugins
+{
+
 MeshGoalTool::MeshGoalTool()
 {
   shortcut_key_ = 'm';
-  topic_property_ = new rviz_common::StringProperty( "Topic", "goal",
+  topic_property_ = new rviz_common::properties::StringProperty( "Topic", "goal",
                                               "The topic on which to publish the mesh navigation goals.",
                                               getPropertyContainer(), SLOT(updateTopic()), this);
 
-  switch_bottom_top_ = new rviz_common::BoolProperty("Switch Bottom/Top",
+  switch_bottom_top_ = new rviz_common::properties::BoolProperty("Switch Bottom/Top",
       false, "Enable to stwich the bottom and top.",
       getPropertyContainer());
 
 }
  
- void MeshGoalTool::onInitialize()
- {
-   MeshPoseTool::onInitialize();
-   setName( "Mesh Goal" );
-   updateTopic();
- }
+void MeshGoalTool::onInitialize()
+{
+  MeshPoseTool::onInitialize();
+  setName( "Mesh Goal" );
+  updateTopic();
+}
 
- void MeshGoalTool::updateTopic()
- {
-   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>( topic_property_->getStdString(), 1 );
- }
+void MeshGoalTool::updateTopic()
+{
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  pose_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>(topic_property_->getStdString(), 1);
+}
   
- void MeshGoalTool::onPoseSet( const Ogre::Vector3& position, const Ogre::Quaternion& orientation ){
-  geometry_msgs::PoseStamped msg;
+void MeshGoalTool::onPoseSet( 
+  const Ogre::Vector3& position, 
+  const Ogre::Quaternion& orientation )
+{
+  geometry_msgs::msg::PoseStamped msg;
   msg.pose.position.x = position.x;
   msg.pose.position.y = position.y;
   msg.pose.position.z = position.z;
@@ -106,9 +112,10 @@ MeshGoalTool::MeshGoalTool()
   msg.pose.orientation.z = ros_orientation.z;
   msg.pose.orientation.w = ros_orientation.w;
   
-  msg.header.stamp = ros::Time::now();
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  msg.header.stamp = node->now();
   msg.header.frame_id = context_->getFixedFrame().toStdString();
-  pose_pub_.publish(msg);
- }
-	
+  pose_pub_->publish(msg);
 }
+	
+} // namespace rviz_mesh_tools_plugins

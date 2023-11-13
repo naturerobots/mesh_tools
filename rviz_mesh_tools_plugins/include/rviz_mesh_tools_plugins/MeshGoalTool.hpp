@@ -46,14 +46,16 @@
 #define MESH_GOAL_TOOL_HPP
 
 #include <rviz_mesh_tools_plugins/MeshPoseTool.hpp>
-#include <geometry_msgs/PoseStamped.h>
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/string_property.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/string_property.hpp>
 #include <rviz_common/display_context.hpp>
 
 #ifndef Q_MOC_RUN
 #include <QObject>
-#endif
+#endif // Q_MOC_RUN
+
+#include <rclcpp/rclcpp.hpp>
 
 namespace rviz_mesh_tools_plugins
 {
@@ -91,15 +93,15 @@ protected:
   virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation);
 
   /// Property for the topic
-  rviz_common::StringProperty* topic_property_;
+  rviz_common::properties::StringProperty* topic_property_;
   /// Switch bottom / top for selection
-  rviz_common::BoolProperty* switch_bottom_top_;
+  rviz_common::properties::BoolProperty* switch_bottom_top_;
   /// Publisher
-  ros::Publisher pose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
   /// Node handle
-  ros::NodeHandle nh_;
+  // ros::NodeHandle nh_;
 };
 
-} /* namespace rviz_mesh_tools_plugins */
+} // namespace rviz_mesh_tools_plugins
 
-#endif
+#endif // MESH_GOAL_TOOL_HPP
