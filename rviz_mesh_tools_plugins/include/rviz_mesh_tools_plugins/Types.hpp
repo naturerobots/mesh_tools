@@ -75,6 +75,8 @@ struct Normal
   }
 };
 
+
+
 /// Struct for texture coordinates
 struct TexCoords
 {

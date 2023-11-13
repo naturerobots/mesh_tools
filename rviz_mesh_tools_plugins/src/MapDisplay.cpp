@@ -514,6 +514,36 @@ bool MapDisplay::loadData()
         m_geometry->faces[i].vertexIndices[2] = amesh->mFaces[i].mIndices[2];
       }
 
+      if(amesh->HasNormals())
+      {
+        m_normals.resize(amesh->mNumVertices, Normal(0.0, 0.0, 0.0));
+        for(int i=0; i<amesh->mNumVertices; i++)
+        {
+          m_normals[i].x = amesh->mNormals[i].x;
+          m_normals[i].y = amesh->mNormals[i].y;
+          m_normals[i].z = amesh->mNormals[i].z;
+        }
+      } else {
+        m_normals.resize(0, Normal(0.0, 0.0, 0.0));
+      }
+
+      // assimp supports more color channels but not this plugin
+      // can we support this too?
+      int color_channel_id = 0;
+      if(amesh->HasVertexColors(color_channel_id))
+      {
+        m_colors.resize(amesh->mNumVertices, Color(0.0, 0.0, 0.0, 0.0));
+        for(int i=0; i<amesh->mNumVertices; i++)
+        {
+          m_colors[i].r = amesh->mColors[color_channel_id][i].r;
+          m_colors[i].g = amesh->mColors[color_channel_id][i].g;
+          m_colors[i].b = amesh->mColors[color_channel_id][i].b;
+          m_colors[i].a = amesh->mColors[color_channel_id][i].a;
+        }
+      } else {
+        m_colors.resize(0, Color(0.0, 0.0, 0.0, 0.0));
+      }
+
       m_costs.clear();
 
       
