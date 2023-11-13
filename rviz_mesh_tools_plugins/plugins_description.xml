@@ -34,11 +34,11 @@
       Displays a mesh.
     </description>
   </class>
-  <class name="rviz_mesh_tools_plugins/MeshGoal"
+  <!-- <class name="rviz_mesh_tools_plugins/MeshGoal"
          type="rviz_mesh_tools_plugins::MeshGoalTool"
          base_class_type="rviz_common::Tool">
     <description>
       Select a goal on a mesh.
     </description>
-  </class>
+  </class> -->
 </library>

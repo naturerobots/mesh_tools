@@ -56,10 +56,10 @@
 
 #include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
 #include <mesh_msgs/msg/mesh_geometry.hpp>
-#include <OGRE/OgreColourValue.h>
-#include <OGRE/OgrePrerequisites.h>
-#include <OGRE/OgreMesh.h>
-#include <OGRE/OgreSubMesh.h>
+#include <OgreColourValue.h>
+#include <OgrePrerequisites.h>
+#include <OgreMesh.h>
+#include <OgreSubMesh.h>
 
 #include <memory>
 #include <vector>

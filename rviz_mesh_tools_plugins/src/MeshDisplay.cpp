@@ -778,7 +778,8 @@ void MeshDisplay::initialServiceCall()
   }
 }
 
-void MeshDisplay::processMessage(const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
+void MeshDisplay::processMessage(
+  const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
   if (m_ignoreMsgs)
   {

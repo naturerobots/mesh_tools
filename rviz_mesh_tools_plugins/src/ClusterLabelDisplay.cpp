@@ -50,12 +50,12 @@
 #include <rviz_mesh_tools_plugins/ClusterLabelVisual.hpp>
 #include <rviz_mesh_tools_plugins/ClusterLabelTool.hpp>
 
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/color_property.h>
-#include <rviz/properties/float_property.h>
-#include <rviz/properties/int_property.h>
-#include <rviz/properties/enum_property.h>
-#include <rviz/properties/string_property.h>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/color_property.hpp>
+#include <rviz_common/properties/float_property.hpp>
+#include <rviz_common/properties/int_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
+#include <rviz_common/properties/string_property.hpp>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -103,16 +103,16 @@ ClusterLabelDisplay::ClusterLabelDisplay()
   m_alphaProperty->setMin(0.0f);
   m_alphaProperty->setMax(1.0f);
 
-  m_colorsProperty = new rviz_common::Property("Colors", "", "colors", this, SLOT(updateColors()), this);
+  m_colorsProperty = new rviz_common::properties::Property("Colors", "", "colors", this, SLOT(updateColors()), this);
   m_colorsProperty->setReadOnly(true);
   m_sphereSizeProperty =
-      new rviz_common::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
+      new rviz_common::properties::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
   m_phantomVisualProperty = new rviz_common::properties::BoolProperty("Show Phantom", false,
                                                    "Show a transparent silhouette of the whole mesh to help with "
                                                    "labeling",
                                                    this, SLOT(updatePhantomVisual()), this);
 
-  setStatus(rviz_common::StatusProperty::Error, "Display", "Cant be used without Map3D plugin");
+  setStatus(rviz_common::properties::StatusProperty::Error, "Display", "Cant be used without Map3D plugin");
 }
 
 ClusterLabelDisplay::~ClusterLabelDisplay()
@@ -151,7 +151,7 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
   if (isEnabled())
     updateMap();
 
-  setStatus(rviz_common::StatusProperty::Ok, "Display", "");
+  setStatus(rviz_common::properties::StatusProperty::Ok, "Display", "");
 }
 
 // =====================================================================================================================
@@ -159,8 +159,10 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
 
 void ClusterLabelDisplay::onInitialize()
 {
+  std::cout << "ClusterLabelDisplay::onInitialize()" << std::endl;
   // Look for an existing label tool or create a new one
   initializeLabelTool();
+  std::cout << "-DONE" << std::endl;
 }
 
 void ClusterLabelDisplay::onEnable()
@@ -226,7 +228,7 @@ void ClusterLabelDisplay::updateMap()
   m_tool->setDisplay(this);
 
   // All good
-  setStatus(rviz_common::StatusProperty::Ok, "Map", "");
+  setStatus(rviz_common::properties::StatusProperty::Ok, "Map", "");
 }
 
 void ClusterLabelDisplay::updateColors()
@@ -269,7 +271,7 @@ void ClusterLabelDisplay::fillPropertyOptions()
 
     // Add color options
     Ogre::ColourValue rainbowColor = getRainbowColor((((float)i + 1) / m_clusterList.size()));
-    m_colorProperties.emplace_back(new rviz_common::ColorProperty(
+    m_colorProperties.emplace_back(new rviz_common::properties::ColorProperty(
         QString::fromStdString(m_clusterList[i].name),
         QColor(rainbowColor.r * 255, rainbowColor.g * 255, rainbowColor.b * 255),
         QString::fromStdString(m_clusterList[i].name), m_colorsProperty, SLOT(updateColors()), this));
@@ -325,8 +327,9 @@ void ClusterLabelDisplay::initializeLabelTool()
   bool foundTool = false;
   for (int i = 0; i < toolClasses.size(); i++)
   {
-    if (toolClasses.at(i).contains("ClusterLabel"))
+    if (toolClasses[i].contains("ClusterLabel"))
     {
+      std::cout << "Convert " << toolClasses[i].toStdString() << std::endl;
       m_tool = static_cast<ClusterLabelTool*>(toolManager->getTool(i));
       foundTool = true;
       break;
@@ -335,7 +338,16 @@ void ClusterLabelDisplay::initializeLabelTool()
 
   if (!foundTool)
   {
-    m_tool = static_cast<ClusterLabelTool*>(context_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel"));
+    std::cout << "Create new tool" << std::endl;
+    auto bla = context_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel");
+    std::cout << "bla" << std::endl;
+
+    if(m_tool = dynamic_cast<ClusterLabelTool*>(bla); m_tool != nullptr)
+    {
+      std::cout << "SUCCESS" << std::endl;
+    } else {
+      std::cout << "Could not create ClusterLabelTool :(" << std::endl;
+    }
   }
 }
 
@@ -353,5 +365,5 @@ void ClusterLabelDisplay::addLabel(std::string label, std::vector<uint32_t> face
 
 }  // End namespace rviz_mesh_tools_plugins
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_mesh_tools_plugins::ClusterLabelDisplay, rviz_common::Display)

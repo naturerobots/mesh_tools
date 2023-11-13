@@ -10,6 +10,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+add_definitions(-D_BUILD_DIR_PATH="${CMAKE_CURRENT_BINARY_DIR}")
+add_definitions(-D_SRC_DIR_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rmw REQUIRED)
@@ -23,18 +26,20 @@ find_package(mesh_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(std_msgs REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 find_package(assimp REQUIRED)
 
 # This needs to be optional for non CL devices
-find_package(OpenCL 2)
+find_package(OpenCL 2 REQUIRED)
 
 include_directories(${ASSIMP_INCLUDE_DIRS})
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 # set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOMOC ON)
 find_package(Qt5 COMPONENTS Core Widgets)
 add_definitions(-DQT_NO_KEYWORDS)
 
@@ -47,11 +52,11 @@ include_directories(
 )
 
 set(SOURCE_FILES
-  # src/ClusterLabelDisplay.cpp
-  # src/ClusterLabelPanel.cpp
-  # src/ClusterLabelTool.cpp
-  # src/ClusterLabelVisual.cpp
-  # src/MapDisplay.cpp
+  src/ClusterLabelDisplay.cpp
+  src/ClusterLabelPanel.cpp
+  src/ClusterLabelTool.cpp
+  src/ClusterLabelVisual.cpp
+  src/MapDisplay.cpp
   src/MeshDisplay.cpp
   src/MeshVisual.cpp
   src/RvizFileProperty.cpp
@@ -61,26 +66,31 @@ set(SOURCE_FILES
 
 
 set(MOC_HEADER_FILES
-  # include/ClusterLabelDisplay.hpp
-  # include/ClusterLabelPanel.hpp
-  # include/ClusterLabelVisual.hpp
-  # include/MapDisplay.hpp
-  include/MeshDisplay.hpp
-  include/MeshVisual.hpp
-  # include/ClusterLabelTool.hpp
-  # include/CLUtil.hpp
-  include/RvizFileProperty.hpp
-  # include/MeshPoseTool.hpp
-  # include/MeshGoalTool.hpp
+  include/rviz_mesh_tools_plugins/ClusterLabelDisplay.hpp
+  include/rviz_mesh_tools_plugins/ClusterLabelPanel.hpp
+  include/rviz_mesh_tools_plugins/ClusterLabelVisual.hpp
+  include/rviz_mesh_tools_plugins/MapDisplay.hpp
+  include/rviz_mesh_tools_plugins/MeshDisplay.hpp
+  include/rviz_mesh_tools_plugins/MeshVisual.hpp
+  include/rviz_mesh_tools_plugins/ClusterLabelTool.hpp
+  include/rviz_mesh_tools_plugins/CLUtil.hpp
+  include/rviz_mesh_tools_plugins/RvizFileProperty.hpp
+  # include/rviz_mesh_tools_plugins/MeshPoseTool.hpp
+  # include/rviz_mesh_tools_plugins/MeshGoalTool.hpp
 )
 
-foreach(header "${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES}")
-  qt5_wrap_cpp(RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES "${header}")
-endforeach()
+# foreach(header "${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES}")
+#   qt5_wrap_cpp(RVIZ_MESH_TOOLS_PLUGINS_MOC "${header}")
+# endforeach()
+
+
 
 add_library(${PROJECT_NAME} SHARED
   ${SOURCE_FILES} 
-  ${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES} 
+  ${MOC_HEADER_FILES} 
+  ${HDF5_LIBRARIES}
+  ${HDF5_HL_LIBRARIES}
+  ${OpenCL_LIBRARIES}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -92,11 +102,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} PUBLIC
   rviz_ogre_vendor::OgreMain
   rviz_ogre_vendor::OgreOverlay
+  Boost::system
+  Boost::filesystem
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
+  ${OpenCL_LIBRARIES}
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RVIZ_MESH_TOOLS_PLUGINS_BUILDING_LIBRARY")#
@@ -115,6 +128,7 @@ ament_target_dependencies(${PROJECT_NAME}
   resource_retriever
   tf2_ros
   message_filters
+  std_msgs
 )
 
 # Export old-style CMake variables
@@ -148,8 +162,6 @@ install(
   DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
 )
-
-
 
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/icons"
   DESTINATION share/${PROJECT_NAME})

@@ -48,13 +48,15 @@
 #ifndef CLUSTER_LABEL_TOOL_HPP
 #define CLUSTER_LABEL_TOOL_HPP
 
+
+
+#include <rviz_mesh_tools_plugins/Types.hpp>
+
+// TODO: Make CL optional
 // enable exceptions for OpenCL
 #define CL_HPP_TARGET_OPENCL_VERSION 120
 #define CL_HPP_MINIMUM_OPENCL_VERSION 110
 #define CL_HPP_ENABLE_EXCEPTIONS
-
-#include <rviz_mesh_tools_plugins/Types.hpp>
-
 #include <CL/cl2.hpp>
 
 #include <vector>
@@ -88,6 +90,7 @@
 #ifndef Q_MOC_RUN
 #include <rviz_rendering/mesh_loader.hpp>
 
+
 #include <OgreManualObject.h>
 #include <OgreSceneNode.h>
 #include <OgreSceneManager.h>
@@ -97,19 +100,26 @@
 #include <OgreRay.h>
 #include <OgreSceneQuery.h>
 
+#include <mesh_msgs/msg/mesh_face_cluster_stamped.hpp>
+
 #endif // Q_MOC_RUN
 
-namespace rviz
+#include <rclcpp/rclcpp.hpp>
+
+namespace rviz_common
+{
+namespace properties
 {
 class RosTopicProperty;
 class ColorProperty;
-}  // namespace rviz
+} // namespace properties
+} // namespace rviz_common
 
 // OGRE stuff
 namespace Ogre
 {
 // Forward declaration
-class Vector3;
+// class Vector3;
 }  // namespace Ogre
 
 namespace rviz_mesh_tools_plugins
@@ -214,8 +224,18 @@ private:
   Ogre::SceneNode* m_sceneNode;
   Ogre::ManualObject* m_selectionBox;
   Ogre::MaterialPtr m_selectionBoxMaterial;
-  Ogre::Vector2 m_selectionStart;
-  Ogre::Vector2 m_selectionStop;
+  
+  // rviz_common::ViewportMouseEvent m_evt_start;
+  // rviz_common::ViewportMouseEvent m_evt_stop;
+
+  int m_bb_x1;
+  int m_bb_y1;
+  int m_bb_x2;
+  int m_bb_y2;
+
+  rviz_common::RenderPanel* m_evt_panel;
+  
+
   bool m_multipleSelect = false;
   bool m_singleSelect = false;
   bool m_singleDeselect = false;
@@ -233,7 +253,7 @@ private:
   void selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode);
   boost::optional<std::pair<uint32_t, float>> getClosestIntersectedFaceParallel(Ogre::Ray& ray);
 
-  ros::Publisher m_labelPublisher;
+  rclcpp::Publisher<mesh_msgs::msg::MeshFaceClusterStamped>::SharedPtr m_labelPublisher;
 
   std::vector<float> m_vertexData;
   std::array<float, 6> m_rayData;
@@ -243,21 +263,21 @@ private:
   std::vector<float> m_resultDistances;
 
   // OpenCL
-  cl::Device m_clDevice;
-  cl::Context m_clContext;
-  cl::Program::Sources m_clProgramSources;
-  cl::Program m_clProgram;
-  cl::CommandQueue m_clQueue;
-  cl::Buffer m_clVertexBuffer;
-  cl::Buffer m_clResultBuffer;
-  cl::Buffer m_clRayBuffer;
-  cl::Buffer m_clSphereBuffer;
-  cl::Buffer m_clBoxBuffer;
-  cl::Buffer m_clStartNormalBuffer;
-  cl::Kernel m_clKernelSingleRay;
-  cl::Kernel m_clKernelSphere;
-  cl::Kernel m_clKernelBox;
-  cl::Kernel m_clKernelDirAndDist;
+  // cl::Device m_clDevice;
+  // cl::Context m_clContext;
+  // cl::Program::Sources m_clProgramSources;
+  // cl::Program m_clProgram;
+  // cl::CommandQueue m_clQueue;
+  // cl::Buffer m_clVertexBuffer;
+  // cl::Buffer m_clResultBuffer;
+  // cl::Buffer m_clRayBuffer;
+  // cl::Buffer m_clSphereBuffer;
+  // cl::Buffer m_clBoxBuffer;
+  // cl::Buffer m_clStartNormalBuffer;
+  // cl::Kernel m_clKernelSingleRay;
+  // cl::Kernel m_clKernelSphere;
+  // cl::Kernel m_clKernelBox;
+  // cl::Kernel m_clKernelDirAndDist;
 };
 }  // end namespace rviz_mesh_tools_plugins
 

@@ -197,42 +197,61 @@ void MeshVisual::reset()
   std::stringstream sstm;
 
   sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
-  Ogre::MaterialManager::getSingleton().unload(sstm.str());
-  Ogre::MaterialManager::getSingleton().remove(sstm.str());
+  if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str()))
+  {
+    materialptr->unload();
+    Ogre::MaterialManager::getSingleton().remove(materialptr);
+  } else {
+    std::cout << "Could not find material '" << sstm.str() << "' to onload. skipping" << std::endl;
+  }
+
   sstm.str("");
   sstm.clear();
 
   if (m_vertex_colors_enabled)
   {
     sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "Material_" << 1;
-    Ogre::MaterialManager::getSingleton().unload(sstm.str());
-    Ogre::MaterialManager::getSingleton().remove(sstm.str());
+    
+    if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str()))
+    {
+      materialptr->unload();
+      Ogre::MaterialManager::getSingleton().remove(materialptr);
+    } else {
+      std::cout << "Could not find material '" << sstm.str() << "' to unload. skipping" << std::endl;
+    }
+    
     sstm.str("");
     sstm.clear();
   }
 
   sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
-  Ogre::MaterialManager::getSingleton().unload(sstm.str());
-  Ogre::MaterialManager::getSingleton().remove(sstm.str());
+  if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str()))
+  {
+    materialptr->unload();
+    Ogre::MaterialManager::getSingleton().remove(materialptr);
+  } else {
+    std::cout << "Could not find material '" << sstm.str() << "' to unload. skipping" << std::endl;
+  }
+
   sstm.str("");
   sstm.clear();
 
   for (Ogre::MaterialPtr textureMaterial : m_textureMaterials)
   {
-    Ogre::MaterialManager::getSingleton().unload(textureMaterial->getName());
-    Ogre::MaterialManager::getSingleton().remove(textureMaterial->getName());
+    textureMaterial->unload();
+    Ogre::MaterialManager::getSingleton().remove(textureMaterial);
   }
 
   if (!m_noTexCluMaterial.isNull())
   {
-    Ogre::MaterialManager::getSingleton().unload(m_noTexCluMaterial->getName());
-    Ogre::MaterialManager::getSingleton().remove(m_noTexCluMaterial->getName());
+    m_noTexCluMaterial->unload();
+    Ogre::MaterialManager::getSingleton().remove(m_noTexCluMaterial);
   }
 
   if (!m_vertexCostMaterial.isNull())
   {
-    Ogre::MaterialManager::getSingleton().unload(m_vertexCostMaterial->getName());
-    Ogre::MaterialManager::getSingleton().remove(m_vertexCostMaterial->getName());
+    m_vertexCostMaterial->unload();
+    Ogre::MaterialManager::getSingleton().remove(m_vertexCostMaterial);
   }
 
   m_mesh->clear();

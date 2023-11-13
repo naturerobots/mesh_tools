@@ -50,15 +50,17 @@
 #include <rviz_mesh_tools_plugins/ClusterLabelVisual.hpp>
 #include <rviz_mesh_tools_plugins/ClusterLabelTool.hpp>
 
-#include <rviz/properties/bool_property.h>
-#include <rviz/properties/color_property.h>
-#include <rviz/properties/float_property.h>
-#include <rviz/properties/int_property.h>
-#include <rviz/properties/enum_property.h>
-#include <rviz/properties/string_property.h>
+#include <rviz_common/properties/bool_property.hpp>
+#include <rviz_common/properties/color_property.hpp>
+#include <rviz_common/properties/float_property.hpp>
+#include <rviz_common/properties/int_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
+#include <rviz_common/properties/string_property.hpp>
 
-#include <rviz/failed_display.h>
-#include <rviz/display_factory.h>
+// #include <rviz_common/failed_display.hpp>
+// #include <rviz_common/display_factory.hpp>
+#include <rviz_common/display_group.hpp>
+#include <rviz_common/display_context.hpp>
 
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
@@ -69,7 +71,7 @@ namespace rviz_mesh_tools_plugins
 {
 MapDisplay::MapDisplay()
 {
-  m_mapFilePath = new rviz_common::FileProperty("Map file path", "/path/to/map.h5", "Absolute path of the map file", this,
+  m_mapFilePath = new rviz_common::properties::FileProperty("Map file path", "/path/to/map.h5", "Absolute path of the map file", this,
                                          SLOT(updateMap()));
 }
 
@@ -84,7 +86,7 @@ std::shared_ptr<Geometry> MapDisplay::getGeometry()
 {
   if (!m_geometry)
   {
-    RCLCPP_ERROR("Map Display: Geometry requested, but none available!");
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Geometry requested, but none available!");
   }
   return m_geometry;
 }
@@ -94,12 +96,20 @@ std::shared_ptr<Geometry> MapDisplay::getGeometry()
 
 rviz_common::Display* MapDisplay::createDisplay(const QString& class_id)
 {
-  rviz_common::DisplayFactory* factory = context_->getDisplayFactory();
-  QString error;
-  rviz_common::Display* disp = factory->make(class_id, &error);
+  // rviz_common::DisplayFactory* factory = context_->getDisplayFactory();
+  // QString error;
+  
+  // rviz_common::Display* disp = factory->make(class_id, &error);
+
+  // rviz_common::Display* disp = context_->getDisplayFactory()->make(class_id, &error);
+
+  rviz_common::Display* disp = context_->getRootDisplayGroup()->createDisplay(class_id);
+
   if (!disp)
   {
-    return new rviz_common::FailedDisplay(class_id, error);
+
+    std::cerr << "ERROR: IM SEARCHING FOR rviz_common::FailedDisplay" << std::endl;
+    // return new rviz_common::FailedDisplay(class_id, error);
   }
   return disp;
 }
@@ -108,30 +118,39 @@ void MapDisplay::onInitialize()
 {
   std::string name = this->getName().toStdString();
 
-  Display* display = createDisplay("rviz_mesh_tools_plugins/ClusterLabel");
-
-  m_nh = std::make_shared<ros::NodeHandle>("~");
-  m_nh_p = std::make_shared<ros::NodeHandle>("~");
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
   
-  m_clusterLabelDisplay = static_cast<ClusterLabelDisplay*>(display);
-  m_clusterLabelDisplay->setName("ClusterLabel");
-  m_clusterLabelDisplay->setModel(model_);
-  m_clusterLabelDisplay->setParent(this);
-  addChild(m_clusterLabelDisplay);
-  m_clusterLabelDisplay->initialize(context_);
+  Display* display = createDisplay("rviz_mesh_tools_plugins/ClusterLabel");
+  if (m_clusterLabelDisplay = dynamic_cast<ClusterLabelDisplay*>(display); m_clusterLabelDisplay != nullptr)
+  {
+    m_clusterLabelDisplay->setName("ClusterLabel");
+    m_clusterLabelDisplay->setModel(model_);
+    m_clusterLabelDisplay->setParent(this);
+    addChild(m_clusterLabelDisplay);
+    m_clusterLabelDisplay->initialize(context_);
 
+    // Make signal/slot connections
+    connect(m_clusterLabelDisplay, SIGNAL(signalAddLabel(Cluster)), this, SLOT(saveLabel(Cluster)));
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel. CREATED");
+  } else {
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel. NOT FOUND");
+  }
+
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/Mesh");
   Display* meshDisplay = createDisplay("rviz_mesh_tools_plugins/Mesh");
-
-  m_meshDisplay = static_cast<MeshDisplay*>(meshDisplay);
-  addChild(m_meshDisplay);
-  m_meshDisplay->setName("Mesh");
-  m_meshDisplay->setModel(model_);
-  m_meshDisplay->setParent(this);
-  m_meshDisplay->initialize(context_);
-  m_meshDisplay->ignoreIncomingMessages();
-
-  // Make signal/slot connections
-  connect(m_clusterLabelDisplay, SIGNAL(signalAddLabel(Cluster)), this, SLOT(saveLabel(Cluster)));
+  if(m_meshDisplay = dynamic_cast<MeshDisplay*>(meshDisplay); m_meshDisplay != nullptr)
+  {
+    addChild(m_meshDisplay);
+    m_meshDisplay->setName("Mesh");
+    m_meshDisplay->setModel(model_);
+    m_meshDisplay->setParent(this);
+    m_meshDisplay->initialize(context_);
+    m_meshDisplay->ignoreIncomingMessages();
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/Mesh. CREATED");
+  } else {
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/Mesh. NOT FOUND");
+  }
+  
 }
 
 void MapDisplay::onEnable()
@@ -161,7 +180,10 @@ void MapDisplay::load(const rviz_common::Config& config)
     ss << "rviz_mesh_tools_plugins/" << name;
 
     std::string mesh_file;
-    if(m_nh_p->getParam(ss.str(), mesh_file))
+
+    auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+    
+    if(node->get_parameter(ss.str(), mesh_file))
     {
       config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
     } else {
@@ -205,7 +227,7 @@ void MapDisplay::updateMap()
   m_clusterLabelDisplay->setData(m_geometry, m_clusterList);
 
   // All good
-  setStatus(rviz_common::StatusProperty::Ok, "Map", "");
+  setStatus(rviz_common::properties::StatusProperty::Ok, "Map", "");
 
   m_map_file_loaded = m_mapFilePath->getFilename();
 }
@@ -243,33 +265,33 @@ bool MapDisplay::loadData()
   std::string mapFile = m_mapFilePath->getFilename();
   if (mapFile.empty())
   {
-    RCLCPP_WARN_STREAM("Map Display: No map file path specified!");
-    setStatus(rviz_common::StatusProperty::Warn, "Map", "No map file path specified!");
+    RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: No map file path specified!");
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Map", "No map file path specified!");
     return false;
   }
   if (!boost::filesystem::exists(mapFile))
   {
-    RCLCPP_WARN_STREAM("Map Display: Specified map file does not exist!");
-    setStatus(rviz_common::StatusProperty::Warn, "Map", "Specified map file does not exist!");
+    RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Specified map file does not exist!");
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Map", "Specified map file does not exist!");
     return false;
   }
   
-  RCLCPP_INFO_STREAM("Map Display: Loading data for map '" << mapFile << "'");
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Loading data for map '" << mapFile << "'");
 
   try
   {
     if (boost::filesystem::extension(mapFile).compare(".h5") == 0)
     {
-      RCLCPP_INFO("Map Display: Load HDF5 map");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load HDF5 map");
       // Open file IO
       hdf5_map_io::HDF5MapIO map_io(mapFile);
 
-      RCLCPP_INFO("Map Display: Load geometry");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load geometry");
 
       // Read geometry
       m_geometry = std::make_shared<Geometry>(Geometry(map_io.getVertices(), map_io.getFaceIds()));
 
-      RCLCPP_INFO("Map Display: Load textures");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load textures");
 
       // Read textures
       vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
@@ -287,7 +309,7 @@ bool MapDisplay::loadData()
         m_textures[textureIndex].pixelFormat = "rgb8";
       }
 
-      RCLCPP_INFO("Map Display: Load materials");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load materials");
 
       // Read materials
       vector<hdf5_map_io::MapMaterial> materials = map_io.getMaterials();
@@ -321,7 +343,7 @@ bool MapDisplay::loadData()
         m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
       }
 
-      RCLCPP_INFO("Map Display: Load vertex colors");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex colors");
 
       // Read vertex colors
       vector<uint8_t> colors = map_io.getVertexColors();
@@ -333,7 +355,7 @@ bool MapDisplay::loadData()
         m_colors.push_back(Color(colors[i + 0] / 255.0f, colors[i + 1] / 255.0f, colors[i + 2] / 255.0f, 1.0));
       }
 
-      RCLCPP_INFO("Map Display: Load vertex normals");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex normals");
 
       // Read vertex normals
       vector<float> normals = map_io.getVertexNormals();
@@ -344,7 +366,7 @@ bool MapDisplay::loadData()
         m_normals.push_back(Normal(normals[i + 0], normals[i + 1], normals[i + 2]));
       }
 
-      RCLCPP_INFO("Map Display: Load texture coordinates");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load texture coordinates");
 
       // Read tex cords
       vector<float> texCoords = map_io.getVertexTextureCoords();
@@ -355,7 +377,7 @@ bool MapDisplay::loadData()
         m_texCoords.push_back(TexCoords(texCoords[i], texCoords[i + 1]));
       }
 
-      RCLCPP_INFO("Map Display: Load clusters");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load clusters");
 
       // Read labels
       m_clusterList.clear();
@@ -383,11 +405,10 @@ bool MapDisplay::loadData()
           }
           catch (const hf::DataSpaceException& e)
           {
-              RCLCPP_WARN_STREAM("Could not load channel " << costlayer << " as a costlayer!");
+              RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not load channel " << costlayer << " as a costlayer!");
           }
       }
     }
-    #if defined(WITH_ASSIMP) 
     else 
     {
       std::cout << "LOADING WITH ASSIMP" << std::endl; 
@@ -419,6 +440,8 @@ bool MapDisplay::loadData()
       m_geometry->vertices.resize(amesh->mNumVertices);
       m_geometry->faces.resize(amesh->mNumFaces);
 
+      std::cout << "- Vertices, Faces: " << amesh->mNumVertices << ", " << amesh->mNumFaces << std::endl;
+
       for (int i = 0; i < amesh->mNumVertices; i++)
       {
         m_geometry->vertices[i].x = amesh->mVertices[i].x;
@@ -432,19 +455,20 @@ bool MapDisplay::loadData()
         m_geometry->faces[i].vertexIndices[1] = amesh->mFaces[i].mIndices[1];
         m_geometry->faces[i].vertexIndices[2] = amesh->mFaces[i].mIndices[2];
       }
+
+      m_costs.clear();
     }
-    #endif // defined(WITH_ASSIMP)
   }
   catch (...)
   {
-    RCLCPP_ERROR_STREAM("An unexpected error occurred while using Pluto Map IO");
-    setStatus(rviz_common::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "An unexpected error occurred while using Pluto Map IO");
+    setStatus(rviz_common::properties::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
     return false;
   }
 
-  setStatus(rviz_common::StatusProperty::Ok, "IO", "");
+  setStatus(rviz_common::properties::StatusProperty::Ok, "IO", "");
 
-  RCLCPP_INFO("Map Display: Successfully loaded map.");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Successfully loaded map.");
 
   return true;
 }
@@ -457,7 +481,7 @@ void MapDisplay::saveLabel(Cluster cluster)
   std::string label = cluster.name;
   std::vector<uint32_t> faces = cluster.faces;
 
-  RCLCPP_INFO_STREAM("Map Display: add label '" << label << "'");
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: add label '" << label << "'");
 
   try
   {
@@ -466,8 +490,8 @@ void MapDisplay::saveLabel(Cluster cluster)
     boost::split(results, label, [](char c) { return c == '_'; });
     if (results.size() != 2)
     {
-      RCLCPP_ERROR_STREAM("Map Display: Illegal label name '" << label << "'");
-      setStatus(rviz_common::StatusProperty::Error, "Label", "Illegal label name!");
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Illegal label name '" << label << "'");
+      setStatus(rviz_common::properties::StatusProperty::Error, "Label", "Illegal label name!");
       return;
     }
 
@@ -480,19 +504,19 @@ void MapDisplay::saveLabel(Cluster cluster)
     // Add to cluster list
     m_clusterList.push_back(Cluster(label, faces));
 
-    setStatus(rviz_common::StatusProperty::Ok, "Label", "Successfully saved label");
-    RCLCPP_INFO_STREAM("Map Display: Successfully added label to map.");
+    setStatus(rviz_common::properties::StatusProperty::Ok, "Label", "Successfully saved label");
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Successfully added label to map.");
 
     // update the map to show the new label
     updateMap();
   }
   catch (...)
   {
-    setStatus(rviz_common::StatusProperty::Error, "Label", "Error while saving label");
+    setStatus(rviz_common::properties::StatusProperty::Error, "Label", "Error while saving label");
   }
 }
 
 }  // End namespace rviz_mesh_tools_plugins
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_mesh_tools_plugins::MapDisplay, rviz_common::Display)

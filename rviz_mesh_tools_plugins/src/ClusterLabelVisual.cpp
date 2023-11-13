@@ -49,13 +49,14 @@
 
 #include <rviz_common/display_context.hpp>
 
-#include <OGRE/OgreEntity.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreMesh.h>
-#include <OGRE/OgreMeshManager.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSubMesh.h>
+#include <OgreEntity.h>
+#include <OgreMaterialManager.h>
+#include <OgreMesh.h>
+#include <OgreMeshManager.h>
+#include <OgreSceneManager.h>
+#include <OgreSceneNode.h>
+#include <OgreSubMesh.h>
+#include <OgreTechnique.h>
 
 namespace rviz_mesh_tools_plugins
 {
@@ -163,7 +164,7 @@ ClusterLabelVisual::~ClusterLabelVisual()
 
   if (!m_mesh.isNull())
   {
-    RCLCPP_DEBUG("ClusterLabelVisual::~ClusterLabelVisual: Destroying SubMesh: %s", m_labelId.c_str());
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::~ClusterLabelVisual: Destroying SubMesh: %s", m_labelId.c_str());
 
     try
     {
@@ -171,13 +172,13 @@ ClusterLabelVisual::~ClusterLabelVisual()
     }
     catch (...)
     {
-      RCLCPP_ERROR("Exception in Visual destructor");
+      RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Exception in Visual destructor");
     }
   }
 
   if (m_sceneNode->numAttachedObjects() == 0)
   {
-    RCLCPP_INFO("ClusterLabelVisual::~ClusterLabelVisual: Delete scene node");
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::~ClusterLabelVisual: Delete scene node");
     m_displayContext->getSceneManager()->destroySceneNode(m_sceneNode);
   }
 }
@@ -201,7 +202,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
 
   if (!m_geometry)
   {
-    RCLCPP_WARN("ClusterLabelVisual::setFacesInCluster: MeshGeometry not set!");
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::setFacesInCluster: MeshGeometry not set!");
     return;
   }
 
@@ -212,7 +213,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
     m_subMesh->indexData->indexCount = 0;
     m_subMesh->indexData->indexStart = 0;
     m_material->getTechnique(0)->removeAllPasses();
-    RCLCPP_DEBUG("ClusterLabelVisual::setFacesInCluster: faces empty!");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::setFacesInCluster: faces empty!");
     return;
   }
 

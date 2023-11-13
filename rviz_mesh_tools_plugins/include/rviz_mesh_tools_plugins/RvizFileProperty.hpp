@@ -43,6 +43,7 @@
  *  authors:
  *
  *    Malte kleine Piening <malte@klpiening.de>
+ *    Alexander Mock <amock@uos.de>
  */
 
 #ifndef RVIZ_FILE_PROPERTY_HPP
@@ -51,9 +52,13 @@
 #include <string>
 #include <rviz_common/properties/file_picker_property.hpp>
 
-namespace rviz
+namespace rviz_common
 {
-class FileProperty : public rviz_common::properties::FilePickerProperty
+
+namespace properties
+{
+  
+class FileProperty : public FilePickerProperty
 {
   Q_OBJECT
 public:
@@ -83,6 +88,7 @@ public Q_SLOTS:
   }
 };
 
-}  // end namespace rviz
+} // namespace properties
+} // namespace rviz
 
-#endif
+#endif // RVIZ_FILE_PROPERTY_HPP

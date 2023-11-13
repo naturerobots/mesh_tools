@@ -44,3 +44,4 @@
 #    Alexander Mock <amock@uos.de>
 #
 find_package(Qt5 REQUIRED QUIET COMPONENTS Widgets)
+find_package(Boost REQUIRED QUITE COMPONENTS system filesystem)

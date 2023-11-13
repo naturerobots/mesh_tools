@@ -69,43 +69,47 @@
 
 // #include <ros/ros.h>
 // #include <ros/console.h>
-#include <rviz/viewport_mouse_event.h>
-#include <rviz/visualization_manager.h>
-#include <rviz/visualization_frame.h>
-#include <rviz/geometry.h>
+#include <rviz_common/viewport_mouse_event.hpp>
+#include <rviz_common/visualization_manager.hpp>
+#include <rviz_common/display.hpp>
+#include <rviz_rendering/geometry.hpp>
 
 #include <rviz_common/display_context.hpp>
-#include <rviz/frame_manager.h>
-#include <rviz/display.h>
+#include <rviz_common/frame_manager_iface.hpp>
 
-#include <rviz/tool.h>
-#include <rviz/tool_manager.h>
-#include <rviz/display_group.h>
 
-#include <std_msgs/Int32.h>
-#include <geometry_msgs/Point32.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <mesh_msgs/MeshGeometryStamped.h>
-#include <mesh_msgs/MeshGeometry.h>
-#include <mesh_msgs/GetGeometry.h>
-#include <mesh_msgs/GetLabeledClusters.h>
+#include <rviz_common/tool.hpp>
+#include <rviz_common/tool_manager.hpp>
+#include <rviz_common/display_group.hpp>
+
+
 
 #ifndef Q_MOC_RUN
-#include <rviz/mesh_loader.h>
+#include <rviz_rendering/mesh_loader.hpp>
 
-#include <OGRE/OgreManualObject.h>
-#include <OGRE/OgreSceneNode.h>
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreEntity.h>
-#include <OGRE/OgreStringConverter.h>
-#include <OGRE/OgreMaterialManager.h>
-#include <OGRE/OgreRay.h>
-#include <OGRE/OgreSceneQuery.h>
-#include <OGRE/OgreColourValue.h>
+#include <OgreManualObject.h>
+#include <OgreSceneNode.h>
+#include <OgreSceneManager.h>
+#include <OgreEntity.h>
+#include <OgreStringConverter.h>
+#include <OgreMaterialManager.h>
+#include <OgreRay.h>
+#include <OgreSceneQuery.h>
+#include <OgreColourValue.h>
 
-#endif
+#include <std_msgs/msg/int32.hpp>
+#include <geometry_msgs/msg/point32.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
+#include <mesh_msgs/msg/mesh_geometry.hpp>
+#include <mesh_msgs/srv/get_geometry.hpp>
+#include <mesh_msgs/srv/get_labeled_clusters.hpp>
 
-namespace rviz
+#endif // Q_MOC_RUN
+
+namespace rviz_common
+{
+namespace properties
 {
 // Forward declaration
 class BoolProperty;
@@ -114,8 +118,8 @@ class FloatProperty;
 class IntProperty;
 class EnumProperty;
 class StringProperty;
-
-}  // End namespace rviz
+} // namespace properties
+} // namespace rviz_common
 
 namespace rviz_mesh_tools_plugins
 {
@@ -292,6 +296,6 @@ private:
   
 };
 
-}  // end namespace rviz_mesh_tools_plugins
+}  // namespace rviz_mesh_tools_plugins
 
-#endif
+#endif // CLUSTER_LABEL_DISPLAY_HPP

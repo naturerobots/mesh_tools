@@ -71,8 +71,8 @@
 
 #include <rviz_common/viewport_mouse_event.hpp>
 #include <rviz_common/visualization_manager.hpp>
-#include <rviz_common/visualization_frame.hpp>
-#include <rviz_rendering/geometry.hpp>
+// #include <rviz_common/visualization_frame.hpp>
+// #include <rviz_rendering/geometry.hpp>
 
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
@@ -106,12 +106,14 @@
 #include <OgreSceneQuery.h>
 #include <OgreColourValue.h>
 
-#endif
+#endif // Q_MOCK_RUN
 
 #include <rviz_mesh_tools_plugins/ClusterLabelDisplay.hpp>
 #include <rviz_mesh_tools_plugins/MeshDisplay.hpp>
 
 namespace rviz
+{
+namespace properties
 {
 // Forward declaration
 class BoolProperty;
@@ -120,8 +122,8 @@ class FloatProperty;
 class IntProperty;
 class EnumProperty;
 class StringProperty;
-
-}  // End namespace rviz
+} // namespace properties
+} // namespace rviz
 
 namespace rviz_mesh_tools_plugins
 {
@@ -212,11 +214,8 @@ private:
 
   std::map<std::string, std::vector<float>> m_costs;
 
-  std::shared_ptr<ros::NodeHandle> m_nh;
-  std::shared_ptr<ros::NodeHandle> m_nh_p;
-
   /// Path to map file
-  rviz_common::FileProperty* m_mapFilePath;
+  rviz_common::properties::FileProperty* m_mapFilePath;
   std::string m_map_file_loaded;
 
   /// Subdisplay: ClusterLabel (for showing the clusters)

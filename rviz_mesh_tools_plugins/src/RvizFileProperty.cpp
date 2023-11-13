@@ -49,12 +49,18 @@
 
 #include <QFileDialog>
 
-namespace rviz
+namespace rviz_common
 {
-FileProperty::FileProperty(const QString& name, const QString& default_value, const QString& description,
-                           Property* parent, const char* changed_slot, QObject* receiver)
-  : rviz_common::properties::FilePickerProperty(
-        name, default_value, description, parent, changed_slot, receiver)
+
+namespace properties
+{
+
+FileProperty::FileProperty(
+  const QString& name, const QString& default_value, const QString& description,
+  Property* parent, const char* changed_slot, QObject* receiver)
+  : FilePickerProperty(
+      name, default_value, description, 
+      parent, changed_slot, receiver)
 {
 }
 
@@ -95,4 +101,5 @@ QWidget* FileProperty::createEditor(
   return nullptr;
 }
 
-}  // namespace rviz
+} // namespace properties
+} // namespace rviz_common

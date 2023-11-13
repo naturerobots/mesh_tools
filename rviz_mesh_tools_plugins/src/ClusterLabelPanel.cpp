@@ -56,11 +56,12 @@
 #include <QTimer>
 #include <QPushButton>
 
-#include <rviz/tool_manager.h>
+#include <rviz_common/tool_manager.hpp>
 
 namespace rviz_mesh_tools_plugins
 {
-ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) : rviz_common::Panel(parent)
+ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) 
+:rviz_common::Panel(parent)
 {
   QHBoxLayout* clusterNameLayout = new QHBoxLayout();
   clusterNameLayout->addWidget(new QLabel("Cluster Name:"));
@@ -87,7 +88,8 @@ ClusterLabelPanel::ClusterLabelPanel(QWidget* parent) : rviz_common::Panel(paren
 void ClusterLabelPanel::onInitialize()
 {
   // Check if the cluster label tool is already opened
-  rviz_common::ToolManager* toolManager = vis_manager_->getToolManager();
+  
+  rviz_common::ToolManager* toolManager = this->getDisplayContext()->getToolManager();
   QStringList toolClasses = toolManager->getToolClasses();
   bool foundTool = false;
   for (int i = 0; i < toolClasses.size(); i++)
@@ -102,7 +104,7 @@ void ClusterLabelPanel::onInitialize()
 
   if (!foundTool)
   {
-    m_tool = static_cast<ClusterLabelTool*>(vis_manager_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel"));
+    m_tool = static_cast<ClusterLabelTool*>(this->getDisplayContext()->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel"));
   }
 }
 
@@ -122,13 +124,13 @@ void ClusterLabelPanel::updateClusterName()
 
 void ClusterLabelPanel::publish()
 {
-  RCLCPP_INFO("Label Panel: Publish");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Label Panel: Publish");
   m_tool->publishLabel(m_clusterName.toStdString());
 }
 
 void ClusterLabelPanel::resetFaces()
 {
-  RCLCPP_INFO("Label panel: Reset");
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Label panel: Reset");
   m_tool->resetFaces();
 }
 
@@ -143,7 +145,6 @@ void ClusterLabelPanel::load(const rviz_common::Config& config)
   rviz_common::Panel::load(config);
   QString clusterName;
   if (config.mapGetString("ClusterName", &clusterName))
-    ;
   {
     m_clusterNameEditor->setText(clusterName);
     updateClusterName();
@@ -152,5 +153,5 @@ void ClusterLabelPanel::load(const rviz_common::Config& config)
 
 }  // End namespace rviz_mesh_tools_plugins
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_mesh_tools_plugins::ClusterLabelPanel, rviz_common::Panel)
