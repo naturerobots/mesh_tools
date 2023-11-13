@@ -175,6 +175,10 @@ private Q_SLOTS:
   void updateMap();
 
 private:
+  void enableClusterLabelDisplay();
+  void disableClusterLabelDisplay();
+  void enableMeshDisplay();
+  void disableMeshDisplay();
   /**
    * @brief RViz callback on initialize
    */
@@ -195,6 +199,8 @@ private:
    * @return true, if successful
    */
   bool loadData();
+
+  
 
   // TODO: make more efficient - currently everything is stored in the MapDisplay, the MeshDisplay and the MeshVisual
   /// Geometry
