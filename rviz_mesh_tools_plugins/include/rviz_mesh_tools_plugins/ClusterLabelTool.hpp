@@ -235,7 +235,6 @@ private:
 
   rviz_common::RenderPanel* m_evt_panel;
   
-
   bool m_multipleSelect = false;
   bool m_singleSelect = false;
   bool m_singleDeselect = false;

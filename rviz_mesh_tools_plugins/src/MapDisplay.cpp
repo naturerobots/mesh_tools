@@ -237,29 +237,13 @@ void MapDisplay::updateMap()
 
 bool MapDisplay::loadData()
 {
-  
-
   std::string name = this->getName().toStdString();
-  // std::stringstream ss;
-  // ss << "rviz_mesh_tools_plugins/" << name;
-
-  // std::string mesh_file;
-  // if(m_nh_p->getParam(ss.str(), mesh_file))
-  // {
-  //   std::cout<< name << ": FOUND INITIAL MESH IN PARAMS - " << mesh_file << std::endl;
-  //   m_mapFilePath->setFilename(QString::fromStdString(mesh_file));
-  // } else {
-  //   std::cout << name << ": COULDN'T FOUND MESH TO LOAD" << std::endl;
-  // }
-
 
   if(m_mapFilePath->getFilename() == m_map_file_loaded)
   {
     std::cout << name << "! Tried to load same map twice. Skipping and keeping old data" << std::endl;
     return true;
   }
-
-
 
   // Read map file path
   std::string mapFile = m_mapFilePath->getFilename();
@@ -420,7 +404,9 @@ bool MapDisplay::loadData()
       // 1. scene graphs will not be imported properly.
       //    Someone has to do some transformations according to the 
       //    node graph in the assimp structures. Or optionally (even better): 
-      //    create tf-transformations for every element of the scene graph
+      //    create tf-transformations for every element of the scene graph#
+      // 2. HDF5 is used to store more information such as label etc.
+      //    So we possibly need to transform the geometry from PLY, OBJ, DAE to H5 first??
       // 
       Assimp::Importer io;
       io.SetPropertyBool(AI_CONFIG_IMPORT_COLLADA_IGNORE_UP_DIRECTION, true);
