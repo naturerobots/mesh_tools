@@ -46,17 +46,20 @@
 #ifndef MESH_MSGS_TRANSFORM__TRANSFORMS_H_
 #define MESH_MSGS_TRANSFORM__TRANSFORMS_H_
 
-#include <tf/transform_listener.h>
-#include <mesh_msgs/MeshGeometryStamped.h>
+#include <tf2_ros/buffer.h>
+#include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
 
-namespace mesh_msgs_transform{
-    bool transformGeometryMeshNoTime(
-        const std::string& target_frame,
-        const mesh_msgs::MeshGeometryStamped& mesh_in,
-        const std::string& fixed_frame,
-        mesh_msgs::MeshGeometryStamped& mesh_out,
-        const tf::TransformListener&  tf_listener
-    );
-}
+namespace mesh_msgs_transform
+{
 
-#endif /* transforms.h */
+bool transformGeometryMeshNoTime(
+    const std::string& target_frame,
+    const mesh_msgs::msg::MeshGeometryStamped& mesh_in,
+    const std::string& fixed_frame,
+    mesh_msgs::msg::MeshGeometryStamped& mesh_out,
+    const tf2_ros::Buffer& tf_buffer
+);
+
+} // namespace mesh_msgs_transform
+
+#endif // MESH_MSGS_TRANSFORM__TRANSFORMS_H_
