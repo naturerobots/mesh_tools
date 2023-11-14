@@ -204,13 +204,12 @@ void MeshVisual::reset()
   } else {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping.");
     
-    
-    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
     auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
     while(mit.hasMoreElements())
     {
       Ogre::ResourcePtr material = mit.getNext();
-      std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+      RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "- " << material->getName() << ", group: " << material->getGroup());
     }
 
   }
@@ -229,12 +228,12 @@ void MeshVisual::reset()
     } else {
       RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping");
     
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
       auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
       while(mit.hasMoreElements())
       {
         Ogre::ResourcePtr material = mit.getNext();
-        std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "- " << material->getName() << ", group: " << material->getGroup());
       }
     }
     
@@ -250,12 +249,12 @@ void MeshVisual::reset()
   } else {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping");
   
-    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
     auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
     while(mit.hasMoreElements())
     {
       Ogre::ResourcePtr material = mit.getNext();
-      std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+      RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "- " << material->getName() << ", group: " << material->getGroup());
     }
   }
 
@@ -303,12 +302,12 @@ void MeshVisual::reset()
   m_vertex_costs_enabled = false;
 
 
-  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "MeshVisual reset done. Left materials are:");
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "MeshVisual reset done. Left materials are:");
   auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
   while(mit.hasMoreElements())
   {
     Ogre::ResourcePtr material = mit.getNext();
-    std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "- " << material->getName() << ", group: " << material->getGroup());
   }
 }
 

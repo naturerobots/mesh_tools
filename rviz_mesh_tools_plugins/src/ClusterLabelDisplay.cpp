@@ -161,10 +161,8 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
 
 void ClusterLabelDisplay::onInitialize()
 {
-  std::cout << "ClusterLabelDisplay::onInitialize()" << std::endl;
   // Look for an existing label tool or create a new one
   initializeLabelTool();
-  std::cout << "-DONE" << std::endl;
 }
 
 void ClusterLabelDisplay::onEnable()
@@ -210,38 +208,30 @@ void ClusterLabelDisplay::updateMap()
 
   if(m_tool)
   {
-    std::cout << "Reset Label Tool visual" << std::endl;
     // Reset the visual of the label tool so that it can be deleted
     m_tool->resetVisual();
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Cluster Label Tool not initialized!");
   }
 
-  std::cout << "createVisualsFromClusterList" << std::endl;
   // Now create the visuals for the loaded clusters
   createVisualsFromClusterList();
 
-  std::cout << "fillPropertyOptions" << std::endl;
   // Fill options for dropdown menu containing the cluster names
   fillPropertyOptions();
 
-  std::cout << "updatePhantomVisual" << std::endl;
   // Create a phantom visual if it is enabled
   updatePhantomVisual();
 
-  std::cout << "notifyLabelTool" << std::endl;
   // Notify label tool for changes. The label tool should now destroy its visual and get a new one from this obj
   notifyLabelTool();
 
-  std::cout << "updateColors" << std::endl;
   // Apply the default colors to the visuals
   updateColors();
 
-  std::cout << "tool set display" << std::endl;
   // Update the tool's assigned display (to this display)
   m_tool->setDisplay(this);
 
-  std::cout << "All good" << std::endl;
   // All good
   setStatus(rviz_common::properties::StatusProperty::Ok, "Map", "");
 }
@@ -344,7 +334,6 @@ void ClusterLabelDisplay::initializeLabelTool()
   {
     if (toolClasses[i].contains("ClusterLabel"))
     {
-      std::cout << "Convert " << toolClasses[i].toStdString() << std::endl;
       m_tool = static_cast<ClusterLabelTool*>(toolManager->getTool(i));
       foundTool = true;
       break;
@@ -353,15 +342,12 @@ void ClusterLabelDisplay::initializeLabelTool()
 
   if (!foundTool)
   {
-    std::cout << "Create new tool" << std::endl;
-    auto bla = context_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel");
-    std::cout << "bla" << std::endl;
-
-    if(m_tool = dynamic_cast<ClusterLabelTool*>(bla); m_tool != nullptr)
+    auto tool_tmp = context_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel");
+    if(m_tool = dynamic_cast<ClusterLabelTool*>(tool_tmp); m_tool != nullptr)
     {
-      std::cout << "SUCCESS" << std::endl;
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Created ClusterLabelTool");
     } else {
-      std::cout << "Could not create ClusterLabelTool :(" << std::endl;
+      RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not create ClusterLabelTool");
     }
   }
 }

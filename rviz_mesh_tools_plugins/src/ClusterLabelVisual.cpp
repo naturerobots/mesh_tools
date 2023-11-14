@@ -177,7 +177,6 @@ ClusterLabelVisual::ClusterLabelVisual(
 
 ClusterLabelVisual::~ClusterLabelVisual()
 {
-  std::cout << "~ClusterLabelVisual" << std::endl;
   reset();
 
   if (!m_mesh.isNull())
@@ -200,7 +199,6 @@ ClusterLabelVisual::~ClusterLabelVisual()
     m_displayContext->getSceneManager()->destroySceneNode(m_sceneNode);
   }
 
-  std::cout << "~ClusterLabelVisual -- done" << std::endl;
 }
 
 void ClusterLabelVisual::reset()

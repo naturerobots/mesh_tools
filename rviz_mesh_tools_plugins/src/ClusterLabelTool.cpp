@@ -82,7 +82,7 @@ using std::stringstream;
 
 namespace rviz_mesh_tools_plugins
 {
-#define CL_RAY_CAST_KERNEL_FILE "/include/kernels/cast_rays.cl"
+// #define CL_RAY_CAST_KERNEL_FILE "/include/kernels/cast_rays.cl"
 
 
 
@@ -138,7 +138,6 @@ void ClusterLabelTool::onInitialize()
   m_selectionBoxMaterial->getTechnique(0)->getPass(0)->setPolygonMode(Ogre::PM_SOLID);
   m_selectionBoxMaterial->setCullingMode(Ogre::CULL_NONE);
 
-  // std::cout << "ClusterLabelTool INIT kdwioh" << std::endl;
 
   // // try-catch block to check for OpenCL errors
   // try
@@ -468,7 +467,7 @@ void ClusterLabelTool::selectMultipleFaces(
     // single face
     selectSingleFace(event, selectMode);
   } else {
-    std::cout << "PICK!" << std::endl;
+    // std::cout << "PICK!" << std::endl;
     rviz_common::interaction::M_Picked pick_results;
 
     auto manager = context_->getSelectionManager();
@@ -482,21 +481,21 @@ void ClusterLabelTool::selectMultipleFaces(
     if(!pick_results.empty())
     {
       // FOUND SOMETHING!
-      std::cout << "FOUND SOMETHING! " << pick_results.size() << std::endl;
+      // std::cout << "FOUND SOMETHING! " << pick_results.size() << std::endl;
 
       for(auto elem : pick_results)
       {
         rviz_common::interaction::CollObjectHandle key = elem.first;
         rviz_common::interaction::Picked value = elem.second;
         
-        std::cout << key << std::endl;
-        std::cout << "Extra handles: " << value.extra_handles.size() << std::endl;
+        // std::cout << key << std::endl;
+        // std::cout << "Extra handles: " << value.extra_handles.size() << std::endl;
 
       }
 
       // TODO: continue implementing this
     } else {
-      std::cout << "NOTHING to pick :(" << std::endl;
+      // std::cout << "NOTHING to pick :(" << std::endl;
     }
   }
 
@@ -586,7 +585,7 @@ void ClusterLabelTool::selectSingleFace(
   Intersection intersection;
   if(selectFace(context_, mouse_ray, intersection))
   {
-    std::cout << "selectSingleFace- HIT!" << std::endl;
+    // std::cout << "selectSingleFace- HIT!" << std::endl;
 
     if (m_displayInitialized && m_visual)
     {
@@ -612,7 +611,7 @@ void ClusterLabelTool::selectSingleFace(
     }
 
   } else {
-    std::cout << "selectSingleFace - No hit :(" << std::endl;
+    // std::cout << "selectSingleFace - No hit :(" << std::endl;
   }
 }
 
@@ -840,7 +839,6 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   }
   else if (event.leftUp() && m_multipleSelect)
   {
-    std::cout << "BLA" << std::endl;
     m_multipleSelect = false;
     selectMultipleFaces(event, true);
   }
@@ -895,10 +893,8 @@ void ClusterLabelTool::resetFaces()
 
 void ClusterLabelTool::resetVisual()
 {
-  // TODO: Segfault here
-  // m_visual.reset();
+  // TODO: Segfault here, when using RViz config
   m_visual.reset();
-  // std::cout << "hfe" << std::endl;
 }
 
 }  // End namespace rviz_mesh_tools_plugins

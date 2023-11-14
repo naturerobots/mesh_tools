@@ -33,7 +33,7 @@ find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 # find_package(assimp REQUIRED)
 
 # This needs to be optional for non CL devices
-find_package(OpenCL 2 REQUIRED)
+# find_package(OpenCL 2 REQUIRED)
 
 # include_directories(${ASSIMP_INCLUDE_DIRS})
 

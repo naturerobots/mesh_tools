@@ -169,7 +169,6 @@ bool selectFace(
   return false;
 }
 
-
 bool selectFace(
   const rviz_common::DisplayContext* ctx,
   const Ogre::Ray& ray, 
