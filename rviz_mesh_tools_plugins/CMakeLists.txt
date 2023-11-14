@@ -19,7 +19,7 @@ find_package(rmw REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
-find_package(rviz_default_plugins REQUIRED)
+find_package(rviz_assimp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(hdf5_map_io REQUIRED)
 find_package(mesh_msgs REQUIRED)
@@ -30,12 +30,12 @@ find_package(std_msgs REQUIRED)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
-find_package(assimp REQUIRED)
+# find_package(assimp REQUIRED)
 
 # This needs to be optional for non CL devices
 find_package(OpenCL 2 REQUIRED)
 
-include_directories(${ASSIMP_INCLUDE_DIRS})
+# include_directories(${ASSIMP_INCLUDE_DIRS})
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 # set(CMAKE_AUTOMOC ON)
@@ -122,6 +122,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rmw
   rviz_common
   rviz_rendering
+  rviz_assimp_vendor
   std_msgs
   hdf5_map_io
   mesh_msgs
@@ -142,6 +143,7 @@ ament_export_dependencies(
   rmw
   rviz_common
   rviz_rendering
+  rviz_assimp_vendor
   std_msgs
   hdf5_map_io
   mesh_msgs

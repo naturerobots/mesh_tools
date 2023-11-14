@@ -24,6 +24,7 @@
   <depend>rclcpp</depend>
   <depend>rviz_common</depend>
   <depend>rviz_rendering</depend>
+  <depend>rviz_assimp_vendor</depend>
   <depend>std_msgs</depend>
   <depend>mesh_msgs</depend>
   <depend>hdf5_map_io</depend>
