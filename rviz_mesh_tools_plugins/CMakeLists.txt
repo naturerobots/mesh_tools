@@ -41,7 +41,7 @@ include_directories(${ASSIMP_INCLUDE_DIRS})
 # set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5 COMPONENTS Core Widgets)
-add_definitions(-DQT_NO_KEYWORDS)
+# add_definitions(-DQT_NO_KEYWORDS)
 
 include_directories(
   include

@@ -84,7 +84,7 @@ protected:
   bool getPositionAndOrientation(const Ogre::ManualObject* mesh, const Ogre::Ray& ray, Ogre::Vector3& position,
                                  Ogre::Vector3& orientation);
 
-  bool selectTriangle(rviz_common::ViewportMouseEvent& event, Ogre::Vector3& position, Ogre::Vector3& orientation);
+  bool selectTriangle(const Ogre::Ray& ray, Ogre::Vector3& position, Ogre::Vector3& orientation);
 
   rviz_rendering::Arrow* arrow_;
   enum State
