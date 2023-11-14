@@ -100,19 +100,25 @@ bool selectFace(
     getRawManualObjectData(mesh, i, vertex_count, vertices, index_count, indices);
     if (index_count != 0)
     {
-      for (size_t j = 0; j < index_count; j += 3)
+      for (size_t face_id = 0; face_id < index_count / 3; face_id++)
       {
-        std::pair<bool, Ogre::Real> goal = Ogre::Math::intersects(ray, vertices[indices[j]], vertices[indices[j + 1]],
-                                                                  vertices[indices[j + 2]], true, true);
+        // face: indices[j], 
+        const Ogre::Vector3 vertex;
+
+        std::pair<bool, Ogre::Real> goal = Ogre::Math::intersects(ray, 
+            vertices[indices[face_id * 3 + 0]], 
+            vertices[indices[face_id * 3 + 1]],
+            vertices[indices[face_id * 3 + 2]], true, true);
 
         if (goal.first)
         {
           if ((dist < 0.0f) || (goal.second < dist))
           {
             dist = goal.second;
-            a = vertices[indices[j]];
-            b = vertices[indices[j + 1]];
-            c = vertices[indices[j + 2]];
+            a = vertices[indices[face_id * 3 + 0]];
+            b = vertices[indices[face_id * 3 + 1]];
+            c = vertices[indices[face_id * 3 + 2]];
+            intersection.face_id = face_id;
           }
         }
       }

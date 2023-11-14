@@ -228,7 +228,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
 {
   m_faces = faces;
 
-  if (!m_geometry)
+  if(!m_geometry)
   {
     RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::setFacesInCluster: MeshGeometry not set!");
     return;
@@ -251,7 +251,6 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
     m_material->getTechnique(0)->createPass();
     m_material->setDiffuse(m_color);
     m_material->setSelfIllumination(m_color);
-
     initMaterial();
   }
 

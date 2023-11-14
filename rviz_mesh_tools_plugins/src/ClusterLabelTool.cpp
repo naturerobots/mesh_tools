@@ -580,11 +580,7 @@ void ClusterLabelTool::selectSingleFace(
   rviz_common::ViewportMouseEvent& event,
   bool selectMode)
 {
-  // Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
-  //     (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
-  // Ogre::Ray ray = event.panel->getViewController()->getCamera()->getCameraToViewportRay(
-  //   (float)event.x / event.panel->getRenderWindow()->width(), (float)event.y / event.panel->getRenderWindow()->height()
-  // );
+  
   Ogre::Ray mouse_ray = getMouseEventRay(event);
 
   Intersection intersection;
