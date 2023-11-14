@@ -86,7 +86,9 @@ public:
    * @param context The context that contains the display information.
    * @param labelId The label id (that has to be unique)
    */
-  ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId);
+  // ClusterLabelVisual(
+  //   rviz_common::DisplayContext* context, 
+  //   std::string labelId);
 
   /**
    * @brief Constructor
@@ -95,12 +97,15 @@ public:
    * @param labelId The label id (that has to be unique)
    * @param geometry A shared pointer to the geometry to which the labels belong
    */
-  ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId, std::shared_ptr<Geometry> geometry);
+  ClusterLabelVisual(
+    rviz_common::DisplayContext* context, 
+    std::string labelId, 
+    std::shared_ptr<Geometry> geometry);
 
   /**
    * @brief Destructor
    */
-  ~ClusterLabelVisual();
+  virtual ~ClusterLabelVisual();
 
   /**
    * @brief Disabling the copy constructor

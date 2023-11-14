@@ -197,12 +197,22 @@ void MeshVisual::reset()
   std::stringstream sstm;
 
   sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
-  if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str()))
+  if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
   {
     materialptr->unload();
     Ogre::MaterialManager::getSingleton().remove(materialptr);
   } else {
-    std::cout << "Could not find material '" << sstm.str() << "' to onload. skipping" << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping.");
+    
+    
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+    auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
+    while(mit.hasMoreElements())
+    {
+      Ogre::ResourcePtr material = mit.getNext();
+      std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+    }
+
   }
 
   sstm.str("");
@@ -212,12 +222,20 @@ void MeshVisual::reset()
   {
     sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "Material_" << 1;
     
-    if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str()))
+    if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
     {
       materialptr->unload();
       Ogre::MaterialManager::getSingleton().remove(materialptr);
     } else {
-      std::cout << "Could not find material '" << sstm.str() << "' to unload. skipping" << std::endl;
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping");
+    
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+      auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
+      while(mit.hasMoreElements())
+      {
+        Ogre::ResourcePtr material = mit.getNext();
+        std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+      }
     }
     
     sstm.str("");
@@ -225,12 +243,20 @@ void MeshVisual::reset()
   }
 
   sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
-  if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str()))
+  if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
   {
     materialptr->unload();
     Ogre::MaterialManager::getSingleton().remove(materialptr);
   } else {
-    std::cout << "Could not find material '" << sstm.str() << "' to unload. skipping" << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping");
+  
+    RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+    auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
+    while(mit.hasMoreElements())
+    {
+      Ogre::ResourcePtr material = mit.getNext();
+      std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+    }
   }
 
   sstm.str("");
@@ -275,6 +301,15 @@ void MeshVisual::reset()
   m_texture_coords_enabled = false;
   m_textures_enabled = false;
   m_vertex_costs_enabled = false;
+
+
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "MeshVisual reset done. Left materials are:");
+  auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
+  while(mit.hasMoreElements())
+  {
+    Ogre::ResourcePtr material = mit.getNext();
+    std::cout << "- " << material->getName() << ", group: " << material->getGroup() << std::endl;
+  }
 }
 
 void MeshVisual::showWireframe(Ogre::Pass* pass, Ogre::ColourValue wireframeColor, float wireframeAlpha)
@@ -371,11 +406,12 @@ void MeshVisual::updateMaterial(bool showFaces, Ogre::ColourValue facesColor, fl
   }
 }
 
-void MeshVisual::updateMaterial(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha,
-                                        bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
-                                        bool useVertexColors, bool showVertexCosts, bool showTextures,
-                                        bool showTexturedFacesOnly, bool showNormals, Ogre::ColourValue normalsColor,
-                                        float normalsAlpha, float normalsScalingFactor)
+void MeshVisual::updateMaterial(
+  bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha,
+  bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
+  bool useVertexColors, bool showVertexCosts, bool showTextures,
+  bool showTexturedFacesOnly, bool showNormals, Ogre::ColourValue normalsColor,
+  float normalsAlpha, float normalsScalingFactor)
 {
   // remove all passes
   if (!m_meshGeneralMaterial.isNull())
@@ -744,15 +780,16 @@ void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector
 
 void MeshVisual::enteringNormals(const Geometry& mesh, const vector<Normal>& normals)
 {
-  if (!m_vertex_normals_enabled)
+  if(!m_vertex_normals_enabled)
   {
     return;
   }
 
   std::stringstream sstm;
-  if (m_normalMaterial.isNull())
+  if(m_normalMaterial.isNull())
   {
     sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
+    
     m_normalMaterial = Ogre::MaterialManager::getSingleton().create(
         sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
     m_normalMaterial->getTechnique(0)->removeAllPasses();

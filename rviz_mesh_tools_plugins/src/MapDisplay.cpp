@@ -98,20 +98,11 @@ std::shared_ptr<Geometry> MapDisplay::getGeometry()
 
 rviz_common::Display* MapDisplay::createDisplay(const QString& class_id)
 {
-  // rviz_common::DisplayFactory* factory = context_->getDisplayFactory();
-  // QString error;
-  
-  // rviz_common::Display* disp = factory->make(class_id, &error);
-
-  // rviz_common::Display* disp = context_->getDisplayFactory()->make(class_id, &error);
-
   rviz_common::Display* disp = context_->getRootDisplayGroup()->createDisplay(class_id);
 
   if (!disp)
   {
-
-    std::cerr << "ERROR: IM SEARCHING FOR rviz_common::FailedDisplay" << std::endl;
-    // return new rviz_common::FailedDisplay(class_id, error);
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "IM SEARCHING FOR rviz_common::FailedDisplay");
   }
   return disp;
 }
@@ -189,11 +180,7 @@ void MapDisplay::disableMeshDisplay()
 void MapDisplay::onInitialize()
 {
   std::string name = this->getName().toStdString();
-
   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
-  
-  // enableClusterLabelDisplay();
-  // enableMeshDisplay();
 }
 
 void MapDisplay::onEnable()
@@ -244,7 +231,7 @@ void MapDisplay::load(const rviz_common::Config& config)
     {
       config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
     } else {
-      std::cout << name << ": COULDN'T FOUND MESH TO LOAD" << std::endl;
+      std::cout << name << ": COULDN'T FIND MESH TO LOAD" << std::endl;
     }
   }
 

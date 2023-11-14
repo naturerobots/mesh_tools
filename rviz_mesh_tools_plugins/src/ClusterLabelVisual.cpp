@@ -60,15 +60,23 @@
 
 namespace rviz_mesh_tools_plugins
 {
-ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId)
-  : m_displayContext(context), m_labelId(labelId)
-{
-}
+// ClusterLabelVisual::ClusterLabelVisual(
+//   rviz_common::DisplayContext* context,
+//   std::string labelId)
+// :m_displayContext(context)
+// ,m_labelId(labelId)
+// {
+// }
 
-ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std::string labelId,
-                                       std::shared_ptr<Geometry> geometry)
-  : m_displayContext(context), m_labelId(labelId), m_geometry(geometry)
+ClusterLabelVisual::ClusterLabelVisual(
+  rviz_common::DisplayContext* context,
+  std::string labelId,
+  std::shared_ptr<Geometry> geometry)
+:m_displayContext(context)
+,m_labelId(labelId)
+,m_geometry(geometry)
 {
+
   // Get or create scene node
   Ogre::SceneManager* sceneManager = m_displayContext->getSceneManager();
   Ogre::SceneNode* rootNode = sceneManager->getRootSceneNode();
@@ -88,7 +96,7 @@ ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std
 
   // Retrieve or create the mesh and attach it to the scene node
   m_mesh = Ogre::MeshManager::getSingleton().getByName("ClusterLabelMesh", "General");
-  if (m_mesh.isNull() && geometry)
+  if(m_mesh.isNull() && geometry)
   {
     m_mesh = Ogre::MeshManager::getSingleton().createManual("ClusterLabelMesh", "General");
 
@@ -134,6 +142,10 @@ ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std
 
     // Create an entity of the mesh and add it to the scene
     Ogre::Entity* entity = sceneManager->createEntity("ClusterLabelEntity", "ClusterLabelMesh", "General");
+    if(!entity)
+    {
+      RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "nullptr return: sceneManager->createEntity(\"ClusterLabelEntity\", \"ClusterLabelMesh\", \"General\"); ");
+    }
     entity->setMaterialName("CustomMaterial", "General");
     m_sceneNode->attachObject(entity);
   }
@@ -145,8 +157,13 @@ ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std
     m_subMesh->useSharedVertices = true;
     std::stringstream sstm;
     sstm << "ClusterLabel_Material_" << m_labelId;
-    m_material = Ogre::MaterialManager::getSingleton().create(
+
+    m_material = Ogre::MaterialManager::getSingleton().getByName(sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+    if(m_material.isNull())
+    {
+      m_material = Ogre::MaterialManager::getSingleton().create(
         sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
+    }
 
     m_subMesh->setMaterialName(m_material->getName(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
     m_material->getTechnique(0)->removeAllPasses();
@@ -160,6 +177,7 @@ ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std
 
 ClusterLabelVisual::~ClusterLabelVisual()
 {
+  std::cout << "~ClusterLabelVisual" << std::endl;
   reset();
 
   if (!m_mesh.isNull())
@@ -181,20 +199,24 @@ ClusterLabelVisual::~ClusterLabelVisual()
     RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::~ClusterLabelVisual: Delete scene node");
     m_displayContext->getSceneManager()->destroySceneNode(m_sceneNode);
   }
+
+  std::cout << "~ClusterLabelVisual -- done" << std::endl;
 }
 
 void ClusterLabelVisual::reset()
 {
   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Reset ClusterLabelVisual");
-  if (!m_material.isNull())
+  if(!m_material.isNull())
   {
-    if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(m_material->getName(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
-    {
-      materialptr->unload();
-      Ogre::MaterialManager::getSingleton().remove(materialptr);
-    } else {
-      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << m_material->getName() << "' to unload. skipping");
-    }
+    // if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(m_material->getName(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
+    // {
+    m_material->unload();
+    Ogre::MaterialManager::getSingleton().remove(m_material);
+    // } else {
+    //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << m_material->getName() << "' to unload. skipping");
+    // }
+  } else {
+
   }
 }
 

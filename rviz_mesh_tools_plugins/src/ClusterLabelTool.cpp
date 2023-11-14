@@ -468,6 +468,7 @@ void ClusterLabelTool::selectMultipleFaces(
     // single face
     selectSingleFace(event, selectMode);
   } else {
+    std::cout << "PICK!" << std::endl;
     rviz_common::interaction::M_Picked pick_results;
 
     auto manager = context_->getSelectionManager();
@@ -494,6 +495,8 @@ void ClusterLabelTool::selectMultipleFaces(
       }
 
       // TODO: continue implementing this
+    } else {
+      std::cout << "NOTHING to pick :(" << std::endl;
     }
   }
 
@@ -582,8 +585,39 @@ void ClusterLabelTool::selectSingleFace(
   // Ogre::Ray ray = event.panel->getViewController()->getCamera()->getCameraToViewportRay(
   //   (float)event.x / event.panel->getRenderWindow()->width(), (float)event.y / event.panel->getRenderWindow()->height()
   // );
-  Ogre::Ray ray = getMouseEventRay(event);
-  selectSingleFaceParallel(ray, selectMode);
+  Ogre::Ray mouse_ray = getMouseEventRay(event);
+
+  Intersection intersection;
+  if(selectFace(context_, mouse_ray, intersection))
+  {
+    std::cout << "selectSingleFace- HIT!" << std::endl;
+
+    if (m_displayInitialized && m_visual)
+    {
+      
+      std::vector<uint32_t> tmpFaceList;
+      if(m_faceSelectedArray.size() <= intersection.face_id)
+      {
+        // TODO: what is this? wtf
+        m_faceSelectedArray.resize(intersection.face_id + 1);
+      }
+      m_faceSelectedArray[intersection.face_id] = selectMode;
+
+      for(int faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
+      {
+        if (m_faceSelectedArray[faceId])
+        {
+          tmpFaceList.push_back(faceId);
+        }
+      }
+
+      m_visual->setFacesInCluster(tmpFaceList);
+      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "selectSingleFaceParallel() found face with id %d", intersection.face_id);
+    }
+
+  } else {
+    std::cout << "selectSingleFace - No hit :(" << std::endl;
+  }
 }
 
 void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
@@ -642,7 +676,6 @@ void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
     }
 
     m_visual->setFacesInCluster(tmpFaceList);
-
     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "selectSingleFaceParallel() found face with id %d", closestFaceId);
   }
 }
@@ -858,7 +891,7 @@ std::vector<uint32_t> ClusterLabelTool::getSelectedFaces()
 void ClusterLabelTool::resetFaces()
 {
   m_faceSelectedArray.clear();
-  if (m_visual)
+  if(m_visual)
   {
     m_visual->setFacesInCluster(std::vector<uint32_t>());
   }
@@ -866,7 +899,10 @@ void ClusterLabelTool::resetFaces()
 
 void ClusterLabelTool::resetVisual()
 {
+  // TODO: Segfault here
+  // m_visual.reset();
   m_visual.reset();
+  // std::cout << "hfe" << std::endl;
 }
 
 }  // End namespace rviz_mesh_tools_plugins

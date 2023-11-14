@@ -144,7 +144,7 @@ public:
   /**
    * @brief Destructor
    */
-  ~ClusterLabelTool();
+  virtual ~ClusterLabelTool();
 
   /**
    * @brief RViz callback on initialize
