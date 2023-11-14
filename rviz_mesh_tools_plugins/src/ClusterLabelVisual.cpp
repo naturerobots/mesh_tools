@@ -139,7 +139,7 @@ ClusterLabelVisual::ClusterLabelVisual(rviz_common::DisplayContext* context, std
   }
 
   // Create a submesh and a custom material for it
-  if (!m_mesh.isNull())
+  if(!m_mesh.isNull())
   {
     m_subMesh = m_mesh->createSubMesh(m_labelId);
     m_subMesh->useSharedVertices = true;
@@ -185,10 +185,16 @@ ClusterLabelVisual::~ClusterLabelVisual()
 
 void ClusterLabelVisual::reset()
 {
+  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Reset ClusterLabelVisual");
   if (!m_material.isNull())
   {
-    Ogre::MaterialManager::getSingleton().unload(m_material->getName());
-    Ogre::MaterialManager::getSingleton().remove(m_material->getName());
+    if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(m_material->getName(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
+    {
+      materialptr->unload();
+      Ogre::MaterialManager::getSingleton().remove(materialptr);
+    } else {
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << m_material->getName() << "' to unload. skipping");
+    }
   }
 }
 

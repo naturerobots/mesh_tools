@@ -136,7 +136,6 @@ bool selectFace(
   }
 }
 
-
 bool selectFace(
   Ogre::SceneManager* sm,
   const Ogre::Ray& ray, 

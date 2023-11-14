@@ -120,7 +120,7 @@ void MapDisplay::enableClusterLabelDisplay()
 {
   if(!m_clusterLabelDisplay)
   {
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
     Display* display = createDisplay("rviz_mesh_tools_plugins/ClusterLabel");
     if (m_clusterLabelDisplay = dynamic_cast<ClusterLabelDisplay*>(display); m_clusterLabelDisplay != nullptr)
     {
@@ -132,12 +132,12 @@ void MapDisplay::enableClusterLabelDisplay()
 
       // Make signal/slot connections
       connect(m_clusterLabelDisplay, SIGNAL(signalAddLabel(Cluster)), this, SLOT(saveLabel(Cluster)));
-      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel. CREATED");
+      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel. CREATED");
     } else {
-      RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel. NOT FOUND");
+      RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel. NOT FOUND");
     }
   } else {
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "rviz_mesh_tools_plugins/ClusterLabel. ALREADY EXISTING");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "rviz_mesh_tools_plugins/ClusterLabel. ALREADY EXISTING");
     m_clusterLabelDisplay->onEnable();
     m_clusterLabelDisplay->show();
   }
@@ -156,7 +156,7 @@ void MapDisplay::enableMeshDisplay()
 {
   if(!m_meshDisplay)
   {
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/Mesh");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/Mesh");
     Display* meshDisplay = createDisplay("rviz_mesh_tools_plugins/Mesh");
     if(m_meshDisplay = dynamic_cast<MeshDisplay*>(meshDisplay); m_meshDisplay != nullptr)
     {
@@ -166,12 +166,12 @@ void MapDisplay::enableMeshDisplay()
       m_meshDisplay->setParent(this);
       m_meshDisplay->initialize(context_);
       m_meshDisplay->ignoreIncomingMessages();
-      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/Mesh. CREATED");
+      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/Mesh. CREATED");
     } else {
-      RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/Mesh. NOT FOUND");
+      RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/Mesh. NOT FOUND");
     }
   } else {
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "rviz_mesh_tools_plugins/Mesh. ALREADY EXISTING");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "rviz_mesh_tools_plugins/Mesh. ALREADY EXISTING");
     m_meshDisplay->onEnable();
     m_meshDisplay->show();
   }
@@ -190,7 +190,7 @@ void MapDisplay::onInitialize()
 {
   std::string name = this->getName().toStdString();
 
-  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
   
   // enableClusterLabelDisplay();
   // enableMeshDisplay();

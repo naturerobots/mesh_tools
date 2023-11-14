@@ -107,7 +107,7 @@ ClusterLabelTool::~ClusterLabelTool()
 // context_ are set.  It should be called only once per instantiation.
 void ClusterLabelTool::onInitialize()
 {
-  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "ClusterLabelTool: Call Init");
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelTool: Call Init");
   
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   m_labelPublisher = node->create_publisher<mesh_msgs::msg::MeshFaceClusterStamped>(
@@ -122,9 +122,15 @@ void ClusterLabelTool::onInitialize()
   m_selectionBox->setQueryFlags(0);
   m_sceneNode->attachObject(m_selectionBox);
 
-  m_selectionBoxMaterial = Ogre::MaterialManager::getSingleton().create(
-      "ClusterLabelTool_SelectionBoxMaterial", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
+  m_selectionBoxMaterial = Ogre::MaterialManager::getSingleton().getByName(
+    "ClusterLabelTool_SelectionBoxMaterial", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
 
+  if(!m_selectionBoxMaterial)
+  {
+    m_selectionBoxMaterial = Ogre::MaterialManager::getSingleton().create(
+      "ClusterLabelTool_SelectionBoxMaterial", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
+  }
+  
   m_selectionBoxMaterial->setAmbient(Ogre::ColourValue(0, 0, 255, 0.5));
   m_selectionBoxMaterial->setDiffuse(0, 0, 0, 0.5);
   m_selectionBoxMaterial->setSceneBlending(Ogre::SBT_TRANSPARENT_ALPHA);
@@ -138,28 +144,28 @@ void ClusterLabelTool::onInitialize()
   // try
   // {
   //   // Initialize OpenCL
-  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Get platforms");
+  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Get platforms");
   //   vector<cl::Platform> platforms;
   //   cl::Platform::get(&platforms);
   //   for (auto const& platform : platforms)
   //   {
-  //     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Found platform: %s", platform.getInfo<CL_PLATFORM_NAME>().c_str());
-  //     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "platform version: %s", platform.getInfo<CL_PLATFORM_VERSION>().c_str());
+  //     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found platform: %s", platform.getInfo<CL_PLATFORM_NAME>().c_str());
+  //     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "platform version: %s", platform.getInfo<CL_PLATFORM_VERSION>().c_str());
   //   }
-  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), " ");
+  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), " ");
 
   //   vector<cl::Device> consideredDevices;
   //   for (auto const& platform : platforms)
   //   {
-  //     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Get devices of %s: ", platform.getInfo<CL_PLATFORM_NAME>().c_str());
+  //     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Get devices of %s: ", platform.getInfo<CL_PLATFORM_NAME>().c_str());
   //     cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platform)(), 0 };
   //     m_clContext = cl::Context(CL_DEVICE_TYPE_ALL, properties);
   //     vector<cl::Device> devices = m_clContext.getInfo<CL_CONTEXT_DEVICES>();
   //     for (auto const& device : devices)
   //     {
-  //       RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Found device: %s", device.getInfo<CL_DEVICE_NAME>().c_str());
-  //       RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Device work units: %d", device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>());
-  //       RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Device work group size: %lu", device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>());
+  //       RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found device: %s", device.getInfo<CL_DEVICE_NAME>().c_str());
+  //       RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Device work units: %d", device.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>());
+  //       RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Device work group size: %lu", device.getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>());
 
   //       std::string device_info = device.getInfo<CL_DEVICE_VERSION>();
   //       // getVersion extracts the version number with major in the upper 16 bits and minor in the lower 16 bits
@@ -171,7 +177,7 @@ void ClusterLabelTool::onInitialize()
   //       // use bitwise AND to extract the number in the lower 16 bits
   //       cl_uint minorVersion = version & 0x0000FFFF;
 
-  //       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_plugin"), "Found a device with OpenCL version: %u.%u", majorVersion, minorVersion);
+  //       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found a device with OpenCL version: %u.%u", majorVersion, minorVersion);
 
   //       // find all devices that support at least OpenCL version 1.2
   //       if (majorVersion >= 1 && minorVersion >= 2)
@@ -181,7 +187,7 @@ void ClusterLabelTool::onInitialize()
   //       }
   //     }
   //   }
-  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), " ");
+  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), " ");
 
   //   cl::Platform platform;
   //   // Preferably choose the first compatible device of type GPU
@@ -206,7 +212,7 @@ void ClusterLabelTool::onInitialize()
   //   if (!deviceFound)
   //   {
   //     // Panic if no compatible device was found
-  //     RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_plugin"), "No device with compatible OpenCL version found (minimum 2.0)");
+  //     RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "No device with compatible OpenCL version found (minimum 2.0)");
   //     // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   //     rclcpp::shutdown();
   //   }
@@ -214,9 +220,9 @@ void ClusterLabelTool::onInitialize()
   //   cl_context_properties properties[] = { CL_CONTEXT_PLATFORM, (cl_context_properties)(platform)(), 0 };
   //   m_clContext = cl::Context(CL_DEVICE_TYPE_ALL, properties);
 
-  //   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_plugin"), "Using device %s of platform %s", m_clDevice.getInfo<CL_DEVICE_NAME>().c_str(),
+  //   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Using device %s of platform %s", m_clDevice.getInfo<CL_DEVICE_NAME>().c_str(),
   //            platform.getInfo<CL_PLATFORM_NAME>().c_str());
-  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), " ");
+  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), " ");
 
   //   // Read kernel file 
   //   // may throw ament_index_cpp::PackageNotFoundError exception
@@ -226,7 +232,7 @@ void ClusterLabelTool::onInitialize()
   //   std::string cast_rays_kernel(static_cast<stringstream const&>(stringstream() << in.rdbuf()).str());
 
 
-  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "Got kernel: %s%s", package_share_directory.c_str(), CL_RAY_CAST_KERNEL_FILE);
+  //   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got kernel: %s%s", package_share_directory.c_str(), CL_RAY_CAST_KERNEL_FILE);
 
   //   m_clProgramSources = cl::Program::Sources(1, { cast_rays_kernel.c_str(), cast_rays_kernel.length() });
 
@@ -234,12 +240,12 @@ void ClusterLabelTool::onInitialize()
   //   try
   //   {
   //     m_clProgram.build({ m_clDevice });
-  //     RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_plugin"), "Successfully built program.");
+  //     RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Successfully built program.");
   //   }
   //   catch (cl::Error& err)
   //   {
       
-  //     RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_plugin"), "Error building: %s", m_clProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(m_clDevice).c_str());
+  //     RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Error building: %s", m_clProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(m_clDevice).c_str());
   //     // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   //     rclcpp::shutdown();
   //     // ros::shutdown();
@@ -251,8 +257,8 @@ void ClusterLabelTool::onInitialize()
   // }
   // catch (cl::Error err)
   // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
+  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
   //   // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   //   rclcpp::shutdown();
   //   // ros::requestShutdown();
@@ -350,8 +356,8 @@ void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
   // }
   // catch (cl::Error err)
   // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
+  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
   //   // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   //   rclcpp::shutdown();
   //   // ros::shutdown();
@@ -391,6 +397,8 @@ void ClusterLabelTool::updateSelectionBox()
   m_selectionBox->triangle(0, 1, 2);
   m_selectionBox->triangle(0, 2, 3);
   m_selectionBox->end();
+
+
 }
 
 void ClusterLabelTool::selectionBoxStart(rviz_common::ViewportMouseEvent& event)
@@ -403,12 +411,10 @@ void ClusterLabelTool::selectionBoxStart(rviz_common::ViewportMouseEvent& event)
   // m_selectionStart.x = (float)event.x / event.panel->getRenderWindow()->width();
   // m_selectionStart.y = (float)event.y / event.panel->getRenderWindow()->height();
 
-
   m_bb_x1 = event.x;
   m_bb_y1 = event.y;
   m_evt_panel = event.panel;
 
-  
   m_bb_x2 = m_bb_x1;
   m_bb_y2 = m_bb_y1;
   m_selectionBox->clear();
@@ -433,7 +439,8 @@ void ClusterLabelTool::selectionBoxMove(rviz_common::ViewportMouseEvent& event)
 }
 
 void ClusterLabelTool::selectMultipleFaces(
-  rviz_common::ViewportMouseEvent& event, bool selectMode)
+  rviz_common::ViewportMouseEvent& event, 
+  bool selectMode)
 {
   m_selectionBox->setVisible(false);
 
@@ -458,8 +465,36 @@ void ClusterLabelTool::selectMultipleFaces(
   const int BOX_SIZE_TOLERANCE = 1;
   if ((right - left) * (bottom - top) < BOX_SIZE_TOLERANCE)
   {
+    // single face
     selectSingleFace(event, selectMode);
-    return;
+  } else {
+    rviz_common::interaction::M_Picked pick_results;
+
+    auto manager = context_->getSelectionManager();
+
+    manager->pick(
+      m_evt_panel->getRenderWindow(),
+      m_bb_x1, m_bb_y1, 
+      m_bb_x2, m_bb_y2, 
+      pick_results);
+
+    if(!pick_results.empty())
+    {
+      // FOUND SOMETHING!
+      std::cout << "FOUND SOMETHING! " << pick_results.size() << std::endl;
+
+      for(auto elem : pick_results)
+      {
+        rviz_common::interaction::CollObjectHandle key = elem.first;
+        rviz_common::interaction::Picked value = elem.second;
+        
+        std::cout << key << std::endl;
+        std::cout << "Extra handles: " << value.extra_handles.size() << std::endl;
+
+      }
+
+      // TODO: continue implementing this
+    }
   }
 
   // Ogre::PlaneBoundedVolume volume =
@@ -477,34 +512,6 @@ void ClusterLabelTool::selectMultipleFaces(
     // int y2,
     // M_Picked & results) = 0;
 
-  rviz_common::interaction::M_Picked pick_results;
-
-  auto manager = context_->getSelectionManager();
-
-  manager->pick(
-    m_evt_panel->getRenderWindow(),
-    m_bb_x1, m_bb_y1, 
-    m_bb_x2, m_bb_y2, 
-    pick_results);
-
-  if(!pick_results.empty())
-  {
-    // FOUND SOMETHING!
-    std::cout << "FOUND SOMETHING!" << std::endl;
-
-    for(auto elem : pick_results)
-    {
-      rviz_common::interaction::CollObjectHandle key = elem.first;
-      rviz_common::interaction::Picked value = elem.second;
-
-      std::cout << "Extra handles: " << value.extra_handles.size() << std::endl;
-      
-
-    }
-
-
-    // TODO: continue implementing this
-  }
 
 }
 
@@ -533,8 +540,8 @@ void ClusterLabelTool::selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume
   // }
   // catch (cl::Error err)
   // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
+  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
   // }
 
   for (int faceId = 0; faceId < m_meshGeometry->faces.size(); faceId++)
@@ -600,8 +607,8 @@ void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
   // }
   // catch (cl::Error err)
   // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
+  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
   // }
 
   int closestFaceId = -1;
@@ -636,7 +643,7 @@ void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
 
     m_visual->setFacesInCluster(tmpFaceList);
 
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_plugin"), "selectSingleFaceParallel() found face with id %d", closestFaceId);
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "selectSingleFaceParallel() found face with id %d", closestFaceId);
   }
 }
 
@@ -679,8 +686,8 @@ void ClusterLabelTool::selectSphereFacesParallel(
     // }
     // catch (cl::Error err)
     // {
-    //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-    //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
+    //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
+    //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
     // }
 
     for (int faceId = 0; faceId < m_meshGeometry->faces.size(); faceId++)
@@ -732,8 +739,8 @@ boost::optional<std::pair<uint32_t, float>> ClusterLabelTool::getClosestIntersec
   // }
   // catch (cl::Error err)
   // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
+  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
+  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
   // }
 
   uint32_t closestFaceId;
@@ -762,7 +769,7 @@ boost::optional<std::pair<uint32_t, float>> ClusterLabelTool::getClosestIntersec
 
 void ClusterLabelTool::publishLabel(std::string label)
 {
-  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_plugin"), "Label Tool: Publish label '" << label << "'");
+  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Label Tool: Publish label '" << label << "'");
 
   vector<uint32_t> faces;
   for (uint32_t i = 0; i < m_faceSelectedArray.size(); i++)
@@ -804,6 +811,7 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   }
   else if (event.leftUp() && m_multipleSelect)
   {
+    std::cout << "BLA" << std::endl;
     m_multipleSelect = false;
     selectMultipleFaces(event, true);
   }

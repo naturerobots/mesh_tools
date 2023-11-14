@@ -78,13 +78,18 @@
 namespace rviz_mesh_tools_plugins
 {
 
-MeshPoseTool::MeshPoseTool() : rviz_common::Tool(), arrow_(NULL)
+MeshPoseTool::MeshPoseTool() 
+:rviz_common::Tool()
+,arrow_(NULL)
 {
 }
 
 MeshPoseTool::~MeshPoseTool()
 {
-  delete arrow_;
+  if(arrow_)
+  {
+    delete arrow_;
+  }
 }
 
 void MeshPoseTool::onInitialize()
