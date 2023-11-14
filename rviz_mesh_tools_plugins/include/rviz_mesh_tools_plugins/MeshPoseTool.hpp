@@ -78,14 +78,6 @@ public:
 protected:
   virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation) = 0;
 
-  void getRawManualObjectData(const Ogre::ManualObject* mesh, const size_t sectionNumber, size_t& vertexCount,
-                              Ogre::Vector3*& vertices, size_t& indexCount, unsigned long*& indices);
-
-  bool getPositionAndOrientation(const Ogre::ManualObject* mesh, const Ogre::Ray& ray, Ogre::Vector3& position,
-                                 Ogre::Vector3& orientation);
-
-  bool selectTriangle(const Ogre::Ray& ray, Ogre::Vector3& position, Ogre::Vector3& orientation);
-
   rviz_rendering::Arrow* arrow_;
   enum State
   {

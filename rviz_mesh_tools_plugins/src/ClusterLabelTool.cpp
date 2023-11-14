@@ -50,6 +50,8 @@
 #include <rviz_mesh_tools_plugins/ClusterLabelDisplay.hpp>
 #include <rviz_mesh_tools_plugins/CLUtil.hpp>
 
+#include <rviz_mesh_tools_plugins/InteractionHelper.hpp>
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -64,9 +66,12 @@
 
 #include <rviz_common/interaction/selection_manager_iface.hpp>
 
+#include <rviz_rendering/render_window.hpp>
+
 #include <OgreColourValue.h>
 #include <OgreCamera.h>
 #include <OgreTechnique.h>
+#include <OgreViewport.h>
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 
@@ -79,6 +84,8 @@ namespace rviz_mesh_tools_plugins
 {
 #define CL_RAY_CAST_KERNEL_FILE "/include/kernels/cast_rays.cl"
 
+
+
 ClusterLabelTool::ClusterLabelTool() 
 :rviz_common::Tool()
 ,m_displayInitialized(false)
@@ -86,9 +93,6 @@ ClusterLabelTool::ClusterLabelTool()
 // ,m_evt_stop(nullptr, (QMouseEvent*)nullptr, 0, 0)
 {
   shortcut_key_ = 'l';
-
-  // ros::NodeHandle n;
-  // m_labelPublisher = n.advertise<mesh_msgs::MeshFaceClusterStamped>("/cluster_label", 1, true);
 }
 
 ClusterLabelTool::~ClusterLabelTool()
@@ -130,7 +134,7 @@ void ClusterLabelTool::onInitialize()
 
   // std::cout << "ClusterLabelTool INIT kdwioh" << std::endl;
 
-  // try-catch block to check for OpenCL errors
+  // // try-catch block to check for OpenCL errors
   // try
   // {
   //   // Initialize OpenCL
@@ -358,12 +362,25 @@ void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
 void ClusterLabelTool::updateSelectionBox()
 {
   // TODO CHECK THIS
-  float left, right, top, bottom;
 
   // left = m_evt_start.x * 2 - 1;
   // right = m_evt_stop.x * 2 - 1;
   // top = 1 - m_evt_start.y * 2;
   // bottom = 1 - m_evt_stop.y * 2;
+
+  auto viewport = rviz_rendering::RenderWindowOgreAdapter::getOgreViewport(m_evt_panel->getRenderWindow());
+  int width = viewport->getActualWidth();
+  int height = viewport->getActualHeight();
+
+  float m_bb_x1_rel = static_cast<float>(m_bb_x1) / static_cast<float>(width);
+  float m_bb_x2_rel = static_cast<float>(m_bb_x2) / static_cast<float>(width);
+  float m_bb_y1_rel = static_cast<float>(m_bb_y1) / static_cast<float>(height);
+  float m_bb_y2_rel = static_cast<float>(m_bb_y2) / static_cast<float>(height);
+
+  float left   = m_bb_x1_rel * 2.0 - 1.0;
+  float right  = m_bb_x2_rel * 2.0 - 1.0;
+  float top    = 1.0 - m_bb_y1_rel * 2.0;
+  float bottom = 1.0 - m_bb_y2_rel * 2.0;
 
   m_selectionBox->clear();
   m_selectionBox->begin(m_selectionBoxMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
@@ -549,15 +566,16 @@ void ClusterLabelTool::selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume
   }
 }
 
-void ClusterLabelTool::selectSingleFace(rviz_common::ViewportMouseEvent& event, bool selectMode)
+void ClusterLabelTool::selectSingleFace(
+  rviz_common::ViewportMouseEvent& event,
+  bool selectMode)
 {
   // Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
   //     (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
   // Ogre::Ray ray = event.panel->getViewController()->getCamera()->getCameraToViewportRay(
   //   (float)event.x / event.panel->getRenderWindow()->width(), (float)event.y / event.panel->getRenderWindow()->height()
   // );
-  Ogre::Ray ray;
-  throw std::runtime_error("TODO");
+  Ogre::Ray ray = getMouseEventRay(event);
   selectSingleFaceParallel(ray, selectMode);
 }
 
