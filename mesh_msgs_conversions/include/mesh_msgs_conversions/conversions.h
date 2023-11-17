@@ -32,8 +32,7 @@
 
 #include <map>
 
-#include <ros/ros.h>
-#include <ros/console.h>
+#include "rclcpp/rclcpp.hpp"
 
 #include <lvr2/geometry/BaseVector.hpp>
 #include <lvr2/io/PointBuffer.hpp>
@@ -49,25 +48,25 @@
 #include <lvr2/texture/Texture.hpp>
 #include <lvr2/geometry/HalfEdgeMesh.hpp>
 
-#include <std_msgs/String.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/fill_image.h>
+#include "std_msgs/msg/string.h"
+#include "sensor_msgs/msg/point_cloud2.hpp"
+#include "sensor_msgs/fill_image.hpp"
 
-#include <mesh_msgs/MeshFaceCluster.h>
-#include <mesh_msgs/MeshMaterial.h>
-#include <mesh_msgs/MeshTriangleIndices.h>
+#include "mesh_msgs/msg/mesh_face_cluster.hpp"
+#include "mesh_msgs/msg/mesh_material.hpp"
+#include "mesh_msgs/msg/mesh_triangle_indices.hpp"
 
-#include <mesh_msgs/MeshGeometry.h>
-#include <mesh_msgs/MeshGeometryStamped.h>
-#include <mesh_msgs/MeshMaterialsStamped.h>
-#include <mesh_msgs/MeshVertexColors.h>
-#include <mesh_msgs/MeshVertexColorsStamped.h>
-#include <mesh_msgs/MeshVertexCostsStamped.h>
-#include <mesh_msgs/MeshVertexTexCoords.h>
-#include <mesh_msgs/MeshMaterial.h>
-#include <mesh_msgs/MeshTexture.h>
+#include "mesh_msgs/msg/mesh_geometry.hpp"
+#include "mesh_msgs/msg/mesh_geometry_stamped.hpp"
+#include "mesh_msgs/msg/mesh_materials_stamped.hpp"
+#include "mesh_msgs/msg/mesh_vertex_colors.hpp"
+#include "mesh_msgs/msg/mesh_vertex_colors_stamped.hpp"
+#include "mesh_msgs/msg/mesh_vertex_costs_stamped.hpp"
+#include "mesh_msgs/msg/mesh_vertex_tex_coords.hpp"
+#include "mesh_msgs/msg/mesh_material.hpp"
+#include "mesh_msgs/msg/mesh_texture.hpp"
 
-#include <sensor_msgs/point_cloud2_iterator.h>
+#include "sensor_msgs/point_cloud2_iterator.hpp"
 
 
 namespace mesh_msgs_conversions
@@ -91,11 +90,11 @@ typedef boost::shared_ptr <MaterialGroup> MaterialGroupPtr;
 
 
 template<typename CoordType>
-inline const mesh_msgs::MeshGeometry toMeshGeometry(
+inline const mesh_msgs::msg::MeshGeometry toMeshGeometry(
     const lvr2::HalfEdgeMesh<lvr2::BaseVector<CoordType>>& hem,
     const lvr2::VertexMap<lvr2::Normal<CoordType>>& normals = lvr2::DenseVertexMap<lvr2::Normal<CoordType>>())
 {
-  mesh_msgs::MeshGeometry mesh_msg;
+  mesh_msgs::msg::MeshGeometry mesh_msg;
   mesh_msg.vertices.reserve(hem.numVertices());
   mesh_msg.faces.reserve(hem.numFaces());
 
@@ -109,14 +108,14 @@ inline const mesh_msgs::MeshGeometry toMeshGeometry(
   {
     new_indices.insert(vH, k++);
     const auto& pi = hem.getVertexPosition(vH);
-    geometry_msgs::Point p;
+    geometry_msgs::msg::Point p;
     p.x = pi.x; p.y = pi.y; p.z = pi.z;
     mesh_msg.vertices.push_back(p);
   }
 
   for(auto fH : hem.faces())
   {
-    mesh_msgs::MeshTriangleIndices indices;
+    mesh_msgs::msg::MeshTriangleIndices indices;
     auto vHs = hem.getVerticesOfFace(fH);
     indices.vertex_indices[0] = new_indices[vHs[0]];
     indices.vertex_indices[1] = new_indices[vHs[1]];
@@ -127,7 +126,7 @@ inline const mesh_msgs::MeshGeometry toMeshGeometry(
   for(auto vH : hem.vertices())
   {
     const auto& n = normals[vH];
-    geometry_msgs::Point v;
+    geometry_msgs::msg::Point v;
     v.x = n.x; v.y = n.y; v.z = n.z;
     mesh_msg.vertex_normals.push_back(v);
   }
@@ -136,14 +135,14 @@ inline const mesh_msgs::MeshGeometry toMeshGeometry(
 }
 
 template<typename CoordType>
-inline const mesh_msgs::MeshGeometryStamped toMeshGeometryStamped(
+inline const mesh_msgs::msg::MeshGeometryStamped toMeshGeometryStamped(
     const lvr2::HalfEdgeMesh<lvr2::BaseVector<CoordType>>& hem,
     const std::string& frame_id,
     const std::string& uuid,
     const lvr2::VertexMap<lvr2::Normal<CoordType>>& normals = lvr2::DenseVertexMap<lvr2::Normal<CoordType>>(),
-    const ros::Time& stamp = ros::Time::now())
+    const rclcpp::Time& stamp = rclcpp::Time())
 {
-    mesh_msgs::MeshGeometryStamped mesh_msg;
+    mesh_msgs::msg::MeshGeometryStamped mesh_msg;
     mesh_msg.mesh_geometry = toMeshGeometry<CoordType>(hem, normals);
     mesh_msg.uuid = uuid;
     mesh_msg.header.frame_id = frame_id;
@@ -151,12 +150,12 @@ inline const mesh_msgs::MeshGeometryStamped toMeshGeometryStamped(
     return mesh_msg;
 }
 
-inline const mesh_msgs::MeshVertexCosts toVertexCosts(
+inline const mesh_msgs::msg::MeshVertexCosts toVertexCosts(
     const lvr2::VertexMap<float>& costs,
     const size_t num_values,
     const float default_value)
 {
-  mesh_msgs::MeshVertexCosts costs_msg;
+  mesh_msgs::msg::MeshVertexCosts costs_msg;
   costs_msg.costs.resize(num_values, default_value);
   for(auto vH : costs){
     costs_msg.costs[vH.idx()] = costs[vH];
@@ -164,17 +163,17 @@ inline const mesh_msgs::MeshVertexCosts toVertexCosts(
   return costs_msg;
 }
 
-inline const mesh_msgs::MeshVertexCostsStamped toVertexCostsStamped(
+inline const mesh_msgs::msg::MeshVertexCostsStamped toVertexCostsStamped(
     const lvr2::VertexMap<float>& costs,
     const size_t num_values,
     const float default_value,
     const std::string& name,
     const std::string& frame_id,
     const std::string& uuid,
-    const ros::Time& stamp = ros::Time::now()
+    const rclcpp::Time& stamp = rclcpp::Time()
 )
 {
-  mesh_msgs::MeshVertexCostsStamped mesh_msg;
+  mesh_msgs::msg::MeshVertexCostsStamped mesh_msg;
   mesh_msg.mesh_vertex_costs = toVertexCosts(costs, num_values, default_value);
   mesh_msg.uuid = uuid;
   mesh_msg.type = name;
@@ -183,9 +182,10 @@ inline const mesh_msgs::MeshVertexCostsStamped toVertexCostsStamped(
   return mesh_msg;
 }
 
-inline const mesh_msgs::MeshVertexCosts toVertexCosts(const lvr2::DenseVertexMap<float>& costs)
+inline const mesh_msgs::msg::MeshVertexCosts toVertexCosts(
+    const lvr2::DenseVertexMap<float>& costs)
 {
-    mesh_msgs::MeshVertexCosts costs_msg;
+    mesh_msgs::msg::MeshVertexCosts costs_msg;
     costs_msg.costs.reserve(costs.numValues());
     for(auto vH : costs){
         costs_msg.costs.push_back(costs[vH]);
@@ -193,15 +193,15 @@ inline const mesh_msgs::MeshVertexCosts toVertexCosts(const lvr2::DenseVertexMap
     return costs_msg;
 }
 
-inline const mesh_msgs::MeshVertexCostsStamped toVertexCostsStamped(
+inline const mesh_msgs::msg::MeshVertexCostsStamped toVertexCostsStamped(
     const lvr2::DenseVertexMap<float>& costs,
     const std::string& name,
     const std::string& frame_id,
     const std::string& uuid,
-    const ros::Time& stamp = ros::Time::now()
+    const rclcpp::Time& stamp = rclcpp::Time()
     )
 {
-    mesh_msgs::MeshVertexCostsStamped mesh_msg;
+    mesh_msgs::msg::MeshVertexCostsStamped mesh_msg;
     mesh_msg.mesh_vertex_costs = toVertexCosts(costs);
     mesh_msg.uuid = uuid;
     mesh_msg.type = name;
@@ -213,48 +213,32 @@ inline const mesh_msgs::MeshVertexCostsStamped toVertexCostsStamped(
 
 bool fromMeshBufferToMeshGeometryMessage(
     const lvr2::MeshBufferPtr& buffer,
-    mesh_msgs::MeshGeometry& mesh_geometry
+    mesh_msgs::msg::MeshGeometry& mesh_geometry
 );
 
 /// Convert lvr2::MeshBuffer to various messages for services
 bool fromMeshBufferToMeshMessages(
     const lvr2::MeshBufferPtr& buffer,
-    mesh_msgs::MeshGeometry& mesh_geometry,
-    mesh_msgs::MeshMaterials& mesh_materials,
-    mesh_msgs::MeshVertexColors& mesh_vertex_colors,
-    boost::optional<std::vector<mesh_msgs::MeshTexture>&> texture_cache,
+    mesh_msgs::msg::MeshGeometry& mesh_geometry,
+    mesh_msgs::msg::MeshMaterials& mesh_materials,
+    mesh_msgs::msg::MeshVertexColors& mesh_vertex_colors,
+    boost::optional<std::vector<mesh_msgs::msg::MeshTexture>&> texture_cache,
     std::string mesh_uuid
 );
 
 bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryConstPtr& mesh_geometry_ptr,
+    const std::shared_ptr<mesh_msgs::msg::MeshGeometry> mesh_geometry_ptr,
     lvr2::MeshBufferPtr& buffer_ptr
 );
 
 bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryConstPtr& mesh_geometry_ptr,
-    lvr2::MeshBuffer& buffer
-);
-
-bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryPtr& mesh_geometry_ptr,
+    const mesh_msgs::msg::MeshGeometry& mesh_geometry,
     lvr2::MeshBufferPtr& buffer_ptr
 );
 
 bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometry& mesh_geometry,
-    lvr2::MeshBufferPtr& buffer_ptr
-);
-
-bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometryPtr& mesh_geometry_ptr,
-    lvr2::MeshBuffer& buffer
-);
-
-bool fromMeshGeometryToMeshBuffer(
-    const mesh_msgs::MeshGeometry& mesh_geometry,
-    lvr2::MeshBuffer& buffer
-);
+    const mesh_msgs::msg::MeshGeometry& mesh_geometry,
+    lvr2::MeshBuffer& buffer);
 
 /* TODO
 void removeDuplicates(lvr2::MeshBuffer& buffer);
@@ -277,7 +261,8 @@ bool readMeshBuffer(lvr2::MeshBufferPtr& buffer, string path);
  */
 bool writeMeshBuffer(lvr2::MeshBufferPtr& mesh, string path);
 
-bool fromPointCloud2ToPointBuffer(const sensor_msgs::PointCloud2& cloud, PointBuffer& buffer);
+bool fromPointCloud2ToPointBuffer(
+    const sensor_msgs::msg::PointCloud2& cloud, PointBuffer& buffer);
 
 /**
  * @brief converts lvr2::Pointbuffer to pointcloud2.
@@ -287,7 +272,10 @@ bool fromPointCloud2ToPointBuffer(const sensor_msgs::PointCloud2& cloud, PointBu
  * @param frame the frame of the converted pointcloud2
  * @param cloud the converted pointcloud2
  */
-void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string frame, sensor_msgs::PointCloud2Ptr& cloud);
+void PointBufferToPointCloud2(
+    const lvr2::PointBufferPtr& buffer, 
+    std::string frame, 
+    std::shared_ptr<sensor_msgs::msg::PointCloud2>& cloud);
 
 /**
  * @brief converts pointcloud2 to a newly created Pointerbuffer.
@@ -298,7 +286,9 @@ void PointBufferToPointCloud2(const lvr2::PointBufferPtr& buffer, std::string fr
  *
  * @return 
  */
-void PointCloud2ToPointBuffer(const sensor_msgs::PointCloud2Ptr& cloud, lvr2::PointBufferPtr& buffer);
+void PointCloud2ToPointBuffer(
+    const std::shared_ptr<sensor_msgs::msg::PointCloud2> cloud,
+    lvr2::PointBufferPtr& buffer);
 
 
 /**
@@ -308,7 +298,7 @@ void PointCloud2ToPointBuffer(const sensor_msgs::PointCloud2Ptr& cloud, lvr2::Po
  * @return bool success status
  */
 bool fromMeshGeometryMessageToMeshBuffer(
-    const mesh_msgs::MeshGeometry& mesh_geometry,
+    const mesh_msgs::msg::MeshGeometry& mesh_geometry,
     const lvr2::MeshBufferPtr& buffer
 );
 

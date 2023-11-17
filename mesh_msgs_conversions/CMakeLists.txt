@@ -1,14 +1,21 @@
-cmake_minimum_required(VERSION 3.1)
-
+cmake_minimum_required(VERSION 3.8)
 project(mesh_msgs_conversions)
 
-set(PACKAGE_DEPENDENCIES
-  mesh_msgs
-  roscpp
-  sensor_msgs
-)
+# Default to C++17
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-find_package(catkin REQUIRED COMPONENTS ${PACKAGE_DEPENDENCIES})
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(mesh_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
 find_package(LVR2 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(MPI REQUIRED)
@@ -16,8 +23,8 @@ find_package(PkgConfig REQUIRED)
 
 add_definitions(${LVR2_DEFINITIONS} ${OpenCV_DEFINITIONS})
 
-### compile with c++14
-set (CMAKE_CXX_STANDARD 14)
+
+find_library(LVR2_LIBRARY NAMES lvr2)
 
 # enable openmp support
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
@@ -29,33 +36,47 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-catkin_package(
-  CATKIN_DEPENDS ${PACKAGE_DEPENDENCIES}
-  INCLUDE_DIRS include
-  DEPENDS LVR2 MPI
-  LIBRARIES ${PROJECT_NAME}
-)
-
 add_library(${PROJECT_NAME}
   src/conversions.cpp
 )
 
-find_library(LVR2_LIBRARY NAMES lvr2)
+target_include_directories(${PROJECT_NAME} PUBLIC
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+  "$<INSTALL_INTERFACE:include>")
 
-target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
+target_link_libraries(${PROJECT_NAME} PUBLIC
   ${LVR2_LIBRARY}
   ${OpenCV_LIBRARIES}
+  rclcpp::rclcpp
+  ${mesh_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+)
+
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE "MESH_MSGS_CONVERSIONS_BUILDING_DLL")
+
+install(TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(
-  TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  DIRECTORY include/
+  DESTINATION include
 )
 
-install(
-  DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+ament_export_include_directories("include/${PROJECT_NAME}")
+ament_export_libraries(${PROJECT_NAME})
+
+# Export modern CMake targets
+ament_export_targets(export_${PROJECT_NAME})
+
+ament_export_dependencies(
+  rclcpp
+  mesh_msgs
+  sensor_msgs
 )
+
+ament_package()

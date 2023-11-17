@@ -9,11 +9,11 @@
  *  modification, are permitted provided that the following conditions
  *  are met:
  *
- *   1. Redistributions of source code must retain the above 
+ *   1. Redistributions of source code must retain the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer.
  *
- *   2. Redistributions in binary form must reproduce the above 
+ *   2. Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials provided
  *      with the distribution.
@@ -32,34 +32,66 @@
  *  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
  *  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  *  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF 
+ *  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  *  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *
  *
- *  transforms.h
+ *  MeshPoseTool.hpp
  *
  *  author: Sebastian Pütz <spuetz@uni-osnabrueck.de>
  */
 
+#ifndef MESH_POSE_TOOL_HPP
+#define MESH_POSE_TOOL_HPP
 
-#ifndef MESH_MSGS_TRANSFORM__TRANSFORMS_H_
-#define MESH_MSGS_TRANSFORM__TRANSFORMS_H_
+#include <OgreVector3.h>
+#include <OgreQuaternion.h>
+#include <OgreManualObject.h>
+#include <OgreRay.h>
 
-#include <tf2_ros/buffer.h>
-#include <mesh_msgs/msg/mesh_geometry_stamped.hpp>
+#include <QCursor>
+#include <rviz_common/tool.hpp>
+// #include <rviz_rendering/objects/arrow.hpp>
 
-namespace mesh_msgs_transform
+// Forward declare types
+namespace rviz_rendering 
 {
+  class Arrow;
+}
 
-bool transformGeometryMeshNoTime(
-    const std::string& target_frame,
-    const mesh_msgs::msg::MeshGeometryStamped& mesh_in,
-    const std::string& fixed_frame,
-    mesh_msgs::msg::MeshGeometryStamped& mesh_out,
-    const tf2_ros::Buffer& tf_buffer
-);
+namespace rviz_mesh_tools_plugins
+{
+class MeshPoseTool : public rviz_common::Tool
+{
+public:
+  MeshPoseTool();
+  virtual ~MeshPoseTool();
 
-} // namespace mesh_msgs_transform
+  virtual void onInitialize();
 
-#endif // MESH_MSGS_TRANSFORM__TRANSFORMS_H_
+  virtual void activate();
+  virtual void deactivate();
+
+  virtual int processMouseEvent(rviz_common::ViewportMouseEvent& event);
+
+protected:
+  virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation) = 0;
+
+  rviz_rendering::Arrow* arrow_;
+  enum State
+  {
+    Position,
+    Orientation
+  };
+  State state_;
+  Ogre::Vector3 pos_start_;
+  Ogre::Vector3 normal_start_;
+  Ogre::Vector3 pos_last_;
+  // smooth normal in pixel coordinates > 2
+  unsigned smooth_normal_width_ = 9;
+};
+
+} /* namespace rviz_mesh_tools_plugins */
+
+#endif

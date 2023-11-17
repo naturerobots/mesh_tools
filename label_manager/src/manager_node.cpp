@@ -3,16 +3,14 @@
  *
  */
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 #include "label_manager/manager.h"
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "label_manager");
-    ros::NodeHandle nodeHandle("~");
-
-    label_manager::LabelManager lm(nodeHandle);
-
-    ros::spin();
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<label_manager::LabelManager>(
+        "label_manager"));
+    rclcpp::shutdown();
     return 0;
 }

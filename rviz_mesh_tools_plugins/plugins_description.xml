@@ -1,0 +1,44 @@
+<library path="rviz_mesh_tools_plugins">
+  <class name="rviz_mesh_tools_plugins/ClusterLabel"
+         type="rviz_mesh_tools_plugins::ClusterLabelPanel"
+         base_class_type="rviz_common::Panel">
+    <description>
+      A panel widget allowing creation of cluster labels.
+    </description>
+  </class>
+  <class name="rviz_mesh_tools_plugins/ClusterLabel"
+         type="rviz_mesh_tools_plugins::ClusterLabelTool"
+         base_class_type="rviz_common::Tool">
+    <description>
+      A tool allowing selection of clusters.
+    </description>
+  </class>
+  <class name="rviz_mesh_tools_plugins/ClusterLabel"
+         type="rviz_mesh_tools_plugins::ClusterLabelDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      Displays labeled clusters of a map. (Don't use without Map3D)
+    </description>
+  </class>
+  <class name="rviz_mesh_tools_plugins/Map3D"
+         type="rviz_mesh_tools_plugins::MapDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      Displays a map with labeled clusters.
+    </description>
+  </class>
+  <class name="rviz_mesh_tools_plugins/Mesh"
+         type="rviz_mesh_tools_plugins::MeshDisplay"
+         base_class_type="rviz_common::Display">
+    <description>
+      Displays a mesh.
+    </description>
+  </class>
+  <class name="rviz_mesh_tools_plugins/MeshGoal"
+         type="rviz_mesh_tools_plugins::MeshGoalTool"
+         base_class_type="rviz_common::Tool">
+    <description>
+      Select a goal on a mesh.
+    </description>
+  </class>
+</library>

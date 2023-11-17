@@ -4,76 +4,72 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/replace.hpp>
-#include "mesh_msgs/MeshFaceCluster.h"
+#include "mesh_msgs/msg/mesh_face_cluster.h"
 
 using namespace boost::filesystem;
 
+using std::placeholders::_1;
+using std::placeholders::_2;
+
 namespace label_manager
 {
-    LabelManager::LabelManager(ros::NodeHandle& nodeHandle) :
-        nh(nodeHandle) {
-
-        if (!nh.getParam("folder_path", folderPath))
-        {
-            folderPath = "/tmp/label_manager/";
-        }
+    LabelManager::LabelManager(std::string handle_str) 
+    :rclcpp::Node(handle_str) 
+    {
+        // TODO: check if this is correct
+        this->declare_parameter("folder_path", "/tmp/label_manager/");
+        folderPath = this->get_parameter("folder_path").as_string();
+        
 
         path p(folderPath);
-        if (!is_directory(p) && !exists(p))
+        if(!is_directory(p) && !exists(p))
         {
             create_directory(p);
         }
 
-        clusterLabelSub = nh.subscribe("cluster_label", 10, &LabelManager::clusterLabelCallback, this);
-        newClusterLabelPub = nh.advertise<mesh_msgs::MeshFaceCluster>("new_cluster_label", 1);
-        srv_get_labeled_clusters = nh.advertiseService(
-            "get_labeled_clusters",
-            &LabelManager::service_getLabeledClusters,
-            this
-        );
-        srv_get_label_groups = nh.advertiseService(
-            "get_label_groups",
-            &LabelManager::service_getLabelGroups,
-            this
-        );
-        srv_get_labeled_cluster_group = nh.advertiseService(
-            "get_labeled_cluster_group",
-            &LabelManager::service_getLabeledClusterGroup,
-            this
-        );
-        srv_delete_label = nh.advertiseService(
-            "delete_label",
-            &LabelManager::service_deleteLabel,
-            this
-        );
+        clusterLabelSub = this->create_subscription<mesh_msgs::msg::MeshFaceClusterStamped>(
+            "cluster_label", 10, std::bind(&LabelManager::clusterLabelCallback, this, _1));
 
-        ROS_INFO("Started LabelManager");
+        newClusterLabelPub = this->create_publisher<mesh_msgs::msg::MeshFaceCluster>(
+            "new_cluster_label", 10);
 
-        ros::spin();
+        srv_get_labeled_clusters = this->create_service<mesh_msgs::srv::GetLabeledClusters>(
+            "get_labeled_clusters", std::bind(&LabelManager::service_getLabeledClusters, this, _1, _2));
+
+        srv_get_label_groups = this->create_service<label_manager::srv::GetLabelGroups>(
+            "get_label_groups", std::bind(&LabelManager::service_getLabelGroups, this, _1, _2));
+
+        srv_get_labeled_cluster_group = this->create_service<label_manager::srv::GetLabeledClusterGroup>(
+            "get_labeled_cluster_group", std::bind(&LabelManager::service_getLabeledClusterGroup, this, _1, _2));
+
+        srv_delete_label = this->create_service<label_manager::srv::DeleteLabel>(
+            "delete_label", std::bind(&LabelManager::service_deleteLabel, this, _1, _2));
+
+        RCLCPP_INFO(this->get_logger(), "Started LabelManager");
     }
 
-    void LabelManager::clusterLabelCallback(const mesh_msgs::MeshFaceClusterStamped::ConstPtr& msg)
+    void LabelManager::clusterLabelCallback(const mesh_msgs::msg::MeshFaceClusterStamped& msg)
     {
-        ROS_INFO_STREAM("Got msg for mesh: " << msg->uuid << " with label: " << msg->cluster.label);
+        RCLCPP_INFO_STREAM(this->get_logger(), "Got msg for mesh: " << msg.uuid << " with label: " << msg.cluster.label);
 
         std::vector<uint> indices;
-        std::string fileName = getFileName(msg->uuid, msg->cluster.label);
+        std::string fileName = getFileName(msg.uuid, msg.cluster.label);
 
         // if appending (not override), first figure what new indices we have to add
-        if (!msg->override)
+        if (!msg.override)
         {
             std::vector<uint> readIndices = readIndicesFromFile(fileName);
 
             // if read indices is empty no file was found or could not be read
             if (readIndices.empty())
             {
-                indices = msg->cluster.face_indices;
+                indices = msg.cluster.face_indices;
             }
             else
             {
-                for (size_t i = 0; i < msg->cluster.face_indices.size(); i++)
+                for (size_t i = 0; i < msg.cluster.face_indices.size(); i++)
                 {
-                    uint idx = msg->cluster.face_indices[i];
+                    uint idx = msg.cluster.face_indices[i];
 
                     // if msg index is not already in file, add it to indices vector
                     if (std::find(readIndices.begin(), readIndices.end(), idx) == readIndices.end())
@@ -85,35 +81,35 @@ namespace label_manager
         }
         else
         {
-            indices = msg->cluster.face_indices;
+            indices = msg.cluster.face_indices;
         }
 
         // publish every new labeled cluster
-        newClusterLabelPub.publish(msg->cluster);
+        newClusterLabelPub->publish(msg.cluster);
 
         // make sure mesh folder exists before writing
-        path p(folderPath + "/" + msg->uuid);
+        path p(folderPath + "/" + msg.uuid);
         if (!is_directory(p) || !exists(p))
         {
             create_directory(p);
         }
 
-        writeIndicesToFile(fileName, indices, !msg->override);
+        writeIndicesToFile(fileName, indices, !msg.override);
     }
 
     bool LabelManager::service_getLabeledClusters(
-        mesh_msgs::GetLabeledClusters::Request& req,
-        mesh_msgs::GetLabeledClusters::Response& res
-    )
+        const std::shared_ptr<mesh_msgs::srv::GetLabeledClusters::Request> req,
+        std::shared_ptr<mesh_msgs::srv::GetLabeledClusters::Response>      res)
     {
-        ROS_DEBUG_STREAM("Service call with uuid: " << req.uuid);
 
-        path p (folderPath + "/" + req.uuid);
+        RCLCPP_DEBUG_STREAM(this->get_logger(), "Service call with uuid: " << req->uuid);
+
+        path p (folderPath + "/" + req->uuid);
         directory_iterator end_itr;
 
         if (!is_directory(p) || !exists(p))
         {
-            ROS_DEBUG_STREAM("No labeled clusters for uuid '" << req.uuid << "' found");
+            RCLCPP_DEBUG_STREAM(this->get_logger(), "No labeled clusters for uuid '" << req->uuid << "' found");
 
             return false;
         }
@@ -127,11 +123,11 @@ namespace label_manager
                 // remove extension from label
                 boost::replace_all(label, itr->path().filename().extension().string(), "");
 
-                mesh_msgs::MeshFaceCluster c;
+                mesh_msgs::msg::MeshFaceCluster c;
                 c.face_indices = readIndicesFromFile(itr->path().string());
                 c.label = label;
 
-                res.clusters.push_back(c);
+                res->clusters.push_back(c);
             }
         }
 
@@ -139,15 +135,15 @@ namespace label_manager
     }
 
     bool LabelManager::service_getLabelGroups(
-        label_manager::GetLabelGroups::Request& req,
-        label_manager::GetLabelGroups::Response& res)
+        const std::shared_ptr<label_manager::srv::GetLabelGroups::Request> req,
+        std::shared_ptr<label_manager::srv::GetLabelGroups::Response>      res)
     {
-        path p (folderPath + "/" + req.uuid);
+        path p (folderPath + "/" + req->uuid);
         directory_iterator end_itr;
 
         if (!is_directory(p) || !exists(p))
         {
-            ROS_WARN_STREAM("No labeled clusters for uuid '" << req.uuid << "' found");
+            RCLCPP_WARN_STREAM(this->get_logger(), "No labeled clusters for uuid '" << req->uuid << "' found");
 
             return false;
         }
@@ -167,9 +163,9 @@ namespace label_manager
                 label = label.substr(0, label.find_first_of("_", 0));
 
                 // only add label group to response if not already added
-                if (std::find(res.labels.begin(), res.labels.end(), label) == res.labels.end())
+                if (std::find(res->labels.begin(), res->labels.end(), label) == res->labels.end())
                 {
-                    res.labels.push_back(label);
+                    res->labels.push_back(label);
                 }
             }
         }
@@ -178,35 +174,16 @@ namespace label_manager
         return true;
     }
 
-    bool LabelManager::service_deleteLabel(
-        label_manager::DeleteLabel::Request& req,
-        label_manager::DeleteLabel::Response& res)
-    {
-        path p(getFileName(req.uuid, req.label));
-
-        if (!is_regular_file(p) || !exists(p))
-        {
-            ROS_WARN_STREAM("Could not delete label '" << req.label << "' of mesh '" << req.uuid << "'.");
-
-            return false;
-        }
-
-        res.cluster.face_indices = readIndicesFromFile(p.filename().string());
-        res.cluster.label = req.label;
-
-        return remove(p);
-    }
-
     bool LabelManager::service_getLabeledClusterGroup(
-        label_manager::GetLabeledClusterGroup::Request& req,
-        label_manager::GetLabeledClusterGroup::Response& res)
+        const std::shared_ptr<label_manager::srv::GetLabeledClusterGroup::Request> req,
+        std::shared_ptr<label_manager::srv::GetLabeledClusterGroup::Response>      res)
     {
-        path p (folderPath + "/" + req.uuid);
+        path p (folderPath + "/" + req->uuid);
         directory_iterator end_itr;
 
         if (!is_directory(p) || !exists(p))
         {
-            ROS_WARN_STREAM("No labeled clusters for uuid '" << req.uuid << "' found");
+            RCLCPP_WARN_STREAM(this->get_logger(), "No labeled clusters for uuid '" << req->uuid << "' found");
 
             return false;
         }
@@ -214,22 +191,41 @@ namespace label_manager
         for (directory_iterator itr(p); itr != end_itr; ++itr)
         {
             // if file is no dir
-            if (is_regular_file(itr->path()) && itr->path().filename().string().find(req.labelGroup) == 0)
+            if (is_regular_file(itr->path()) && itr->path().filename().string().find(req->label_group) == 0)
             {
                 std::string label = itr->path().filename().string();
                 // remove extension from label
                 boost::replace_all(label, itr->path().filename().extension().string(), "");
 
-                mesh_msgs::MeshFaceCluster c;
+                mesh_msgs::msg::MeshFaceCluster c;
                 c.face_indices = readIndicesFromFile(itr->path().string());
                 c.label = label;
 
-                res.clusters.push_back(c);
+                res->clusters.push_back(c);
             }
         }
 
 
         return true;
+    }
+
+    bool LabelManager::service_deleteLabel(
+        const std::shared_ptr<label_manager::srv::DeleteLabel::Request> req,
+        std::shared_ptr<label_manager::srv::DeleteLabel::Response>      res)
+    {
+        path p(getFileName(req->uuid, req->label));
+
+        if (!is_regular_file(p) || !exists(p))
+        {
+            RCLCPP_WARN_STREAM(this->get_logger(), "Could not delete label '" << req->label << "' of mesh '" << req->uuid << "'.");
+
+            return false;
+        }
+
+        res->cluster.face_indices = readIndicesFromFile(p.filename().string());
+        res->cluster.label = req->label;
+
+        return remove(p);
     }
 
     bool LabelManager::writeIndicesToFile(
@@ -240,7 +236,7 @@ namespace label_manager
     {
         if (indices.empty())
         {
-            ROS_WARN_STREAM("Empty indices.");
+            RCLCPP_WARN_STREAM(this->get_logger(), "Empty indices.");
 
             return true;
         }
@@ -248,7 +244,7 @@ namespace label_manager
         std::ios_base::openmode mode = append ? (std::ios::out|std::ios::app) : std::ios::out;
         std::ofstream ofs(fileName.c_str(), mode);
 
-        ROS_DEBUG_STREAM("Writing indices to file: " << fileName);
+        RCLCPP_DEBUG_STREAM(this->get_logger(), "Writing indices to file: " << fileName);
 
         if (ofs.is_open())
         {
@@ -270,13 +266,13 @@ namespace label_manager
             }
 
             ofs.close();
-            ROS_DEBUG_STREAM("Successfully written indices to file.");
+            RCLCPP_DEBUG_STREAM(this->get_logger(), "Successfully written indices to file.");
 
             return true;
         }
         else
         {
-            ROS_ERROR_STREAM("Could not open file: " << fileName);
+            RCLCPP_ERROR_STREAM(this->get_logger(), "Could not open file: " << fileName);
         }
 
         return false;
@@ -290,7 +286,7 @@ namespace label_manager
         // if file dos not exists, return empty vector
         if (!ifs.good())
         {
-            ROS_DEBUG_STREAM("File " << fileName << " does not exists. Nothing to read...");
+            RCLCPP_DEBUG_STREAM(this->get_logger(), "File " << fileName << " does not exists. Nothing to read...");
 
             return faceIndices;
         }
