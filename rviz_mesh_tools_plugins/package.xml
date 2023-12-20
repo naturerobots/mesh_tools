@@ -11,7 +11,6 @@
   <author email="krschmidt@uos.de">Kristin Schmidt</author>
   <author email="jvogtherr@uos.de">Jan Philipp Vogtherr</author>
   <author email="malte@klpiening.de">Malte kleine Piening</author>
-  <buildtool_depend>catkin</buildtool_depend>
 
   <license>BSD-3</license>
   <url>https://github.com/uos/mesh_tools/tree/master/rviz_mesh_tools_plugins</url>
