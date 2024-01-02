@@ -179,8 +179,17 @@ void MapDisplay::disableMeshDisplay()
 
 void MapDisplay::onInitialize()
 {
+  rviz_common::Display::onInitialize();
+
+
   std::string name = this->getName().toStdString();
   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
+
+  // make ROS parameters visible
+  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  std::stringstream ss;
+  ss << "rviz_mesh_tools_plugins." << name;
+  node->declare_parameter(ss.str(), "");
 }
 
 void MapDisplay::onEnable()
@@ -215,23 +224,24 @@ void MapDisplay::onDisable()
 void MapDisplay::load(const rviz_common::Config& config)
 {
   std::string name = this->getName().toStdString();
-  std::cout << name << ": LOAD CONFIG..." << std::endl;
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": LOAD CONFIG...");
 
   rviz_common::Config config2 = config;
 
   { // Override with ros params
     std::stringstream ss;
-    ss << "rviz_mesh_tools_plugins/" << name;
-
-    std::string mesh_file;
+    ss << "rviz_mesh_tools_plugins" << "." << name;
 
     auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-    
+
+    std::string mesh_file;
     if(node->get_parameter(ss.str(), mesh_file))
     {
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading " << mesh_file << " that was set with parameter " << ss.str());
+
       config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
     } else {
-      std::cout << name << ": COULDN'T FIND MESH TO LOAD" << std::endl;
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": COULDN'T FIND MESH TO LOAD: " << mesh_file);
     }
   }
 
@@ -447,14 +457,13 @@ bool MapDisplay::loadData()
               RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not load channel " << costlayer << " as a costlayer!");
           }
       }
-
-      
     }
     else 
     {
       disableClusterLabelDisplay(); // we cannot write labels to standard formats
       enableMeshDisplay();
-      std::cout << "LOADING WITH ASSIMP" << std::endl; 
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "LOADING WITH ASSIM");
+
       // PLY, OBJ, DAE? -> ASSIMP
       // The following lines are a simple way to import the mesh geometry
       // of commonly used mesh file formats.
@@ -485,7 +494,7 @@ bool MapDisplay::loadData()
       m_geometry->vertices.resize(amesh->mNumVertices);
       m_geometry->faces.resize(amesh->mNumFaces);
 
-      std::cout << "- Vertices, Faces: " << amesh->mNumVertices << ", " << amesh->mNumFaces << std::endl;
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "- Vertices, Faces: " << amesh->mNumVertices << ", " << amesh->mNumFaces);
 
       for (int i = 0; i < amesh->mNumVertices; i++)
       {
@@ -532,8 +541,6 @@ bool MapDisplay::loadData()
       }
 
       m_costs.clear();
-
-      
     }
   }
   catch (...)
