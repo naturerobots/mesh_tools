@@ -204,7 +204,7 @@ void MeshVisual::reset()
   } else {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping.");
     
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
     auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
     while(mit.hasMoreElements())
     {
@@ -228,7 +228,7 @@ void MeshVisual::reset()
     } else {
       RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping");
     
-      RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+      RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
       auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
       while(mit.hasMoreElements())
       {
@@ -249,7 +249,7 @@ void MeshVisual::reset()
   } else {
     RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not find material '" << sstm.str() << "' to unload. skipping");
   
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Available materials are:");
     auto mit = Ogre::MaterialManager::getSingleton().getResourceIterator();
     while(mit.hasMoreElements())
     {

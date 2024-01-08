@@ -96,8 +96,6 @@ MeshDisplay::MeshDisplay()
 , m_costsSynchronizer(nullptr)
 {
   // mesh topic
-  std::cout << "Create MeshDisplay with topic type " << rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>() << std::endl;
-
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
       "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
@@ -281,8 +279,6 @@ void MeshDisplay::onInitialize()
 
 void MeshDisplay::onEnable()
 {
-  std::cout << "MeshDisplay::onEnable -> ENABLE MESH VISUAL!" << std::endl;
-
   m_messagesReceived = 0;
   
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
@@ -301,19 +297,13 @@ void MeshDisplay::onEnable()
 
 void MeshDisplay::onDisable()
 {
-  std::cout << "MeshDisplay::onDisable -> DISABLE MESH VISUAL!" << std::endl;
   unsubscribe();
-
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
 
   if(visual)
   {
     visual->hide();
   }
-
-  // new: disable just disables the rendering process. delete the tree item to free the RAM
-  // clear visuals
-  // std::queue<std::shared_ptr<MeshVisual>>().swap(m_visuals);
 }
 
 void MeshDisplay::subscribe()
@@ -358,7 +348,10 @@ void MeshDisplay::subscribe()
     m_costsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
   }
 
-  initialServiceCall();
+  // std::cout << "initialServiceCall" << std::endl;
+  // TODO
+  // initialServiceCall();
+  // std::cout << "MeshDisplay::subscribe end" << std::endl;
 }
 
 void MeshDisplay::unsubscribe()
@@ -690,14 +683,10 @@ void MeshDisplay::updateVertexCostsTopic()
 
 void MeshDisplay::updateTopic()
 {
-  std::cout << "UPDATE TOPIC!!" << std::endl;
-
-
+  RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Visualization of mesh topics not tested!");
   unsubscribe();
   subscribe();
   context_->queueRender();
-
-  std::cout << "UPDATE TOPIC -- done!!" << std::endl;
 }
 
 void MeshDisplay::updateMaterialAndTextureServices()
@@ -770,7 +759,6 @@ void MeshDisplay::updateVertexColorService()
 
 // =====================================================================================================================
 // Data loading
-
 void MeshDisplay::initialServiceCall()
 {
   if (m_ignoreMsgs)
@@ -818,6 +806,7 @@ void MeshDisplay::initialServiceCall()
 void MeshDisplay::processMessage(
   const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
+  std::cout << "GOT MESH GEOMETRY MSG. UUID: " << meshMsg.uuid << std::endl;
   if (m_ignoreMsgs)
   {
     return;
@@ -834,6 +823,12 @@ void MeshDisplay::processMessage(
     return;
   }
 
+  if(m_lastUuid.empty())
+  {
+    // FIRST MESSAGE
+
+  }
+
   if (!m_lastUuid.empty() && meshMsg.uuid.compare(m_lastUuid) != 0)
   {
     RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received geometry with new UUID!");
@@ -843,6 +838,8 @@ void MeshDisplay::processMessage(
   }
 
   m_lastUuid = meshMsg.uuid;
+
+  // Reuse memory if already existing
 
   // set Geometry
   std::shared_ptr<Geometry> mesh(std::make_shared<Geometry>());
@@ -874,8 +871,12 @@ void MeshDisplay::processMessage(
   }
   setVertexNormals(normals);
 
-  requestVertexColors(meshMsg.uuid);
-  requestMaterials(meshMsg.uuid);
+  // TODO
+  // std::cout << "requestVertexColors" << std::endl;
+  // requestVertexColors(meshMsg.uuid);
+  // std::cout << "requestMaterials" << std::endl;
+  // requestMaterials(meshMsg.uuid);
+  // std::cout << "done." << std::endl;
 }
 
 void MeshDisplay::incomingGeometry(
@@ -964,6 +965,8 @@ void MeshDisplay::requestMaterials(std::string uuid)
 
   auto fut_materials = m_materialsClient->async_send_request(req_materials);
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+
+  // TODO: this doesnt work
   if(rclcpp::spin_until_future_complete(node, fut_materials) == rclcpp::FutureReturnCode::SUCCESS)
   {
     auto res_materials = fut_materials.get();
