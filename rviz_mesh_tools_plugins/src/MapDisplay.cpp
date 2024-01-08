@@ -143,6 +143,7 @@ void MapDisplay::disableClusterLabelDisplay()
   }
 }
 
+// TODO: name it "constructMeshDisplay" or "initMeshDisplay"
 void MapDisplay::enableMeshDisplay()
 {
   if(!m_meshDisplay)
@@ -161,26 +162,27 @@ void MapDisplay::enableMeshDisplay()
     } else {
       RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/Mesh. NOT FOUND");
     }
-  } else {
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "rviz_mesh_tools_plugins/Mesh. ALREADY EXISTING");
-    m_meshDisplay->onEnable();
-    m_meshDisplay->show();
   }
+
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "rviz_mesh_tools_plugins/Mesh. ENABLE");
+  m_meshDisplay->setEnabled(true); // doesnt trigger onEnable
+  m_meshDisplay->onEnable();
+  m_meshDisplay->show();
 }
 
 void MapDisplay::disableMeshDisplay()
 {
   if(m_meshDisplay)
   {
-    m_meshDisplay->onDisable();
+    m_meshDisplay->setEnabled(false);
     m_meshDisplay->hide();
   }
 }
 
 void MapDisplay::onInitialize()
 {
+  std::cout << "MapDisplay::onInitialize !!!" << std::endl;
   rviz_common::Display::onInitialize();
-
 
   std::string name = this->getName().toStdString();
   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "createDisplay: rviz_mesh_tools_plugins/ClusterLabel");
@@ -189,19 +191,30 @@ void MapDisplay::onInitialize()
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   std::stringstream ss;
   ss << "rviz_mesh_tools_plugins." << name;
-  node->declare_parameter(ss.str(), "");
+  if(node->has_parameter(ss.str()))
+  {
+    node->declare_parameter(ss.str(), "");
+  }
+
 }
 
 void MapDisplay::onEnable()
 {
+  
   if(m_clusterLabelDisplay)
   {
-    m_clusterLabelDisplay->onEnable();
+    if(m_clusterLabelDisplay->isEnabled())
+    {
+      m_clusterLabelDisplay->onEnable();
+    }
   }
   
   if(m_meshDisplay)
   {
-    m_meshDisplay->onEnable();
+    if(m_meshDisplay->isEnabled())
+    {
+      m_meshDisplay->onEnable();
+    }
   }
 }
 
@@ -215,7 +228,6 @@ void MapDisplay::onDisable()
   {
     m_meshDisplay->onDisable();
   }
-  
 }
 
 // =====================================================================================================================
@@ -248,10 +260,13 @@ void MapDisplay::load(const rviz_common::Config& config)
   rviz_common::Display::load(config2);
   
   std::cout << name << ": LOAD CONFIG done." << std::endl;
+
+  // onInitialize();
 }
 
 void MapDisplay::updateMap()
 {
+  std::cout << "!!!!!!!!!!!!!!!!!!!!" << std::endl;
   std::string name = this->getName().toStdString();
   std::cout << name << ": updateMap" << std::endl;
 
@@ -286,7 +301,6 @@ void MapDisplay::updateMap()
   {
     m_clusterLabelDisplay->setData(m_geometry, m_clusterList);
   }
-  
 
   // All good
   setStatus(rviz_common::properties::StatusProperty::Ok, "Map", "");
@@ -462,7 +476,7 @@ bool MapDisplay::loadData()
     {
       disableClusterLabelDisplay(); // we cannot write labels to standard formats
       enableMeshDisplay();
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "LOADING WITH ASSIM");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "LOADING WITH ASSIMP");
 
       // PLY, OBJ, DAE? -> ASSIMP
       // The following lines are a simple way to import the mesh geometry

@@ -150,6 +150,8 @@ public:
    */
   ~MeshDisplay();
 
+  virtual void load(const rviz_common::Config& config);
+
   /**
    * @brief RViz callback on enable
    */

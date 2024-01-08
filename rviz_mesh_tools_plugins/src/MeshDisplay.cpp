@@ -224,6 +224,13 @@ MeshDisplay::~MeshDisplay()
   unsubscribe();
 }
 
+void MeshDisplay::load(const rviz_common::Config& config)
+{
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), ": MESH LOAD CONFIG...");
+
+  rviz_common::Display::load(config);
+}
+
 void MeshDisplay::onInitialize()
 {
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
@@ -266,23 +273,45 @@ void MeshDisplay::onInitialize()
   updateWireframe();
   updateNormals();
   updateTopic();
+
+  // rviz_common::Display::onInitialize();
 }
 
 void MeshDisplay::onEnable()
 {
+  std::cout << "MeshDisplay::onEnable -> ENABLE MESH VISUAL!" << std::endl;
+
   m_messagesReceived = 0;
+  
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if(visual)
+  {
+    visual->show();
+  }
+
   subscribe();
   updateMesh();
   updateWireframe();
   updateNormals();
+
+  rviz_common::Display::onEnable();
 }
 
 void MeshDisplay::onDisable()
 {
+  std::cout << "MeshDisplay::onDisable -> DISABLE MESH VISUAL!" << std::endl;
   unsubscribe();
 
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+
+  if(visual)
+  {
+    visual->hide();
+  }
+
+  // new: disable just disables the rendering process. delete the tree item to free the RAM
   // clear visuals
-  std::queue<std::shared_ptr<MeshVisual>>().swap(m_visuals);
+  // std::queue<std::shared_ptr<MeshVisual>>().swap(m_visuals);
 }
 
 void MeshDisplay::subscribe()
@@ -551,6 +580,7 @@ void MeshDisplay::updateMesh()
 
   if (isEnabled())
   {
+    std::cout << "UPDATE MATERIAL!" << std::endl;
     visual->updateMaterial(showFaces, m_facesColor->getOgreColor(), m_facesAlpha->getFloat(), showVertexColors,
                            showVertexCosts, showTextures, m_showTexturedFacesOnly->getBool());
     updateWireframe();
@@ -658,6 +688,7 @@ void MeshDisplay::updateVertexCostsTopic()
 
 void MeshDisplay::updateTopic()
 {
+  // std::cout << "UPDATE TOPIC!!" << std::endl;
   unsubscribe();
   subscribe();
   context_->queueRender();

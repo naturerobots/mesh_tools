@@ -151,7 +151,7 @@ public:
    */
   ~MapDisplay();
 
-  virtual void load(const rviz_common::Config& config);
+  virtual void load(const rviz_common::Config& config) override;
 
 public Q_SLOTS:
 
@@ -182,25 +182,23 @@ private:
   /**
    * @brief RViz callback on initialize
    */
-  void onInitialize();
+  virtual void onInitialize() override;
 
   /**
    * @brief RViz callback on enable
    */
-  void onEnable();
+  virtual void onEnable() override;
 
   /**
    * @brief RViz callback on disable
    */
-  void onDisable();
+  virtual void onDisable() override;
 
   /**
    * @brief Read all data from the HDF5 file and save it in the member variables
    * @return true, if successful
    */
   bool loadData();
-
-  
 
   // TODO: make more efficient - currently everything is stored in the MapDisplay, the MeshDisplay and the MeshVisual
   /// Geometry

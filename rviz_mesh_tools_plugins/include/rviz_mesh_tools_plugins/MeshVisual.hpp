@@ -116,6 +116,10 @@ public:
    */
   void reset();
 
+  void hide();
+
+  void show();
+
   /**
    * @brief Extracts data from the ros-messages and creates meshes.
    *
@@ -333,18 +337,23 @@ private:
 
   /// The mesh-object to display
   Ogre::ManualObject* m_mesh;
+  bool                m_mesh_hidden = false;
 
   /// The manual object to display normals
   Ogre::ManualObject* m_normals;
+  bool                m_normals_hidden = false;
 
   /// The manual object to display the mesh with vertex costs
   Ogre::ManualObject* m_vertexCostsMesh;
+  bool                m_vertexCostsMesh_hidden = false;
 
   /// The manual object to display the textured mesh
   Ogre::ManualObject* m_texturedMesh;
+  bool                m_texturedMesh_hidden = false;
 
   /// The manual object to display the not textured parts of the textured mesh
   Ogre::ManualObject* m_noTexCluMesh;
+  bool                m_noTexCluMesh_hidden = false;
 
   // The textures for the mesh
   std::vector<Ogre::Image> m_images;

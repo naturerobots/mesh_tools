@@ -311,6 +311,95 @@ void MeshVisual::reset()
   }
 }
 
+void MeshVisual::hide()
+{
+  // I dont like my approach:
+  // - we cannot really good extend this class
+  // - maybe we should think of creating on subvisual per material setting that can be set visible or unvisible
+  // - we need additional bools so that we can recover the state before hiding
+  //   - m_mesh -> m_mesh_hidden
+  //   - ...
+  if(m_mesh)
+  {
+    if(m_mesh->getVisible())
+    {
+      // store the information that is was previous before
+      m_mesh_hidden = true;
+    }
+    m_mesh->setVisible(false);
+  }
+
+  if(m_normals)
+  {
+    if(m_normals->getVisible())
+    {
+      m_normals_hidden = true;
+    }
+    m_normals->setVisible(false);
+  }
+
+  if(m_vertexCostsMesh)
+  {
+    if(m_vertexCostsMesh->getVisible())
+    {
+      m_vertexCostsMesh_hidden = true;
+    }
+    m_vertexCostsMesh->setVisible(false);
+  }
+
+  if(m_texturedMesh)
+  {
+    if(m_texturedMesh->getVisible())
+    {
+      m_texturedMesh_hidden = true;
+    }
+    m_texturedMesh->setVisible(false);
+  }
+
+  if(m_noTexCluMesh)
+  {
+    if(m_noTexCluMesh->getVisible())
+    {
+      m_noTexCluMesh_hidden = true;
+    }
+    m_noTexCluMesh->setVisible(false);
+  }
+}
+
+void MeshVisual::show()
+{
+  // m_mesh->setVisible(true);
+  if(m_mesh_hidden)
+  {
+    m_mesh->setVisible(true);
+    m_mesh_hidden = false;
+  }
+
+  if(m_normals_hidden)
+  {
+    m_normals->setVisible(true);
+    m_normals_hidden = false;
+  }
+
+  if(m_vertexCostsMesh_hidden)
+  {
+    m_vertexCostsMesh->setVisible(true);
+    m_vertexCostsMesh_hidden = false;
+  }
+
+  if(m_texturedMesh_hidden)
+  {
+    m_texturedMesh->setVisible(true);
+    m_texturedMesh_hidden = false;
+  }
+
+  if(m_noTexCluMesh_hidden)
+  {
+    m_noTexCluMesh->setVisible(true);
+    m_noTexCluMesh_hidden = false;
+  }
+}
+
 void MeshVisual::showWireframe(Ogre::Pass* pass, Ogre::ColourValue wireframeColor, float wireframeAlpha)
 {
   pass->setAmbient(Ogre::ColourValue(wireframeColor.r, wireframeColor.g, wireframeColor.b, wireframeAlpha));
@@ -358,9 +447,10 @@ void MeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normalsColor, f
   pass->setCullingMode(Ogre::CULL_NONE);
 }
 
-void MeshVisual::updateMaterial(bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
-                                        bool useVertexColors, bool showVertexCosts, bool showTextures,
-                                        bool showTexturedFacesOnly)
+void MeshVisual::updateMaterial(
+  bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
+  bool useVertexColors, bool showVertexCosts, bool showTextures,
+  bool showTexturedFacesOnly)
 {
   // remove the faces pass
   if (!m_meshGeneralMaterial.isNull())
@@ -380,11 +470,17 @@ void MeshVisual::updateMaterial(bool showFaces, Ogre::ColourValue facesColor, fl
   // we can use the general mesh with the m_meshGeneralMaterial
   if (!m_meshGeneralMaterial.isNull() && !showTextures && !showVertexCosts)
   {
-    Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
     if (showFaces)
     {
-      Ogre::Pass* pass = tech->createPass();
-      pass->setName("faces");
+      Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
+      Ogre::Pass* pass = tech->getPass("faces");
+      // create new pass if not existing
+      if(!pass)
+      {
+        pass = tech->createPass();
+        pass->setName("faces");
+      }
+
       this->showFaces(pass, facesColor, facesAlpha, useVertexColors);
     }
   }
