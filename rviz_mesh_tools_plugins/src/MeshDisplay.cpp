@@ -91,8 +91,13 @@ namespace rviz_mesh_tools_plugins
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
+, m_meshSynchronizer(nullptr)
+, m_colorsSynchronizer(nullptr)
+, m_costsSynchronizer(nullptr)
 {
   // mesh topic
+  std::cout << "Create MeshDisplay with topic type " << rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>() << std::endl;
+
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
       "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
@@ -235,6 +240,8 @@ void MeshDisplay::onInitialize()
 {
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
+  m_meshTopic->initialize(context_->getRosNodeAbstraction());
+
   m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(
       *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 2,
       node);
@@ -253,16 +260,11 @@ void MeshDisplay::onInitialize()
   m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
   // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexCostsFilter, this);
 
-  m_meshSynchronizer = 0;
-  m_colorsSynchronizer = 0;
-  m_costsSynchronizer = 0;
+  m_meshSynchronizer = nullptr;
+  m_colorsSynchronizer = nullptr;
+  m_costsSynchronizer = nullptr;
 
   // Initialize service clients
-  // ros::NodeHandle n;
-  // m_node = rclcpp::Node::make_shared("mesh_display"); // TODO: how to name this? What if multiple MeshDisplay instances exists?  
-
-  // auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-
   m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
   m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
   m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
@@ -368,17 +370,17 @@ void MeshDisplay::unsubscribe()
   if (m_meshSynchronizer)
   {
     delete m_meshSynchronizer;
-    m_meshSynchronizer = 0;
+    m_meshSynchronizer = nullptr;
   }
   if (m_colorsSynchronizer)
   {
     delete m_colorsSynchronizer;
-    m_colorsSynchronizer = 0;
+    m_colorsSynchronizer = nullptr;
   }
   if (m_costsSynchronizer)
   {
     delete m_costsSynchronizer;
-    m_costsSynchronizer = 0;
+    m_costsSynchronizer = nullptr;
   }
 }
 
@@ -489,7 +491,7 @@ void MeshDisplay::updateBufferSize()
 
 void MeshDisplay::updateMesh()
 {
-  RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Mesh Display: Update");
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Mesh Display: Update");
 
   bool showFaces = false;
   bool showTextures = false;
@@ -580,7 +582,7 @@ void MeshDisplay::updateMesh()
 
   if (isEnabled())
   {
-    std::cout << "UPDATE MATERIAL!" << std::endl;
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "update material");
     visual->updateMaterial(showFaces, m_facesColor->getOgreColor(), m_facesAlpha->getFloat(), showVertexColors,
                            showVertexCosts, showTextures, m_showTexturedFacesOnly->getBool());
     updateWireframe();
@@ -688,10 +690,14 @@ void MeshDisplay::updateVertexCostsTopic()
 
 void MeshDisplay::updateTopic()
 {
-  // std::cout << "UPDATE TOPIC!!" << std::endl;
+  std::cout << "UPDATE TOPIC!!" << std::endl;
+
+
   unsubscribe();
   subscribe();
   context_->queueRender();
+
+  std::cout << "UPDATE TOPIC -- done!!" << std::endl;
 }
 
 void MeshDisplay::updateMaterialAndTextureServices()

@@ -181,7 +181,6 @@ void MapDisplay::disableMeshDisplay()
 
 void MapDisplay::onInitialize()
 {
-  std::cout << "MapDisplay::onInitialize !!!" << std::endl;
   rviz_common::Display::onInitialize();
 
   std::string name = this->getName().toStdString();
@@ -191,16 +190,14 @@ void MapDisplay::onInitialize()
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
   std::stringstream ss;
   ss << "rviz_mesh_tools_plugins." << name;
-  if(node->has_parameter(ss.str()))
+  if(!node->has_parameter(ss.str()))
   {
     node->declare_parameter(ss.str(), "");
   }
-
 }
 
 void MapDisplay::onEnable()
 {
-  
   if(m_clusterLabelDisplay)
   {
     if(m_clusterLabelDisplay->isEnabled())
@@ -250,25 +247,47 @@ void MapDisplay::load(const rviz_common::Config& config)
     if(node->get_parameter(ss.str(), mesh_file))
     {
       RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading " << mesh_file << " that was set with parameter " << ss.str());
-
       config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
     } else {
-      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": COULDN'T FIND MESH TO LOAD: " << mesh_file);
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": COULDN'T FIND MESH TO LOAD: " << mesh_file);
     }
   }
 
   rviz_common::Display::load(config2);
-  
-  std::cout << name << ": LOAD CONFIG done." << std::endl;
 
-  // onInitialize();
+  auto mesh_config = config2.mapGetChild("Mesh");
+  if(mesh_config.isValid())
+  {
+    if(m_meshDisplay)
+    {
+      m_meshDisplay->load(mesh_config);
+    } else {
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading MeshDisplay by config failed. Reason: MeshDisplay not initialized!");
+    }
+  } else {
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading MeshDisplay by config failed. Reason: Config not valid!");
+  }
+
+  auto cluster_label_config = config2.mapGetChild("ClusterLabel");
+  if(cluster_label_config.isValid())
+  {
+    if(m_clusterLabelDisplay)
+    {
+      m_clusterLabelDisplay->load(cluster_label_config);
+    } else {
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading ClusterLabel by config failed. Reason: ClusterLabel not initialized!");
+    }
+  } else {
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading ClusterLabel by config failed. Reason: Config not valid!");
+  }
+
+  
+  RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": LOAD CONFIG done.");
 }
 
 void MapDisplay::updateMap()
 {
-  std::cout << "!!!!!!!!!!!!!!!!!!!!" << std::endl;
   std::string name = this->getName().toStdString();
-  std::cout << name << ": updateMap" << std::endl;
 
   // Load geometry and clusters
   bool successful = loadData();
