@@ -806,7 +806,7 @@ void MeshDisplay::initialServiceCall()
 void MeshDisplay::processMessage(
   const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
-  std::cout << "GOT MESH GEOMETRY MSG. UUID: " << meshMsg.uuid << std::endl;
+  // std::cout << "GOT MESH GEOMETRY MSG. UUID: " << meshMsg.uuid << std::endl;
   if (m_ignoreMsgs)
   {
     return;
@@ -821,12 +821,6 @@ void MeshDisplay::processMessage(
     RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Error transforming from frame '%s' to frame '%s'", meshMsg.header.frame_id.c_str(),
               qPrintable(rviz_common::Display::fixed_frame_));
     return;
-  }
-
-  if(m_lastUuid.empty())
-  {
-    // FIRST MESSAGE
-
   }
 
   if (!m_lastUuid.empty() && meshMsg.uuid.compare(m_lastUuid) != 0)
