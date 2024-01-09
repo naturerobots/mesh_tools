@@ -233,9 +233,10 @@ void MapDisplay::onDisable()
 void MapDisplay::load(const rviz_common::Config& config)
 {
   std::string name = this->getName().toStdString();
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": LOAD CONFIG...");
+  // RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": LOAD CONFIG...");
 
-  rviz_common::Config config2 = config;
+  rviz_common::Config config2;
+  config2.copy(config);
 
   { // Override with ros params
     std::stringstream ss;
@@ -246,42 +247,37 @@ void MapDisplay::load(const rviz_common::Config& config)
     std::string mesh_file;
     if(node->get_parameter(ss.str(), mesh_file))
     {
-      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading " << mesh_file << " that was set with parameter " << ss.str());
-      config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
+      if(mesh_file != "")
+      {
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading " << mesh_file << " that was set with parameter " << ss.str());
+        config2.mapSetValue(m_mapFilePath->getName(), QString::fromStdString(mesh_file) );
+      }
     } else {
       RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": COULDN'T FIND MESH TO LOAD: " << mesh_file);
     }
   }
 
-  rviz_common::Display::load(config2);
+  Base::load(config2);
 
-  auto mesh_config = config2.mapGetChild("Mesh");
-  if(mesh_config.isValid())
+  // parts of the childs are not loaded automatically?. Do it manually instead. TODO: figure out why
+  if(m_meshDisplay)
   {
-    if(m_meshDisplay)
+    auto mesh_config = config2.mapGetChild(m_meshDisplay->getName());
+    if(mesh_config.isValid())
     {
       m_meshDisplay->load(mesh_config);
-    } else {
-      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading MeshDisplay by config failed. Reason: MeshDisplay not initialized!");
     }
-  } else {
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading MeshDisplay by config failed. Reason: Config not valid!");
   }
 
-  auto cluster_label_config = config2.mapGetChild("ClusterLabel");
-  if(cluster_label_config.isValid())
+  if(m_clusterLabelDisplay)
   {
-    if(m_clusterLabelDisplay)
+    auto cluster_label_config = config2.mapGetChild(m_clusterLabelDisplay->getName());
+    if(cluster_label_config.isValid())
     {
       m_clusterLabelDisplay->load(cluster_label_config);
-    } else {
-      RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading ClusterLabel by config failed. Reason: ClusterLabel not initialized!");
     }
-  } else {
-    RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loading ClusterLabel by config failed. Reason: Config not valid!");
   }
 
-  
   RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), name << ": LOAD CONFIG done.");
 }
 

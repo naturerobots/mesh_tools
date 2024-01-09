@@ -95,10 +95,11 @@ MeshDisplay::MeshDisplay()
 , m_colorsSynchronizer(nullptr)
 , m_costsSynchronizer(nullptr)
 {
+  std::cout << "Create RosTopic property" << std::endl;
   // mesh topic
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
       "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
-      "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
+      "Geometry topic to subscribe to.", this, SLOT(updateTopic()), this);
 
   // buffer size / amount of meshes visualized
   m_bufferSize = new rviz_common::properties::IntProperty("Buffer Size", 1, "Number of meshes visualized", this, SLOT(updateBufferSize()));
@@ -227,12 +228,12 @@ MeshDisplay::~MeshDisplay()
   unsubscribe();
 }
 
-void MeshDisplay::load(const rviz_common::Config& config)
-{
-  RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), ": MESH LOAD CONFIG...");
+// void MeshDisplay::load(const rviz_common::Config& config)
+// {
+//   RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), ": MESH LOAD CONFIG...");
 
-  rviz_common::Display::load(config);
-}
+//   rviz_common::Display::load(config);
+// }
 
 void MeshDisplay::onInitialize()
 {

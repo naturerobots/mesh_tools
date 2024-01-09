@@ -41,4 +41,11 @@
       Select a goal on a mesh.
     </description>
   </class>
+  <class name="rviz_mesh_tools_plugins/MeshPoseGuess"
+         type="rviz_mesh_tools_plugins::MeshPoseGuessTool"
+         base_class_type="rviz_common::Tool">
+    <description>
+      Select a pose estimate on a mesh.
+    </description>
+  </class>
 </library>

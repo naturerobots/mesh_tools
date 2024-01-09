@@ -76,6 +76,9 @@ public:
   virtual int processMouseEvent(rviz_common::ViewportMouseEvent& event);
 
 protected:
+
+  void setColor(float r, float g, float b, float a);
+
   virtual void onPoseSet(const Ogre::Vector3& position, const Ogre::Quaternion& orientation) = 0;
 
   rviz_rendering::Arrow* arrow_;

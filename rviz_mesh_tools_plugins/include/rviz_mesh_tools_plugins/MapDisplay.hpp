@@ -141,6 +141,7 @@ class MapDisplay : public rviz_common::Display
   Q_OBJECT
 
 public:
+  using Base = rviz_common::Display;
   /**
    * @brief Constructor
    */

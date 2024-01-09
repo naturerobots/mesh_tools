@@ -62,6 +62,7 @@ set(SOURCE_FILES
   src/RvizFileProperty.cpp
   src/MeshPoseTool.cpp
   src/MeshGoalTool.cpp
+  src/MeshPoseGuessTool.cpp
   src/InteractionHelper.cpp
 )
 
@@ -78,6 +79,7 @@ set(MOC_HEADER_FILES
   include/rviz_mesh_tools_plugins/RvizFileProperty.hpp
   include/rviz_mesh_tools_plugins/MeshPoseTool.hpp
   include/rviz_mesh_tools_plugins/MeshGoalTool.hpp
+  include/rviz_mesh_tools_plugins/MeshPoseGuessTool.hpp
   include/rviz_mesh_tools_plugins/InteractionHelper.hpp
 )
 

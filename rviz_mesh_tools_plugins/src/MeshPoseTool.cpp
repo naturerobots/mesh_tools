@@ -105,6 +105,11 @@ void MeshPoseTool::activate()
   state_ = Position;
 }
 
+void MeshPoseTool::setColor(float r, float g, float b, float a)
+{
+  arrow_->setColor(r, g, b, a);
+}
+
 void MeshPoseTool::deactivate()
 {
   arrow_->getSceneNode()->setVisible(false);
