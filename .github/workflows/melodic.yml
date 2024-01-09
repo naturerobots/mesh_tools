@@ -1,7 +1,15 @@
 name: Melodic CI
 
-on: [push, pull_request]
-
+on:
+  push:
+    branches:
+      - 'melodic'
+  pull_request:
+    branches:
+      - 'melodic'
+  workflow_dispatch:
+    branches:
+      - '*'
 jobs:
   industrial_ci:
     strategy:

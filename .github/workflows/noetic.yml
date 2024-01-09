@@ -1,7 +1,18 @@
 name: Noetic CI
 
-on: [push, pull_request]
-
+name: core-ubu20
+on:
+  push:
+    branches:
+      - 'main'
+      - 'noetic'
+  pull_request:
+    branches:
+      - 'main'
+      - 'noetic'
+  workflow_dispatch:
+    branches:
+      - '*'
 jobs:
   industrial_ci:
     strategy:
