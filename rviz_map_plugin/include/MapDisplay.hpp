@@ -67,6 +67,7 @@
 #include <QMessageBox>
 #include <QApplication>
 #include <QIcon>
+#include <QString>
 
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -78,6 +79,7 @@
 #include <rviz/display_context.h>
 #include <rviz/frame_manager.h>
 #include <rviz/display.h>
+#include <rviz/config.h>
 
 #include <rviz/tool.h>
 #include <rviz/tool_manager.h>
@@ -149,6 +151,8 @@ public:
    */
   ~MapDisplay();
 
+  virtual void load(const rviz::Config& config);
+
 public Q_SLOTS:
 
   /**
@@ -210,8 +214,12 @@ private:
 
   std::map<std::string, std::vector<float>> m_costs;
 
+  std::shared_ptr<ros::NodeHandle> m_nh;
+  std::shared_ptr<ros::NodeHandle> m_nh_p;
+
   /// Path to map file
   rviz::FileProperty* m_mapFilePath;
+  std::string m_map_file_loaded;
 
   /// Subdisplay: ClusterLabel (for showing the clusters)
   rviz_map_plugin::ClusterLabelDisplay* m_clusterLabelDisplay;

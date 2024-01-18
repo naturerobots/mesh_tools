@@ -63,6 +63,16 @@ QWidget* FileProperty::createEditor(QWidget* parent, const QStyleOptionViewItem&
 
   QStringList filenameFilters;
   filenameFilters << tr("*.h5");
+  #if defined(WITH_ASSIMP)
+  filenameFilters << tr("*.ply");
+  filenameFilters << tr("*.obj");
+  filenameFilters << tr("*.dae");
+  filenameFilters << tr("*.stl");
+  filenameFilters << tr("*.3d");
+  filenameFilters << tr("*.3ds");
+  filenameFilters << tr("*.fbx");
+  filenameFilters << tr("*.blend");
+  #endif
   filenameFilters << tr("*");
   editor->setNameFilters(filenameFilters);
 

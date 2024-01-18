@@ -77,7 +77,7 @@ MeshDisplay::MeshDisplay() : rviz::Display(), m_ignoreMsgs(false)
       "Geometry topic to subscribe to.", this, SLOT(updateTopic()));
 
   // buffer size / amount of meshes visualized
-  m_bufferSize = new rviz::IntProperty("Buffer Size", 1, "Amount of meshes visualized", this, SLOT(updateBufferSize()));
+  m_bufferSize = new rviz::IntProperty("Buffer Size", 1, "Number of meshes visualized", this, SLOT(updateBufferSize()));
   m_bufferSize->setMin(1);
 
   // Display Type
