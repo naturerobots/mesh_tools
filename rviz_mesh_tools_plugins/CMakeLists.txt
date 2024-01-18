@@ -37,6 +37,10 @@ find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 
 # include_directories(${ASSIMP_INCLUDE_DIRS})
 
+# LVR2 includes HighFive that we need here
+# - it was compiling before because globale lvr2 header were accessible
+# find_package(LVR2 REQUIRED)
+
 ## This setting causes Qt's "MOC" generation to happen automatically.
 # set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOMOC ON)

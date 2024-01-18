@@ -24,6 +24,9 @@ find_package(label_manager REQUIRED)
 
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 
+# LVR2 includes HighFive that we need here
+# - it was compiling before because globale lvr2 header were accessible
+# find_package(LVR2 REQUIRED)
 
 include_directories(
   include
@@ -47,8 +50,6 @@ ament_target_dependencies(${PROJECT_NAME}
   mesh_msgs 
   hdf5_map_io
   label_manager)
-
-
 
 install(
   TARGETS ${PROJECT_NAME}

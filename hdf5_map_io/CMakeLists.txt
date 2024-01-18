@@ -28,13 +28,7 @@ find_package(PkgConfig REQUIRED)
 set(HIGHFIVE_EXAMPLES FALSE)
 set(HIGHFIVE_UNIT_TESTS FALSE)
 
-find_library(LVR2_LIBRARY NAMES lvr2)
-
-
-include_directories(
-  include
-  ${LVR2_INCLUDE_DIRS}
-)
+find_package(LVR2 REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   src/hdf5_map_io.cpp
@@ -42,10 +36,11 @@ add_library(${PROJECT_NAME} SHARED
 
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include>")
+  "$<INSTALL_INTERFACE:include>"
+  ${LVR2_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
-  ${LVR2_LIBRARY}
+target_link_libraries(${PROJECT_NAME}
+  ${LVR2_LIBRARIES}
   ${MPI_CXX_LIBRARIES}
   rclcpp::rclcpp
 )
@@ -71,6 +66,7 @@ ament_export_targets(export_${PROJECT_NAME})
 
 ament_export_dependencies(
   rclcpp
+  LVR2
 )
 
 ament_package()
