@@ -1,11 +1,11 @@
-name: Melodic CI
+name: Humble CI
 on:
   push:
     branches:
-      - 'melodic'
+      - 'humble'
   pull_request:
     branches:
-      - 'melodic'
+      - 'humble'
   workflow_dispatch:
     branches:
       - '*'
@@ -14,9 +14,9 @@ jobs:
     strategy:
       matrix:
         env:
-          - {ROS_DISTRO: melodic, ROS_REPO: testing}
-          - {ROS_DISTRO: melodic, ROS_REPO: main}
-    runs-on: ubuntu-18.04
+          - {ROS_DISTRO: humble, ROS_REPO: testing}
+          - {ROS_DISTRO: humble, ROS_REPO: main}
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
         with:

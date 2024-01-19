@@ -1,6 +1,4 @@
 name: Noetic CI
-
-name: core-ubu20
 on:
   push:
     branches:
@@ -20,7 +18,7 @@ jobs:
         env:
           - {ROS_DISTRO: noetic, ROS_REPO: testing}
           - {ROS_DISTRO: noetic, ROS_REPO: main}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
