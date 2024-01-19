@@ -88,6 +88,7 @@
 #ifndef Q_MOC_RUN
 #include <rviz/mesh_loader.h>
 
+#include <OGRE/Ogre.h>
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
@@ -104,13 +105,6 @@ namespace rviz
 class RosTopicProperty;
 class ColorProperty;
 }  // namespace rviz
-
-// OGRE stuff
-namespace Ogre
-{
-// Forward declaration
-class Vector3;
-}  // namespace Ogre
 
 namespace rviz_map_plugin
 {

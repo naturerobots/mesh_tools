@@ -64,13 +64,6 @@
 #include <memory>
 #include <vector>
 
-namespace Ogre
-{
-// Forward declaration
-class SceneNode;
-class Mesh;
-}  // End namespace Ogre
-
 namespace rviz_map_plugin
 {
 /**

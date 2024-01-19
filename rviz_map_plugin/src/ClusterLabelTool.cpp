@@ -61,7 +61,7 @@
 
 #include <OGRE/OgreColourValue.h>
 
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 PLUGINLIB_EXPORT_CLASS(rviz_map_plugin::ClusterLabelTool, rviz::Tool)
 
 using std::ifstream;

@@ -49,6 +49,7 @@
 
 #include <rviz/display_context.h>
 
+#include <OGRE/Ogre.h>
 #include <OGRE/OgreEntity.h>
 #include <OGRE/OgreMaterialManager.h>
 #include <OGRE/OgreMesh.h>
