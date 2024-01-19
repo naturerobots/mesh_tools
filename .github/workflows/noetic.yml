@@ -1,7 +1,16 @@
 name: Noetic CI
-
-on: [push, pull_request]
-
+on:
+  push:
+    branches:
+      - 'master'
+      - 'noetic'
+  pull_request:
+    branches:
+      - 'master'
+      - 'noetic'
+  workflow_dispatch:
+    branches:
+      - '*'
 jobs:
   industrial_ci:
     strategy:
@@ -9,7 +18,7 @@ jobs:
         env:
           - {ROS_DISTRO: noetic, ROS_REPO: testing}
           - {ROS_DISTRO: noetic, ROS_REPO: main}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
         with:
