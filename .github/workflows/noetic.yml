@@ -2,11 +2,11 @@ name: Noetic CI
 on:
   push:
     branches:
-      - 'main'
+      - 'master'
       - 'noetic'
   pull_request:
     branches:
-      - 'main'
+      - 'master'
       - 'noetic'
   workflow_dispatch:
     branches:
