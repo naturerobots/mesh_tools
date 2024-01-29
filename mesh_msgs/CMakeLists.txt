@@ -46,7 +46,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
     std_msgs
     geometry_msgs
     sensor_msgs
-  ADD_LINTER_TESTS
 )
 
 ament_export_dependencies(rosidl_default_runtime)
