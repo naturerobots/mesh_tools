@@ -32,6 +32,7 @@
   <depend>message_filters</depend>
   <depend>ocl-icd-opencl-dev</depend>
   <depend>opencl-headers</depend>
+  <depend>freeimage</depend>
   
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>
