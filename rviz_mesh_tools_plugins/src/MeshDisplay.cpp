@@ -319,6 +319,7 @@ void MeshDisplay::subscribe()
     auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
     rmw_qos_profile_t qos = rmw_qos_profile_default;
+    qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
     qos.depth = 1;
     m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), qos);
     qos.depth = 1;
