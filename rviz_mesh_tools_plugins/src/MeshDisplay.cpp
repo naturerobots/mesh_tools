@@ -265,8 +265,8 @@ void MeshDisplay::onInitialize()
 
   // Initialize service clients
   m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
-  m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
-  m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
+  m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
+  m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
   m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
   m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
 
