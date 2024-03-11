@@ -340,20 +340,10 @@ void MeshDisplay::subscribe()
     if (!m_vertexColorsTopic->isEmpty()) {
       qos.depth = 1;
       m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
-      m_tfVertexColorsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexColorsStamped> >(
-          *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-          node);
-      m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
-      m_tfVertexColorsFilter->registerCallback(std::bind(&MeshDisplay::incomingVertexColors, this, _1));
     }
     if (!m_vertexCostsTopic->isEmpty()) {
       qos.depth = 4;
       m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
-      m_tfVertexCostsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexCostsStamped> >(
-          *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-          node);
-      m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
-      m_tfVertexCostsFilter->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
     }
 
     setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
