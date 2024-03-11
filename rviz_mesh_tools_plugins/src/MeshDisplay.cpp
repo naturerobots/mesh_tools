@@ -663,6 +663,7 @@ void MeshDisplay::updateVertexColorsTopic()
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
   rmw_qos_profile_t qos = rmw_qos_profile_default;
+  qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
   qos.depth = 1;
   m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
   m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
@@ -677,6 +678,7 @@ void MeshDisplay::updateVertexCostsTopic()
   auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
   rmw_qos_profile_t qos = rmw_qos_profile_default;
+  qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
   qos.depth = 4;
   m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
   m_costsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
