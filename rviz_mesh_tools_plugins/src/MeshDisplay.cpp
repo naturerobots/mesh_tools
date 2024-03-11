@@ -237,43 +237,27 @@ MeshDisplay::~MeshDisplay()
 
 void MeshDisplay::onInitialize()
 {
-  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  rviz_common::Display::onInitialize();
 
   m_meshTopic->initialize(context_->getRosNodeAbstraction());
+  m_vertexColorsTopic->initialize(context_->getRosNodeAbstraction());
+  m_vertexCostsTopic->initialize(context_->getRosNodeAbstraction());
 
-  m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(
-      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 2,
-      node);
-  m_tfMeshFilter->connectInput(m_meshSubscriber);
-  // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfMeshFilter, this);
-
-  m_tfVertexColorsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexColorsStamped> >(
-      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-      node);
-  m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
-  // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexColorsFilter, this);
-
-  m_tfVertexCostsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexCostsStamped> >(
-      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-      node);
-  m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
-  // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexCostsFilter, this);
-
-  m_meshSynchronizer = nullptr;
-  m_colorsSynchronizer = nullptr;
-  m_costsSynchronizer = nullptr;
+  //m_meshSynchronizer = nullptr;
+  //m_colorsSynchronizer = nullptr;
+  //m_costsSynchronizer = nullptr;
 
   // Initialize service clients
-  m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
-  m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
-  m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
-  m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
-  m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
+  //m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  //m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
+  //m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
+  //m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
+  //m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
 
-  updateMesh();
-  updateWireframe();
-  updateNormals();
-  updateTopic();
+  //updateMesh();
+  //updateWireframe();
+  //updateNormals();
+  //updateTopic();
 
   // rviz_common::Display::onInitialize();
 }
@@ -314,6 +298,11 @@ void MeshDisplay::subscribe()
     return;
   }
 
+  if (m_meshTopic->isEmpty()) {
+    setStatus(rviz_common::properties::StatusProperty::Error, "Topic", QString("Error subscribing: Empty mesh topic name"));
+    return;
+  }
+
   try
   {
     auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
@@ -322,10 +311,31 @@ void MeshDisplay::subscribe()
     qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
     qos.depth = 1;
     m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), qos);
-    qos.depth = 1;
-    m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
-    qos.depth = 4;
-    m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
+    m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(
+        *context_->getFrameManager()->getTransformer(), fixed_frame_.toStdString(), 2,
+        node);
+    m_tfMeshFilter->connectInput(m_meshSubscriber);
+    m_tfMeshFilter->registerCallback(std::bind(&MeshDisplay::incomingGeometry, this, _1));
+
+    if (!m_vertexColorsTopic->isEmpty()) {
+      qos.depth = 1;
+      m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
+      m_tfVertexColorsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexColorsStamped> >(
+          *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
+          node);
+      m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
+      m_tfVertexColorsFilter->registerCallback(std::bind(&MeshDisplay::incomingVertexColors, this, _1));
+    }
+    if (!m_vertexCostsTopic->isEmpty()) {
+      qos.depth = 4;
+      m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
+      m_tfVertexCostsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexCostsStamped> >(
+          *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
+          node);
+      m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
+      m_tfVertexCostsFilter->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
+    }
+
     setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
   }
   catch (std::runtime_error& e)
@@ -340,6 +350,7 @@ void MeshDisplay::subscribe()
   }
   else
   {
+    // TODO what is their purpose?
     m_meshSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshGeometryStamped>(m_meshSubscriber, 10);
     m_meshSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingGeometry, this, _1));
 
