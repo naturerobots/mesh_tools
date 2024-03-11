@@ -155,22 +155,26 @@ public:
   /**
    * @brief RViz callback on enable
    */
-  void onEnable();
+  void onEnable() override;
 
   /**
    * @brief RViz callback on disable
    */
-  void onDisable();
+  void onDisable() override;
 
   /**
    * @brief Set the topics to subscribe.
    */
   void subscribe();
 
+  void reset() override;
+
   /**
    * @brief Unsubscribes all topics.
    */
   void unsubscribe();
+
+  void fixedFrameChanged() override;
 
   /**
    * @brief disables visualization of incoming messages

@@ -264,6 +264,7 @@ void MeshDisplay::onInitialize()
 
 void MeshDisplay::onEnable()
 {
+  rviz_common::Display::onEnable();
   m_messagesReceived = 0;
   
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
@@ -273,21 +274,40 @@ void MeshDisplay::onEnable()
   }
 
   subscribe();
-  updateMesh();
-  updateWireframe();
-  updateNormals();
+  //updateMesh();
+  //updateWireframe();
+  //updateNormals();
 
-  rviz_common::Display::onEnable();
 }
 
 void MeshDisplay::onDisable()
 {
-  unsubscribe();
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
 
   if(visual)
   {
     visual->hide();
+  }
+
+  unsubscribe();
+  reset();
+}
+
+void MeshDisplay::fixedFrameChanged()
+{
+  if (m_tfMeshFilter) 
+  {
+    m_tfMeshFilter->setTargetFrame(fixed_frame_.toStdString());
+    // TODO update existing visual? or delete visual in reset? (former is better I think)
+  }
+  reset();
+}
+
+void MeshDisplay::reset()
+{
+  Display::reset();
+  if (m_tfMeshFilter) {
+    m_tfMeshFilter->clear();
   }
 }
 
