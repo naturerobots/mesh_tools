@@ -73,7 +73,6 @@
 
 #include <rviz_common/viewport_mouse_event.hpp>
 #include <rviz_common/visualization_manager.hpp>
-
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/display.hpp>
@@ -236,6 +235,7 @@ public:
   void setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation);
 
 private Q_SLOTS:
+  void transformerChangedCallback();
 
   /**
    * @brief Updates the buffer size
@@ -289,11 +289,6 @@ private Q_SLOTS:
    * @brief Updates the subscribed vertex costs topic.
    */
   void updateVertexCostsSubscription();
-
-  /**
-   * @brief Updates the subscribed topic.
-   */
-  void updateTopic();
 
   /**
    * @brief Updates the vertex color service.
@@ -372,14 +367,6 @@ private:
 
   /// if set to true, ignore incoming messages and do not use services to request materials
   bool m_ignoreMsgs;
-
-
-  // TODO: use this instead: 
-  // ros_integration::RosNodeAbstractionIface::WeakPtr m_node;
-  // from
-  // #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
-  // std::shared_ptr<rclcpp::Node> m_node;
-
 
   /// Client to request the vertex colors
   rclcpp::Client<mesh_msgs::srv::GetVertexColors>::SharedPtr m_vertexColorClient;

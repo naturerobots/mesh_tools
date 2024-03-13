@@ -254,6 +254,12 @@ void MeshDisplay::onInitialize()
 {
   rviz_common::Display::onInitialize();
 
+  connect(
+    reinterpret_cast<QObject *>(context_->getTransformationManager()),
+    SIGNAL(transformerChanged(std::shared_ptr<rviz_common::transformation::FrameTransformer>)),
+    this,
+    SLOT(transformerChangedCallback()));
+
   m_meshTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexColorsTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexCostsTopic->initialize(context_->getRosNodeAbstraction());
@@ -292,6 +298,11 @@ void MeshDisplay::onDisable()
   reset();
 }
 
+void MeshDisplay::transformerChangedCallback()
+{
+  updateMeshGeometrySubscription();
+}
+
 void MeshDisplay::fixedFrameChanged()
 {
   if (m_tfMeshFilter) 
@@ -316,7 +327,6 @@ void MeshDisplay::updateMeshGeometrySubscription()
     setStatus(rviz_common::properties::StatusProperty::Error, "Topic", QString("Error subscribing: Empty mesh topic name"));
     return;
   }
-
   try
   {
     auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
@@ -326,8 +336,8 @@ void MeshDisplay::updateMeshGeometrySubscription()
     m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(m_meshSubscriber,
         *context_->getFrameManager()->getTransformer(), fixed_frame_.toStdString(), 2,
         node);
-    m_tfMeshFilter->registerCallback(std::bind(&MeshDisplay::meshGeometryCallback, this, _1));
     m_tfMeshFilter->connectInput(m_meshSubscriber);
+    m_tfMeshFilter->registerCallback(std::bind(&MeshDisplay::meshGeometryCallback, this, _1));
 
     setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
   }
@@ -507,6 +517,10 @@ void MeshDisplay::updateDisplayType()
       {
         m_vertexColorsTopic->show();
         m_vertexColorServiceName->show();
+        if (!m_colorsMsgCache) // checks whether we are not subscribed yet, avoids resetting the subscription when something else changes in the display type
+        {
+          updateVertexColorsSubscription();
+        }
       }
       break;
     case display_type_option.textures:
@@ -522,6 +536,10 @@ void MeshDisplay::updateDisplayType()
       if (!m_ignoreMsgs)
       {
         m_vertexCostsTopic->show();
+        if (!m_costsMsgCache) // checks whether we are not subscribed yet, avoids resetting the subscription when something else changes in the display type
+        {
+          updateVertexCostsSubscription();
+        }
       }
       m_selectVertexCostMap->show();
       m_costUseCustomLimits->show();
@@ -795,7 +813,6 @@ void MeshDisplay::initialServiceCall()
 void MeshDisplay::processMessage(
   const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
-  // std::cout << "GOT MESH GEOMETRY MSG. UUID: " << meshMsg.uuid << std::endl;
   if (m_ignoreMsgs)
   {
     return;
@@ -854,7 +871,7 @@ void MeshDisplay::processMessage(
   }
   setVertexNormals(normals);
 
-  // TODO
+  // TODO service stuff
   // std::cout << "requestVertexColors" << std::endl;
   // requestVertexColors(meshMsg.uuid);
   // std::cout << "requestMaterials" << std::endl;
@@ -870,7 +887,7 @@ void MeshDisplay::meshGeometryCallback(
   processMessage(*meshMsg);
 
   // check for cached color and cost msgs that might have arrived earlier:
-  if (m_colorsMsgCache && m_colorsMsgCache->getOldestTime().seconds() != 0.0) { 
+  if (m_colorsMsgCache && m_colorsMsgCache->getOldestTime().seconds() != 0.0) {
     // TODO: The check with getOldestTime() is a workaround to avoid segfault from bug in getSurroundingInterval() when cache is empty. 
     // Remove when the changes from https://github.com/ros2/message_filters/pull/116 are released.
     const auto colorMsgs = m_colorsMsgCache->getSurroundingInterval(meshMsg->header.stamp, meshMsg->header.stamp);
@@ -878,12 +895,26 @@ void MeshDisplay::meshGeometryCallback(
     for (const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorMsg : colorMsgs) {
       if (colorMsg->uuid == meshMsg->uuid) {
         RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached color msg with matching UUID, applying its information now");
+        vertexColorsCallback(colorMsg);
       } else {
         RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached color msg, but UUIDs do not match. Ignoring color msg.");
       }
     }
   }
-  // TODO same for cost msgs
+  if (m_costsMsgCache && m_costsMsgCache->getOldestTime().seconds() != 0.0) {
+    // TODO: The check with getOldestTime() is a workaround to avoid segfault from bug in getSurroundingInterval() when cache is empty. 
+    // Remove when the changes from https://github.com/ros2/message_filters/pull/116 are released.
+    const auto costMsgs = m_costsMsgCache->getSurroundingInterval(meshMsg->header.stamp, meshMsg->header.stamp);
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << costMsgs.size() << " cost msgs from cache");
+    for (const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costMsg : costMsgs) {
+      if (costMsg->uuid == meshMsg->uuid) {
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached cost msg with matching UUID, applying its information now");
+        vertexCostsCallback(costMsg);
+      } else {
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached cost msg, but UUIDs do not match. Ignoring cost msg.");
+      }
+    }
+  }
 }
 
 void MeshDisplay::vertexColorsCallback(
