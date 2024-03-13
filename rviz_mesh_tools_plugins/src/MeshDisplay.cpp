@@ -308,7 +308,6 @@ void MeshDisplay::fixedFrameChanged()
   if (m_tfMeshFilter) 
   {
     m_tfMeshFilter->setTargetFrame(fixed_frame_.toStdString());
-    // TODO update existing visual? or delete visual in reset? (former is better I think)
   }
   reset();
 }
@@ -319,6 +318,7 @@ void MeshDisplay::reset()
   if (m_tfMeshFilter) {
     m_tfMeshFilter->clear();
   }
+  std::queue<std::shared_ptr<MeshVisual>>().swap(m_visuals); // clear visuals
 }
 
 void MeshDisplay::updateMeshGeometrySubscription()
