@@ -86,20 +86,37 @@ using namespace std::chrono_literals;
 using std::placeholders::_1;
 using std::placeholders::_2;
 
+namespace {
+  constexpr struct {
+    const int fixed_color = 0;
+    const int vertex_color = 1;
+    const int textures = 2;
+    const int vertex_costs = 3;
+    const int hide_faces = 4;
+  } display_type_option;
+}
+
 namespace rviz_mesh_tools_plugins
 {
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
-, m_meshSynchronizer(nullptr)
-, m_colorsSynchronizer(nullptr)
-, m_costsSynchronizer(nullptr)
+, m_qos({
+    RMW_QOS_POLICY_HISTORY_KEEP_LAST,
+    1,
+    RMW_QOS_POLICY_RELIABILITY_RELIABLE,
+    RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
+    RMW_QOS_DEADLINE_DEFAULT,
+    RMW_QOS_LIFESPAN_DEFAULT,
+    RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
+    RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
+    false
+  })
 {
-  std::cout << "Create RosTopic property" << std::endl;
   // mesh topic
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
       "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
-      "Geometry topic to subscribe to.", this, SLOT(updateTopic()), this);
+      "Geometry topic to subscribe to.", this, SLOT(updateMeshGeometrySubscription()), this);
 
   // buffer size / amount of meshes visualized
   m_bufferSize = new rviz_common::properties::IntProperty("Buffer Size", 1, "Number of meshes visualized", this, SLOT(updateBufferSize()));
@@ -108,22 +125,22 @@ MeshDisplay::MeshDisplay()
   // Display Type
   {
     m_displayType = new rviz_common::properties::EnumProperty("Display Type", "Fixed Color", "Select Display Type for Mesh", this,
-                                           SLOT(updateMesh()), this);
-    m_displayType->addOption("Fixed Color", 0);
-    m_displayType->addOption("Vertex Color", 1);
-    m_displayType->addOption("Textures", 2);
-    m_displayType->addOption("Vertex Costs", 3);
-    m_displayType->addOption("Hide Faces", 4);
+                                           SLOT(updateDisplayType()), this);
+    m_displayType->addOption("Fixed Color", display_type_option.fixed_color);
+    m_displayType->addOption("Vertex Color", display_type_option.vertex_color);
+    m_displayType->addOption("Textures", display_type_option.textures);
+    m_displayType->addOption("Vertex Costs", display_type_option.vertex_costs);
+    m_displayType->addOption("Hide Faces", display_type_option.hide_faces);
 
     // Fixed Color
     {
       // face color properties
       m_facesColor = new rviz_common::properties::ColorProperty("Faces Color", QColor(0, 255, 0), "The color of the faces.", m_displayType,
-                                             SLOT(updateMesh()), this);
+                                             SLOT(updateMeshMaterial()), this);
 
       // face alpha properties
       m_facesAlpha = new rviz_common::properties::FloatProperty("Faces Alpha", 1.0, "The alpha-value of the faces", m_displayType,
-                                             SLOT(updateMesh()), this);
+                                             SLOT(updateMeshMaterial()), this);
       m_facesAlpha->setMin(0);
       m_facesAlpha->setMax(1);
     }
@@ -133,7 +150,7 @@ MeshDisplay::MeshDisplay()
       m_vertexColorsTopic = new rviz_common::properties::RosTopicProperty(
           "Vertex Colors Topic", "",
           QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshVertexColorsStamped>()),
-          "Vertex color topic to subscribe to.", m_displayType, SLOT(updateVertexColorsTopic()), this);
+          "Vertex color topic to subscribe to.", m_displayType, SLOT(updateVertexColorsSubscription()), this);
 
       m_vertexColorServiceName = new rviz_common::properties::StringProperty("Vertex Color Service Name", "get_vertex_colors",
                                                           "Name of the Vertex Color Service to request Vertex Colors "
@@ -144,7 +161,7 @@ MeshDisplay::MeshDisplay()
     // Textures
     {
       m_showTexturedFacesOnly = new rviz_common::properties::BoolProperty("Show textured faces only", false, "Show textured faces only",
-                                                       m_displayType, SLOT(updateMesh()), this);
+                                                       m_displayType, SLOT(updateMeshMaterial()), this);
 
       m_materialServiceName = new rviz_common::properties::StringProperty("Material Service Name", "get_materials",
                                                        "Name of the Matrial Service to request Materials from.",
@@ -169,7 +186,7 @@ MeshDisplay::MeshDisplay()
       m_vertexCostsTopic = new rviz_common::properties::RosTopicProperty(
           "Vertex Costs Topic", "",
           QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshVertexCostsStamped>()),
-          "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateVertexCostsTopic()), this);
+          "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateVertexCostsSubscription()), this);
 
       m_selectVertexCostMap = new rviz_common::properties::EnumProperty("Vertex Costs Type", "-- None --",
                                                      "Select the type of vertex cost map to be displayed. New types "
@@ -184,13 +201,11 @@ MeshDisplay::MeshDisplay()
       {
         m_costLowerLimit = new rviz_common::properties::FloatProperty("Vertex Costs Lower Limit", 0.0, "Vertex costs lower limit",
                                                    m_costUseCustomLimits, SLOT(updateVertexCosts()), this);
-        m_costLowerLimit->hide();
-
         m_costUpperLimit = new rviz_common::properties::FloatProperty("Vertex Costs Upper Limit", 1.0, "Vertex costs upper limit",
                                                    m_costUseCustomLimits, SLOT(updateVertexCosts()), this);
-        m_costUpperLimit->hide();
       }
     }
+    updateDisplayType(); // ensures that DisplayType children are correctly hidden / visible for the chosen default option
   }
 
   // Wireframe
@@ -237,49 +252,29 @@ MeshDisplay::~MeshDisplay()
 
 void MeshDisplay::onInitialize()
 {
-  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+  rviz_common::Display::onInitialize();
+
+  connect(
+    reinterpret_cast<QObject *>(context_->getTransformationManager()),
+    SIGNAL(transformerChanged(std::shared_ptr<rviz_common::transformation::FrameTransformer>)),
+    this,
+    SLOT(transformerChangedCallback()));
 
   m_meshTopic->initialize(context_->getRosNodeAbstraction());
-
-  m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(
-      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 2,
-      node);
-  m_tfMeshFilter->connectInput(m_meshSubscriber);
-  // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfMeshFilter, this);
-
-  m_tfVertexColorsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexColorsStamped> >(
-      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-      node);
-  m_tfVertexColorsFilter->connectInput(m_vertexColorsSubscriber);
-  // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexColorsFilter, this);
-
-  m_tfVertexCostsFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshVertexCostsStamped> >(
-      *context_->getFrameManager()->getTransformer(), rviz_common::Display::fixed_frame_.toStdString(), 10,
-      node);
-  m_tfVertexCostsFilter->connectInput(m_vertexCostsSubscriber);
-  // context_->getFrameManager()->registerFilterForTransformStatusCheck(m_tfVertexCostsFilter, this);
-
-  m_meshSynchronizer = nullptr;
-  m_colorsSynchronizer = nullptr;
-  m_costsSynchronizer = nullptr;
+  m_vertexColorsTopic->initialize(context_->getRosNodeAbstraction());
+  m_vertexCostsTopic->initialize(context_->getRosNodeAbstraction());
 
   // Initialize service clients
-  m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
-  m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_vertexColorServiceName->getStdString());
-  m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_vertexColorServiceName->getStdString());
-  m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
-  m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
-
-  updateMesh();
-  updateWireframe();
-  updateNormals();
-  updateTopic();
-
-  // rviz_common::Display::onInitialize();
+  //m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
+  //m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
+  //m_textureClient = node->create_client<mesh_msgs::srv::GetTexture>(m_textureServiceName->getStdString());
+  //m_uuidClient = node->create_client<mesh_msgs::srv::GetUUIDs>("get_uuid");
+  //m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
 }
 
 void MeshDisplay::onEnable()
 {
+  rviz_common::Display::onEnable();
   m_messagesReceived = 0;
   
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
@@ -288,71 +283,83 @@ void MeshDisplay::onEnable()
     visual->show();
   }
 
-  subscribe();
-  updateMesh();
-  updateWireframe();
-  updateNormals();
-
-  rviz_common::Display::onEnable();
+  updateAllSubscriptions();
 }
 
 void MeshDisplay::onDisable()
 {
-  unsubscribe();
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
-
   if(visual)
   {
     visual->hide();
   }
+
+  unsubscribe();
+  reset();
 }
 
-void MeshDisplay::subscribe()
+void MeshDisplay::transformerChangedCallback()
 {
-  if (!isEnabled() || m_ignoreMsgs)
+  updateMeshGeometrySubscription();
+}
+
+void MeshDisplay::fixedFrameChanged()
+{
+  if (m_tfMeshFilter) 
   {
+    m_tfMeshFilter->setTargetFrame(fixed_frame_.toStdString());
+  }
+  reset();
+}
+
+void MeshDisplay::reset()
+{
+  Display::reset();
+  if (m_tfMeshFilter) {
+    m_tfMeshFilter->clear();
+  }
+  std::queue<std::shared_ptr<MeshVisual>>().swap(m_visuals); // clear visuals
+}
+
+void MeshDisplay::updateMeshGeometrySubscription()
+{
+  if (m_meshTopic->isEmpty()) {
+    setStatus(rviz_common::properties::StatusProperty::Error, "Topic", QString("Error subscribing: Empty mesh topic name"));
     return;
   }
-
   try
   {
     auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
-    rmw_qos_profile_t qos = rmw_qos_profile_default;
-    qos.depth = 1;
-    m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), qos);
-    qos.depth = 1;
-    m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
-    qos.depth = 4;
-    m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
+    m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), m_qos);
+
+    m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(m_meshSubscriber,
+        *context_->getFrameManager()->getTransformer(), fixed_frame_.toStdString(), 2,
+        node);
+    m_tfMeshFilter->connectInput(m_meshSubscriber);
+    m_tfMeshFilter->registerCallback(std::bind(&MeshDisplay::meshGeometryCallback, this, _1));
+
     setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", "OK");
   }
   catch (std::runtime_error& e)
   {
     setStatus(rviz_common::properties::StatusProperty::Error, "Topic", QString("Error subscribing: ") + e.what());
   }
+}
 
-  // Nothing
-  if (m_meshTopic->getTopicStd().empty())
+void MeshDisplay::updateAllSubscriptions()
+{
+  if (!isEnabled() || m_ignoreMsgs)
   {
     return;
   }
-  else
-  {
-    m_meshSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshGeometryStamped>(m_meshSubscriber, 10);
-    m_meshSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingGeometry, this, _1));
 
-    m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
-    m_colorsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexColors, this, _1));
+  updateMeshGeometrySubscription();
+  updateVertexColorsSubscription();
+  updateVertexCostsSubscription();
 
-    m_costsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
-    m_costsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
-  }
-
-  // std::cout << "initialServiceCall" << std::endl;
   // TODO
   // initialServiceCall();
-  // std::cout << "MeshDisplay::subscribe end" << std::endl;
 }
 
 void MeshDisplay::unsubscribe()
@@ -361,28 +368,16 @@ void MeshDisplay::unsubscribe()
   m_vertexColorsSubscriber.unsubscribe();
   m_vertexCostsSubscriber.unsubscribe();
 
-  if (m_meshSynchronizer)
-  {
-    delete m_meshSynchronizer;
-    m_meshSynchronizer = nullptr;
-  }
-  if (m_colorsSynchronizer)
-  {
-    delete m_colorsSynchronizer;
-    m_colorsSynchronizer = nullptr;
-  }
-  if (m_costsSynchronizer)
-  {
-    delete m_costsSynchronizer;
-    m_costsSynchronizer = nullptr;
-  }
+  m_tfMeshFilter.reset();
+  m_colorsMsgCache.reset();
+  m_costsMsgCache.reset();
 }
 
 void MeshDisplay::ignoreIncomingMessages()
 {
   m_ignoreMsgs = true;
   unsubscribe();
-  updateMesh();
+  updateMeshMaterial();
 
   // only allow one mesh to be visualized
   while (m_visuals.size() > 1)
@@ -401,7 +396,7 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
   visual->setGeometry(*geometry);
   if (isEnabled())
   {
-    updateMesh();
+    updateMeshMaterial();
     updateNormals();
     updateWireframe();
   }
@@ -415,7 +410,7 @@ void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
   {
     visual->setVertexColors(vertexColors);
   }
-  updateMesh();
+  updateMeshMaterial();
 }
 
 void MeshDisplay::clearVertexCosts()
@@ -450,7 +445,7 @@ void MeshDisplay::setMaterials(vector<Material>& materials, vector<TexCoords>& t
   {
     visual->setMaterials(materials, texCoords);
   }
-  updateMesh();
+  updateMeshMaterial();
 }
 
 void MeshDisplay::addTexture(Texture& texture, uint32_t textureIndex)
@@ -483,32 +478,9 @@ void MeshDisplay::updateBufferSize()
   }
 }
 
-void MeshDisplay::updateMesh()
+void MeshDisplay::updateDisplayType()
 {
-  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Mesh Display: Update");
-
-  bool showFaces = false;
-  bool showTextures = false;
-  bool showVertexColors = false;
-  bool showVertexCosts = false;
-
-  m_facesColor->hide();
-  m_facesAlpha->hide();
-
-  m_vertexColorsTopic->hide();
-  m_vertexColorServiceName->hide();
-
-  m_showTexturedFacesOnly->hide();
-  m_materialServiceName->hide();
-  m_textureServiceName->hide();
-
-  m_costColorType->hide();
-  m_vertexCostsTopic->hide();
-  m_selectVertexCostMap->hide();
-  m_costUseCustomLimits->hide();
-  m_costLowerLimit->hide();
-  m_costUpperLimit->hide();
-
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Update display type"); 
   if (m_ignoreMsgs)
   {
     m_meshTopic->hide();
@@ -520,26 +492,38 @@ void MeshDisplay::updateMesh()
     m_bufferSize->show();
   }
 
+  m_facesColor->hide();
+  m_facesAlpha->hide();
+  m_vertexColorsTopic->hide();
+  m_vertexColorServiceName->hide();
+  m_showTexturedFacesOnly->hide();
+  m_materialServiceName->hide();
+  m_textureServiceName->hide();
+  m_costColorType->hide();
+  m_vertexCostsTopic->hide();
+  m_selectVertexCostMap->hide();
+  m_costUseCustomLimits->hide();
+  m_costLowerLimit->hide();
+  m_costUpperLimit->hide();
   switch (m_displayType->getOptionInt())
   {
     default:
-    case 0:  // Faces with fixed color
-      showFaces = true;
+    case display_type_option.fixed_color:
       m_facesColor->show();
       m_facesAlpha->show();
       break;
-    case 1:  // Faces with vertex color
-      showFaces = true;
-      showVertexColors = true;
+    case display_type_option.vertex_color:
       if (!m_ignoreMsgs)
       {
         m_vertexColorsTopic->show();
         m_vertexColorServiceName->show();
+        if (!m_colorsMsgCache) // checks whether we are not subscribed yet, avoids resetting the subscription when something else changes in the display type
+        {
+          updateVertexColorsSubscription();
+        }
       }
       break;
-    case 2:  // Faces with textures
-      showFaces = true;
-      showTextures = true;
+    case display_type_option.textures:
       m_showTexturedFacesOnly->show();
       if (!m_ignoreMsgs)
       {
@@ -547,13 +531,15 @@ void MeshDisplay::updateMesh()
         m_textureServiceName->show();
       }
       break;
-    case 3:  // Faces with vertex costs
-      showFaces = true;
-      showVertexCosts = true;
+    case display_type_option.vertex_costs:
       m_costColorType->show();
       if (!m_ignoreMsgs)
       {
         m_vertexCostsTopic->show();
+        if (!m_costsMsgCache) // checks whether we are not subscribed yet, avoids resetting the subscription when something else changes in the display type
+        {
+          updateVertexCostsSubscription();
+        }
       }
       m_selectVertexCostMap->show();
       m_costUseCustomLimits->show();
@@ -563,23 +549,45 @@ void MeshDisplay::updateMesh()
         m_costUpperLimit->show();
       }
       break;
-    case 4:  // No Faces
+  }
+
+  updateMeshMaterial();
+}
+
+void MeshDisplay::updateMeshMaterial()
+{
+  bool showFaces = false;
+  bool showTextures = false;
+  bool showVertexColors = false;
+  bool showVertexCosts = false;
+  switch (m_displayType->getOptionInt())
+  {
+    default:
+    case display_type_option.fixed_color:
+      showFaces = true;
+      break;
+    case display_type_option.vertex_color:
+      showFaces = true;
+      showVertexColors = true;
+      break;
+    case display_type_option.textures:
+      showFaces = true;
+      showTextures = true;
+      break;
+    case display_type_option.vertex_costs:
+      showFaces = true;
+      showVertexCosts = true;
+      break;
+    case display_type_option.hide_faces:
       break;
   }
 
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
-  if (!visual)
+  if (visual)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Mesh display: no visual available, can't draw mesh! (maybe no data has been received yet?)");
-    return;
-  }
-
-  if (isEnabled())
-  {
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "update material");
+    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Updating visual's mesh material");
     visual->updateMaterial(showFaces, m_facesColor->getOgreColor(), m_facesAlpha->getFloat(), showVertexColors,
                            showVertexCosts, showTextures, m_showTexturedFacesOnly->getBool());
-    updateWireframe();
   }
 }
 
@@ -651,43 +659,41 @@ void MeshDisplay::updateVertexCosts()
       }
     }
   }
-  updateMesh();
+  updateMeshMaterial();
 }
 
-void MeshDisplay::updateVertexColorsTopic()
+void MeshDisplay::updateVertexColorsSubscription()
 {
-  m_vertexColorsSubscriber.unsubscribe();
-  delete m_colorsSynchronizer;
+  if (!m_vertexColorsTopic->getHidden())
+  {
+    if (!m_vertexColorsTopic->getTopicStd().empty()) 
+    {
+      auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+      m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), m_qos);
 
-  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-
-  rmw_qos_profile_t qos = rmw_qos_profile_default;
-  qos.depth = 1;
-  m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), qos);
-  m_colorsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>(m_vertexColorsSubscriber, 1);
-  m_colorsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexColors, this, _1));
+      m_colorsMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>>(m_vertexColorsSubscriber, 1);
+      m_colorsMsgCache->registerCallback(std::bind(&MeshDisplay::vertexColorsCallback, this, _1));
+    } else {
+      setStatus(rviz_common::properties::StatusProperty::Warn, "Topic", QString("Error subscribing: Empty color topic name"));
+    }
+  }
 }
 
-void MeshDisplay::updateVertexCostsTopic()
+void MeshDisplay::updateVertexCostsSubscription()
 {
-  m_vertexCostsSubscriber.unsubscribe();
-  delete m_costsSynchronizer;
+  if (!m_vertexCostsTopic->getHidden())
+  {
+    if (!m_vertexCostsTopic->getTopicStd().empty()) 
+    {
+      auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
+      m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), m_qos);
 
-  auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-
-  rmw_qos_profile_t qos = rmw_qos_profile_default;
-  qos.depth = 4;
-  m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), qos);
-  m_costsSynchronizer = new message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>(m_vertexCostsSubscriber, 1);
-  m_costsSynchronizer->registerCallback(std::bind(&MeshDisplay::incomingVertexCosts, this, _1));
-}
-
-void MeshDisplay::updateTopic()
-{
-  RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Visualization of mesh topics not tested!");
-  unsubscribe();
-  subscribe();
-  context_->queueRender();
+      m_costsMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>>(m_vertexCostsSubscriber, 1);
+      m_costsMsgCache->registerCallback(std::bind(&MeshDisplay::vertexCostsCallback, this, _1));
+    } else {
+      setStatus(rviz_common::properties::StatusProperty::Warn, "Topic", QString("Error subscribing: Empty cost topic name"));
+    }
+  }
 }
 
 void MeshDisplay::updateMaterialAndTextureServices()
@@ -807,7 +813,6 @@ void MeshDisplay::initialServiceCall()
 void MeshDisplay::processMessage(
   const mesh_msgs::msg::MeshGeometryStamped& meshMsg)
 {
-  // std::cout << "GOT MESH GEOMETRY MSG. UUID: " << meshMsg.uuid << std::endl;
   if (m_ignoreMsgs)
   {
     return;
@@ -866,7 +871,7 @@ void MeshDisplay::processMessage(
   }
   setVertexNormals(normals);
 
-  // TODO
+  // TODO service stuff
   // std::cout << "requestVertexColors" << std::endl;
   // requestVertexColors(meshMsg.uuid);
   // std::cout << "requestMaterials" << std::endl;
@@ -874,20 +879,50 @@ void MeshDisplay::processMessage(
   // std::cout << "done." << std::endl;
 }
 
-void MeshDisplay::incomingGeometry(
+void MeshDisplay::meshGeometryCallback(
   const mesh_msgs::msg::MeshGeometryStamped::ConstSharedPtr& meshMsg)
 {
   m_messagesReceived++;
   setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
   processMessage(*meshMsg);
+
+  // check for cached color and cost msgs that might have arrived earlier:
+  if (m_colorsMsgCache && m_colorsMsgCache->getOldestTime().seconds() != 0.0) {
+    // TODO: The check with getOldestTime() is a workaround to avoid segfault from bug in getSurroundingInterval() when cache is empty. 
+    // Remove when the changes from https://github.com/ros2/message_filters/pull/116 are released.
+    const auto colorMsgs = m_colorsMsgCache->getSurroundingInterval(meshMsg->header.stamp, meshMsg->header.stamp);
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << colorMsgs.size() << " color msgs from cache");
+    for (const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorMsg : colorMsgs) {
+      if (colorMsg->uuid == meshMsg->uuid) {
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached color msg with matching UUID, applying its information now");
+        vertexColorsCallback(colorMsg);
+      } else {
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached color msg, but UUIDs do not match. Ignoring color msg.");
+      }
+    }
+  }
+  if (m_costsMsgCache && m_costsMsgCache->getOldestTime().seconds() != 0.0) {
+    // TODO: The check with getOldestTime() is a workaround to avoid segfault from bug in getSurroundingInterval() when cache is empty. 
+    // Remove when the changes from https://github.com/ros2/message_filters/pull/116 are released.
+    const auto costMsgs = m_costsMsgCache->getSurroundingInterval(meshMsg->header.stamp, meshMsg->header.stamp);
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << costMsgs.size() << " cost msgs from cache");
+    for (const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costMsg : costMsgs) {
+      if (costMsg->uuid == meshMsg->uuid) {
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached cost msg with matching UUID, applying its information now");
+        vertexCostsCallback(costMsg);
+      } else {
+        RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached cost msg, but UUIDs do not match. Ignoring cost msg.");
+      }
+    }
+  }
 }
 
-void MeshDisplay::incomingVertexColors(
+void MeshDisplay::vertexColorsCallback(
   const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorsStamped)
 {
   if (colorsStamped->uuid.compare(m_lastUuid) != 0)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received vertex colors, but UUIDs dont match!");
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received vertex colors, but its UUID does not match the latest mesh geometry UUID. Not updating colors.");
     return;
   }
 
@@ -901,12 +936,12 @@ void MeshDisplay::incomingVertexColors(
   setVertexColors(vertexColors);
 }
 
-void MeshDisplay::incomingVertexCosts(
+void MeshDisplay::vertexCostsCallback(
   const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costsStamped)
 {
   if (costsStamped->uuid.compare(m_lastUuid) != 0)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received vertex costs, but UUIDs dont match!");
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received vertex costs, but its UUID does not match the latest mesh geometry UUID. Not updating costs.");
     return;
   }
 

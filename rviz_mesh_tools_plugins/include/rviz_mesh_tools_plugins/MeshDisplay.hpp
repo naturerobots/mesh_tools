@@ -73,7 +73,6 @@
 
 #include <rviz_common/viewport_mouse_event.hpp>
 #include <rviz_common/visualization_manager.hpp>
-
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/frame_manager_iface.hpp>
 #include <rviz_common/display.hpp>
@@ -155,17 +154,21 @@ public:
   /**
    * @brief RViz callback on enable
    */
-  void onEnable();
+  void onEnable() override;
 
   /**
    * @brief RViz callback on disable
    */
-  void onDisable();
+  void onDisable() override;
+
+  void reset() override;
+
+  void fixedFrameChanged() override;
 
   /**
-   * @brief Set the topics to subscribe.
+   * @brief Update all subscriptions. Individual subscription update function will check whether they are active. (e.g. vertex colors can also be inactive when the UI element is set to a fixed color).
    */
-  void subscribe();
+  void updateAllSubscriptions();
 
   /**
    * @brief Unsubscribes all topics.
@@ -232,6 +235,7 @@ public:
   void setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation);
 
 private Q_SLOTS:
+  void transformerChangedCallback();
 
   /**
    * @brief Updates the buffer size
@@ -239,9 +243,14 @@ private Q_SLOTS:
   void updateBufferSize();
 
   /**
-   * @brief Updates the mesh
+   * @brief Updates the mesh material (how faces are colored)
    */
-  void updateMesh();
+  void updateMeshMaterial();
+
+  /**
+   * @brief Updates UI elements that change the mesh display type
+   */
+  void updateDisplayType();
 
   /**
    * @brief Updates the mesh wireframe
@@ -268,20 +277,18 @@ private Q_SLOTS:
    */
   void updateVertexCosts();
 
+  //! Updates the subscription for getting the mesh geometry
+  void updateMeshGeometrySubscription();
+
   /**
    * @brief Updates the subscribed vertex colors topic.
    */
-  void updateVertexColorsTopic();
+  void updateVertexColorsSubscription();
 
   /**
    * @brief Updates the subscribed vertex costs topic.
    */
-  void updateVertexCostsTopic();
-
-  /**
-   * @brief Updates the subscribed topic.
-   */
-  void updateTopic();
+  void updateVertexCostsSubscription();
 
   /**
    * @brief Updates the vertex color service.
@@ -314,19 +321,19 @@ private:
    * @brief Handler for incoming geometry messages. Validate data and update mesh
    * @param meshMsg The geometry
    */
-  void incomingGeometry(const mesh_msgs::msg::MeshGeometryStamped::ConstSharedPtr& meshMsg);
+  void meshGeometryCallback(const mesh_msgs::msg::MeshGeometryStamped::ConstSharedPtr& meshMsg);
 
   /**
    * @brief Handler for incoming vertex color messages. Validate data and update mesh
    * @param colorsStamped The vertex colors
    */
-  void incomingVertexColors(const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorsStamped);
+  void vertexColorsCallback(const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorsStamped);
 
   /**
    * @brief Handler for incoming vertex cost messages. Validate data and update mesh
    * @param costsStamped The vertex costs
    */
-  void incomingVertexCosts(const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costsStamped);
+  void vertexCostsCallback(const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costsStamped);
 
   /**
    * @brief Requests vertex colors from the specified service
@@ -361,68 +368,40 @@ private:
   /// if set to true, ignore incoming messages and do not use services to request materials
   bool m_ignoreMsgs;
 
-
-  // TODO: use this instead: 
-  // ros_integration::RosNodeAbstractionIface::WeakPtr m_node;
-  // from
-  // #include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
-  // std::shared_ptr<rclcpp::Node> m_node;
-
-
   /// Client to request the vertex colors
   rclcpp::Client<mesh_msgs::srv::GetVertexColors>::SharedPtr m_vertexColorClient;
-
   /// Client to request the materials
   rclcpp::Client<mesh_msgs::srv::GetMaterials>::SharedPtr m_materialsClient;
-
   /// Client to request the textures
   rclcpp::Client<mesh_msgs::srv::GetTexture>::SharedPtr m_textureClient;
-
   /// Client to request the UUID
   rclcpp::Client<mesh_msgs::srv::GetUUIDs>::SharedPtr m_uuidClient;
-
   /// Client to request the geometry
   rclcpp::Client<mesh_msgs::srv::GetGeometry>::SharedPtr m_geometryClient;
 
   /// Subscriber for meshMsg
   message_filters::Subscriber<mesh_msgs::msg::MeshGeometryStamped> m_meshSubscriber;
-
   /// Subscriber for vertex colors
   message_filters::Subscriber<mesh_msgs::msg::MeshVertexColorsStamped> m_vertexColorsSubscriber;
-
   /// Subscriber for vertex costs
   message_filters::Subscriber<mesh_msgs::msg::MeshVertexCostsStamped> m_vertexCostsSubscriber;
 
-  /// Messagefilter for meshMsg
-  
-  
-
-
+  /// TF2 message filter for incoming mesh data. Ensures we only process meshes for which a suitable TF is available
   tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshGeometryStamped> m_tfMeshFilter;
 
-  /// Messagefilter for vertex colors
-  tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshVertexColorsStamped> m_tfVertexColorsFilter;
-
-  /// Messagefilter for vertex costs
-  tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshVertexCostsStamped> m_tfVertexCostsFilter;
-
-  /// Synchronizer for meshMsgs
-  message_filters::Cache<mesh_msgs::msg::MeshGeometryStamped>* m_meshSynchronizer;
-
-  /// Synchronizer for vertex colors
-  message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>* m_colorsSynchronizer;
-
-  /// Synchronizer for vertex costs
-  message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>* m_costsSynchronizer;
+  /// Cache for vertex colors, useful for when color information arrives before the mesh geometry
+  std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>> m_colorsMsgCache;
+  /// Cache for vertex costs, useful for when cost information arrives before the mesh geometry
+  std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>> m_costsMsgCache;
 
   /// Counter for the received messages
   uint32_t m_messagesReceived;
-
   /// Uuid of the last received message
   std::string m_lastUuid;
-
   /// Visual data
   std::queue<std::shared_ptr<MeshVisual>> m_visuals;
+
+  // ================= UI members =================
 
   /// Property to handle topic for meshMsg
   rviz_common::properties::RosTopicProperty* m_meshTopic;
@@ -495,6 +474,8 @@ private:
 
   /// Cache for received vertex cost messages
   std::map<std::string, std::vector<float>> m_costCache;
+
+  const rmw_qos_profile_t m_qos;
 };
 
 }  // end namespace rviz_mesh_tools_plugins
