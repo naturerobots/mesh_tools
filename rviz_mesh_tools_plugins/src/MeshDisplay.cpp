@@ -887,11 +887,9 @@ void MeshDisplay::meshGeometryCallback(
   processMessage(*meshMsg);
 
   // check for cached color and cost msgs that might have arrived earlier:
-  if (m_colorsMsgCache && m_colorsMsgCache->getOldestTime().seconds() != 0.0) {
-    // TODO: The check with getOldestTime() is a workaround to avoid segfault from bug in getSurroundingInterval() when cache is empty. 
-    // Remove when the changes from https://github.com/ros2/message_filters/pull/116 are released.
-    const auto colorMsgs = m_colorsMsgCache->getSurroundingInterval(meshMsg->header.stamp, meshMsg->header.stamp);
-    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << colorMsgs.size() << " color msgs from cache");
+  if (m_colorsMsgCache) {
+    const auto colorMsgs = m_colorsMsgCache->getInterval(meshMsg->header.stamp, meshMsg->header.stamp); // get msgs where header.stamp match exactly (this should usually be only one msg)
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << colorMsgs.size() << " color msgs from cache with header.stamp=" << rclcpp::Time(meshMsg->header.stamp).seconds());
     for (const mesh_msgs::msg::MeshVertexColorsStamped::ConstSharedPtr& colorMsg : colorMsgs) {
       if (colorMsg->uuid == meshMsg->uuid) {
         RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached color msg with matching UUID, applying its information now");
@@ -901,11 +899,9 @@ void MeshDisplay::meshGeometryCallback(
       }
     }
   }
-  if (m_costsMsgCache && m_costsMsgCache->getOldestTime().seconds() != 0.0) {
-    // TODO: The check with getOldestTime() is a workaround to avoid segfault from bug in getSurroundingInterval() when cache is empty. 
-    // Remove when the changes from https://github.com/ros2/message_filters/pull/116 are released.
-    const auto costMsgs = m_costsMsgCache->getSurroundingInterval(meshMsg->header.stamp, meshMsg->header.stamp);
-    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << costMsgs.size() << " cost msgs from cache");
+  if (m_costsMsgCache) {
+    const auto costMsgs = m_costsMsgCache->getInterval(meshMsg->header.stamp, meshMsg->header.stamp); // get msgs where header.stamp match exactly (this should usually be only one msg)
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << costMsgs.size() << " cost msgs from cache with header.stamp=" << rclcpp::Time(meshMsg->header.stamp).seconds());
     for (const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costMsg : costMsgs) {
       if (costMsg->uuid == meshMsg->uuid) {
         RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached cost msg with matching UUID, applying its information now");
