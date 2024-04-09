@@ -73,6 +73,7 @@
 #include <rviz_common/properties/float_property.hpp>
 #include <rviz_common/properties/int_property.hpp>
 #include <rviz_common/properties/ros_topic_property.hpp>
+#include <rviz_common/properties/qos_profile_property.hpp>
 #include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/properties/string_property.hpp>
 
@@ -101,7 +102,14 @@ namespace rviz_mesh_tools_plugins
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
-, m_qos({
+, m_qos(5)
+{
+  // mesh topic
+  m_meshTopic = new rviz_common::properties::RosTopicProperty(
+      "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
+      "Geometry topic to subscribe to.", this, SLOT(updateMeshGeometrySubscription()), this);
+
+  rmw_qos_profile_t rmw_qos = {
     RMW_QOS_POLICY_HISTORY_KEEP_LAST,
     1,
     RMW_QOS_POLICY_RELIABILITY_RELIABLE,
@@ -111,12 +119,10 @@ MeshDisplay::MeshDisplay()
     RMW_QOS_POLICY_LIVELINESS_SYSTEM_DEFAULT,
     RMW_QOS_LIVELINESS_LEASE_DURATION_DEFAULT,
     false
-  })
-{
-  // mesh topic
-  m_meshTopic = new rviz_common::properties::RosTopicProperty(
-      "Geometry Topic", "", QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshGeometryStamped>()),
-      "Geometry topic to subscribe to.", this, SLOT(updateMeshGeometrySubscription()), this);
+  };
+
+  m_qos = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos), rmw_qos);
+  m_meshTopicQos = new rviz_common::properties::QosProfileProperty(m_meshTopic, m_qos);
 
   // buffer size / amount of meshes visualized
   m_bufferSize = new rviz_common::properties::IntProperty("Buffer Size", 1, "Number of meshes visualized", this, SLOT(updateBufferSize()));
@@ -264,6 +270,12 @@ void MeshDisplay::onInitialize()
   m_vertexColorsTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexCostsTopic->initialize(context_->getRosNodeAbstraction());
 
+  m_meshTopicQos->initialize(
+      [this](rclcpp::QoS profile) {
+        m_qos = profile;
+        updateAllSubscriptions();
+      });
+
   // Initialize service clients
   //m_vertexColorClient = node->create_client<mesh_msgs::srv::GetVertexColors>(m_vertexColorServiceName->getStdString());
   //m_materialsClient = node->create_client<mesh_msgs::srv::GetMaterials>(m_materialServiceName->getStdString());
@@ -331,7 +343,7 @@ void MeshDisplay::updateMeshGeometrySubscription()
   {
     auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
 
-    m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), m_qos);
+    m_meshSubscriber.subscribe(node, m_meshTopic->getTopicStd(), m_qos.get_rmw_qos_profile());
 
     m_tfMeshFilter = std::make_shared<tf2_ros::RVizMessageFilter<mesh_msgs::msg::MeshGeometryStamped> >(m_meshSubscriber,
         *context_->getFrameManager()->getTransformer(), fixed_frame_.toStdString(), 2,
@@ -669,7 +681,7 @@ void MeshDisplay::updateVertexColorsSubscription()
     if (!m_vertexColorsTopic->getTopicStd().empty()) 
     {
       auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-      m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), m_qos);
+      m_vertexColorsSubscriber.subscribe(node, m_vertexColorsTopic->getTopicStd(), m_qos.get_rmw_qos_profile());
 
       m_colorsMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>>(m_vertexColorsSubscriber, 1);
       m_colorsMsgCache->registerCallback(std::bind(&MeshDisplay::vertexColorsCallback, this, _1));
@@ -686,7 +698,7 @@ void MeshDisplay::updateVertexCostsSubscription()
     if (!m_vertexCostsTopic->getTopicStd().empty()) 
     {
       auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
-      m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), m_qos);
+      m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), m_qos.get_rmw_qos_profile());
 
       m_costsMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>>(m_vertexCostsSubscriber, 1);
       m_costsMsgCache->registerCallback(std::bind(&MeshDisplay::vertexCostsCallback, this, _1));

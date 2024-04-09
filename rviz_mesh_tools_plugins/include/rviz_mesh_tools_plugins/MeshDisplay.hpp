@@ -115,6 +115,7 @@ class ColorProperty;
 class FloatProperty;
 class IntProperty;
 class RosTopicProperty;
+class QosProfileProperty;
 class EnumProperty;
 class StringProperty;
 } // end namespace properties
@@ -405,6 +406,7 @@ private:
 
   /// Property to handle topic for meshMsg
   rviz_common::properties::RosTopicProperty* m_meshTopic;
+  rviz_common::properties::QosProfileProperty* m_meshTopicQos;
 
   /// Property to handle buffer size
   rviz_common::properties::IntProperty* m_bufferSize;
@@ -475,7 +477,8 @@ private:
   /// Cache for received vertex cost messages
   std::map<std::string, std::vector<float>> m_costCache;
 
-  const rmw_qos_profile_t m_qos;
+  // const rmw_qos_profile_t m_qos;
+  rclcpp::QoS m_qos;
 };
 
 }  // end namespace rviz_mesh_tools_plugins
