@@ -97,14 +97,14 @@ Ogre::ColourValue getRainbowColor1(float value)
 }
 
 MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, size_t meshID, size_t randomID)
-  : m_displayContext(context)
-  , m_prefix(displayID)
-  , m_postfix(meshID)
-  , m_random(randomID)
-  , m_vertex_normals_enabled(false)
+  : m_vertex_normals_enabled(false)
   , m_vertex_colors_enabled(false)
   , m_materials_enabled(false)
   , m_texture_coords_enabled(false)
+  , m_displayContext(context)
+  , m_prefix(displayID)
+  , m_postfix(meshID)
+  , m_random(randomID)
   , m_normalsScalingFactor(1)
 {
   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Creating MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
@@ -267,13 +267,13 @@ void MeshVisual::reset()
     Ogre::MaterialManager::getSingleton().remove(textureMaterial);
   }
 
-  if (!m_noTexCluMaterial.isNull())
+  if (m_noTexCluMaterial)
   {
     m_noTexCluMaterial->unload();
     Ogre::MaterialManager::getSingleton().remove(m_noTexCluMaterial);
   }
 
-  if (!m_vertexCostMaterial.isNull())
+  if (m_vertexCostMaterial)
   {
     m_vertexCostMaterial->unload();
     Ogre::MaterialManager::getSingleton().remove(m_vertexCostMaterial);
@@ -287,11 +287,11 @@ void MeshVisual::reset()
   sstm.str("");
   sstm.flush();
 
-  m_meshGeneralMaterial.setNull();
-  m_normalMaterial.setNull();
-  m_noTexCluMaterial.setNull();
+  m_meshGeneralMaterial.reset();
+  m_normalMaterial.reset();
+  m_noTexCluMaterial.reset();
   m_textureMaterials.clear();
-  m_vertexCostMaterial.setNull();
+  m_vertexCostMaterial.reset();
 
   m_images.clear();
 
@@ -453,7 +453,7 @@ void MeshVisual::updateMaterial(
   bool showTexturedFacesOnly)
 {
   // remove the faces pass
-  if (!m_meshGeneralMaterial.isNull())
+  if (m_meshGeneralMaterial)
   {
     Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
     if (tech->getPass("faces") != 0)
@@ -468,7 +468,7 @@ void MeshVisual::updateMaterial(
 
   // if the material exists and the textures are not enabled
   // we can use the general mesh with the m_meshGeneralMaterial
-  if (!m_meshGeneralMaterial.isNull() && !showTextures && !showVertexCosts)
+  if (m_meshGeneralMaterial && !showTextures && !showVertexCosts)
   {
     if (showFaces)
     {
@@ -509,12 +509,12 @@ void MeshVisual::updateMaterial(
   float normalsAlpha, float normalsScalingFactor)
 {
   // remove all passes
-  if (!m_meshGeneralMaterial.isNull())
+  if (m_meshGeneralMaterial)
   {
     m_meshGeneralMaterial->getTechnique(0)->removeAllPasses();
   }
 
-  if (!m_normalMaterial.isNull())
+  if (m_normalMaterial)
   {
     m_normalMaterial->getTechnique(0)->removeAllPasses();
   }
@@ -525,7 +525,7 @@ void MeshVisual::updateMaterial(
 
   // if the material exists and the textures are not enabled
   // we can use the general mesh with the m_meshGeneralMaterial
-  if (!m_meshGeneralMaterial.isNull() && !showTextures && !showVertexCosts)
+  if (m_meshGeneralMaterial && !showTextures && !showVertexCosts)
   {
     Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
 
@@ -556,7 +556,7 @@ void MeshVisual::updateMaterial(
     this->showWireframe(tech->createPass(), wireframeColor, wireframeAlpha);
   }
 
-  if (!m_normalMaterial.isNull())
+  if (m_normalMaterial)
   {
     if (showNormals)
     {
@@ -575,7 +575,7 @@ void MeshVisual::updateNormals(float scalingFactor)
 
 void MeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor, float normalsAlpha)
 {
-  if (!m_normalMaterial.isNull())
+  if (m_normalMaterial)
   {
     m_normalMaterial->getTechnique(0)->removeAllPasses();
 
@@ -596,7 +596,7 @@ void MeshVisual::updateNormals(bool showNormals, Ogre::ColourValue normalsColor,
 
 void MeshVisual::updateWireframe(bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha)
 {
-  if (!m_meshGeneralMaterial.isNull())
+  if (m_meshGeneralMaterial)
   {
     Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
 
@@ -648,7 +648,7 @@ void MeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
 
 void MeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors)
 {
-  if (m_meshGeneralMaterial.isNull())
+  if (!m_meshGeneralMaterial)
   {
     std::stringstream sstm;
     sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
@@ -711,7 +711,7 @@ void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const
     return;
   }
 
-  if (m_vertexCostMaterial.isNull())
+  if (!m_vertexCostMaterial)
   {
     std::stringstream sstm;
     sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "VertexCostMaterial_";
@@ -777,8 +777,6 @@ void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector
   m_noTexCluMesh->begin(m_noTexCluMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
   size_t noTexCluVertexCount = 0;
-
-  size_t materialIndex = 0;
 
   for (auto& material : materials)
   {
@@ -848,7 +846,6 @@ void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector
       // write vertices for each triangle to enable a coloring for each triangle
       // write triangle colors as vertex colours
 
-      size_t triangleVertexCount = 0;
       for (size_t i = 0; i < material.faceIndices.size(); i++)
       {
         uint32_t faceIndex = material.faceIndices[i];
@@ -881,7 +878,7 @@ void MeshVisual::enteringNormals(const Geometry& mesh, const vector<Normal>& nor
   }
 
   std::stringstream sstm;
-  if(m_normalMaterial.isNull())
+  if(!m_normalMaterial)
   {
     sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "NormalMaterial";
     
@@ -1066,7 +1063,7 @@ bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costC
 bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords)
 {
   // check if there is a material index for each cluster
-  if (materials.size() >= 0)
+  if (materials.size() > 0)
   {
     RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received %lu materials.", materials.size());
     m_materials_enabled = true;  // enable materials
@@ -1149,7 +1146,7 @@ void MeshVisual::loadImageIntoTextureMaterial(size_t textureIndex)
 
   Ogre::Pass* pass = m_textureMaterials[textureIndex]->getTechnique(0)->getPass(0);
   pass->removeAllTextureUnitStates();
-  pass->createTextureUnitState()->addFrameTextureName(textureNameStream.str());
+  pass->createTextureUnitState()->setTextureName(textureNameStream.str());
 }
 
 Ogre::ColourValue MeshVisual::calculateColorFromCost(float cost, int costColorType)
