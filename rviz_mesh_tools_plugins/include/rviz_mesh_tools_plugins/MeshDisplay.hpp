@@ -404,9 +404,10 @@ private:
 
   // ================= UI members =================
 
-  /// Property to handle topic for meshMsg
+  /// Properties to handle topic for meshMsg
   rviz_common::properties::RosTopicProperty* m_meshTopic;
   rviz_common::properties::QosProfileProperty* m_meshTopicQos;
+  rclcpp::QoS m_meshQos;
 
   /// Property to handle buffer size
   rviz_common::properties::IntProperty* m_bufferSize;
@@ -420,8 +421,10 @@ private:
   /// Property to set faces transparency
   rviz_common::properties::FloatProperty* m_facesAlpha;
 
-  /// Property to handle topic for vertex colors
+  /// Properties to handle topic for vertex colors
   rviz_common::properties::RosTopicProperty* m_vertexColorsTopic;
+  rviz_common::properties::QosProfileProperty* m_vertexColorsTopicQos;
+  rclcpp::QoS m_vertexColorsQos;
 
   /// Property to handle service name for vertexColors
   rviz_common::properties::StringProperty* m_vertexColorServiceName;
@@ -438,8 +441,10 @@ private:
   /// Property for selecting the color type for cost display
   rviz_common::properties::EnumProperty* m_costColorType;
 
-  /// Property to handle topic for vertex cost maps
+  /// Properties to handle topic for vertex cost maps
   rviz_common::properties::RosTopicProperty* m_vertexCostsTopic;
+  rviz_common::properties::QosProfileProperty* m_vertexCostsTopicQos;
+  rclcpp::QoS m_vertexCostsQos;
 
   /// Property to select different types of vertex cost maps to be shown
   rviz_common::properties::EnumProperty* m_selectVertexCostMap;
@@ -476,9 +481,6 @@ private:
 
   /// Cache for received vertex cost messages
   std::map<std::string, std::vector<float>> m_costCache;
-
-  // const rmw_qos_profile_t m_qos;
-  rclcpp::QoS m_qos;
 };
 
 }  // end namespace rviz_mesh_tools_plugins
