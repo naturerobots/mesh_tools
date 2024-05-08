@@ -1,3 +1,6 @@
+This is the active ROS2 branch of this repository.
+If your are looking for the old ROS1 version, checkout the [noetic branch](https://github.com/naturerobots/mesh_tools/tree/noetic).
+
 # Mesh Tools
 
 We introduce a set of tools to make 3D environment mesh representations
