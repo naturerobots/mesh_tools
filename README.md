@@ -1,3 +1,7 @@
+This branch preserves the latest ROS1 (`noetic`) state.
+It is not longer actively developed.
+For the latest version, check out one of the ROS2 branches.
+
 # Mesh Tools
 
 We introduce a set of tools to make 3D environment mesh representations
