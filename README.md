@@ -1,6 +1,6 @@
 This branch preserves the latest ROS1 (`noetic`) state.
 It is not longer actively developed.
-For the latest version, check out one of the ROS2 branches.
+For the latest code state (ROS2), check out the [active branch](https://github.com/naturerobots/mesh_tools).
 
 # Mesh Tools
 
