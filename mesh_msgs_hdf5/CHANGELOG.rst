@@ -2,6 +2,10 @@
 Changelog for package mesh_msgs_hdf5
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.0 (2024-05-15)
+------------------
+* port package to ROS2
+
 1.1.0 (2021-10-27)
 ------------------
 * added publishing of mesh_msgs to mesh_msgs_hdf5 package
