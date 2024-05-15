@@ -1,0 +1,25 @@
+name: Humble CI
+on:
+  push:
+    branches:
+      - 'humble'
+  pull_request:
+    branches:
+      - 'humble'
+  workflow_dispatch:
+    branches:
+      - '*'
+jobs:
+  build_and_test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ros-tooling/setup-ros@0.7
+        with:
+          required-ros-distributions: humble
+      - uses: ros-tooling/action-ros-ci@v0.3
+    with:
+      package-name: my_package
+      target-ros2-distro: humble
+      vcs-repo-file-url: $GITHUB_WORKSPACE/source_dependencies.yaml
+      rosdep-check: true
