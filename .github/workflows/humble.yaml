@@ -19,7 +19,6 @@ jobs:
           required-ros-distributions: humble
       - uses: ros-tooling/action-ros-ci@0.3.12
         with:
-          package-name: my_package
           target-ros2-distro: humble
           vcs-repo-file-url: $GITHUB_WORKSPACE/source_dependencies.yaml
-          rosdep-check: tru              
+          rosdep-check: true
