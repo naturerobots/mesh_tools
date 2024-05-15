@@ -1,4 +1,6 @@
-This is the active ROS2 branch of this repository.
+This is the active ROS2 branch of this repository, which targets [ROS2 humble](https://docs.ros.org/en/humble/index.html).
+Our CI runs on Ubuntu Jammy (22.04), but other distros might work as well.
+
 If your are looking for the old ROS1 version, checkout the [noetic branch](https://github.com/naturerobots/mesh_tools/tree/noetic).
 
 # Mesh Tools
