@@ -18,8 +18,8 @@ jobs:
         with:
           required-ros-distributions: humble
       - uses: ros-tooling/action-ros-ci@v0.3
-    with:
-      package-name: my_package
-      target-ros2-distro: humble
-      vcs-repo-file-url: $GITHUB_WORKSPACE/source_dependencies.yaml
-      rosdep-check: true
+        with:
+          package-name: my_package
+          target-ros2-distro: humble
+          vcs-repo-file-url: $GITHUB_WORKSPACE/source_dependencies.yaml
+          rosdep-check: true
