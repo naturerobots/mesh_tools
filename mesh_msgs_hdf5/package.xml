@@ -2,9 +2,11 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mesh_msgs_hdf5</name>
-  <version>1.1.0</version>
+  <version>2.0.0</version>
   <description>Read mesh_msgs from hdf5</description>
-  <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
+  <maintainer email="amock@uos.de">Alexander Mock</maintainer>
+  <maintainer email="matthias.holoch@naturerobots.com">Matthias Holoch</maintainer>
+  <maintainer email="sebastian.puetz@naturerobots.com">Sebastian Pütz</maintainer>
   <url type="website">http://wiki.ros.org/ros_mesh_tools/mesh_msgs_hdf5</url>
   <license>BSD-3</license>
   <author email="spuetz@uos.de">Sebastian Pütz</author>

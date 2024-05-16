@@ -2,6 +2,11 @@
 Changelog for package rviz_mesh_tools_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.0 (2024-05-15)
+------------------
+* port package to ROS2
+* MeshVisual: Add texture support for maps loaded with assimp
+
 1.1.0 (2021-10-27)
 ------------------
 * fixed GetUUIDs service call in MeshDisplay
