@@ -64,6 +64,9 @@
   #include <assimp/Importer.hpp>
   #include <assimp/postprocess.h>
   #include <assimp/scene.h>
+  #include <OgreImage.h>
+  #include <OgreDataStream.h>
+  #include <fstream>
 #endif
 
 namespace rviz_map_plugin
@@ -408,38 +411,192 @@ bool MapDisplay::loadData()
       // with aiProcess_PreTransformVertices assimp transforms the whole scene graph
       // into one mesh
       // - if you want to use TF for spawning meshes, the loading has to be done manually
-      const aiScene* ascene = io.ReadFile(mapFile, aiProcess_PreTransformVertices);
-      // what if there is more than one mesh?
-      const aiMesh* amesh = ascene->mMeshes[0];
-
-      const aiVector3D* ai_vertices = amesh->mVertices;
-      const aiFace* ai_faces = amesh->mFaces;
+      const aiScene* ascene = io.ReadFile(mapFile, aiProcess_PreTransformVertices | aiProcess_Triangulate | aiProcess_SortByPType);
+      if (!ascene) {
+        ROS_ERROR_STREAM("Map Display: Error while loading map: " << io.GetErrorString());
+        setStatus(rviz::StatusProperty::Error, "IO", io.GetErrorString());
+        return false;
+      }
 
       m_geometry = std::make_shared<Geometry>();
+      m_normals.clear();
+      m_colors.clear();
+      m_texCoords.clear();
+      m_textures.clear();
+      m_materials.clear();
+      m_materials.resize(ascene->mNumMaterials);
+      int numTextures = 0;
 
-      m_geometry->vertices.resize(amesh->mNumVertices);
-      m_geometry->faces.resize(amesh->mNumFaces);
-
-      for (int i = 0; i < amesh->mNumVertices; i++)
+      // load all meshes into one geometry
+      for (unsigned int meshIdx = 0; meshIdx < ascene->mNumMeshes; meshIdx++)
       {
-        m_geometry->vertices[i].x = amesh->mVertices[i].x;
-        m_geometry->vertices[i].y = amesh->mVertices[i].y;
-        m_geometry->vertices[i].z = amesh->mVertices[i].z;
+        const aiMesh* amesh = ascene->mMeshes[meshIdx];
+
+        // skip non-triangle meshes
+        if (amesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE)
+        {
+          ROS_ERROR_STREAM("Map Display: Mesh " << meshIdx << " is not a triangle mesh! Skipping...");
+          continue;
+        }
+
+        // save old vector sizes
+        unsigned int numVertices = m_geometry->vertices.size();
+        unsigned int numFaces = m_geometry->faces.size();
+
+        m_geometry->vertices.resize(numVertices + amesh->mNumVertices);
+        m_geometry->faces.resize(numFaces + amesh->mNumFaces);
+
+      ROS_INFO_STREAM("- Vertices, Faces: " << amesh->mNumVertices << ", " << amesh->mNumFaces);
+
+      for (unsigned int i = 0; i < amesh->mNumVertices; i++)
+      {
+        m_geometry->vertices[numVertices + i].x = amesh->mVertices[i].x;
+        m_geometry->vertices[numVertices + i].y = amesh->mVertices[i].y;
+        m_geometry->vertices[numVertices + i].z = amesh->mVertices[i].z;
       }
 
-      for (int i = 0; i < amesh->mNumFaces; i++)
+      for (unsigned int i = 0; i < amesh->mNumFaces; i++)
       {
-        m_geometry->faces[i].vertexIndices[0] = amesh->mFaces[i].mIndices[0];
-        m_geometry->faces[i].vertexIndices[1] = amesh->mFaces[i].mIndices[1];
-        m_geometry->faces[i].vertexIndices[2] = amesh->mFaces[i].mIndices[2];
+        m_geometry->faces[numFaces + i].vertexIndices[0] = numVertices + amesh->mFaces[i].mIndices[0];
+        m_geometry->faces[numFaces + i].vertexIndices[1] = numVertices + amesh->mFaces[i].mIndices[1];
+        m_geometry->faces[numFaces + i].vertexIndices[2] = numVertices + amesh->mFaces[i].mIndices[2];
       }
+
+      m_normals.resize(numVertices + amesh->mNumVertices, Normal(0.0, 0.0, 0.0));
+      if(amesh->HasNormals())
+      {
+        for(unsigned int i=0; i<amesh->mNumVertices; i++)
+        {
+          m_normals[numVertices + i].x = amesh->mNormals[i].x;
+          m_normals[numVertices + i].y = amesh->mNormals[i].y;
+          m_normals[numVertices + i].z = amesh->mNormals[i].z;
+        }
+      }
+
+      // assimp supports more color channels but not this plugin
+      // can we support this too?
+      m_colors.resize(numVertices + amesh->mNumVertices, Color(1.0, 1.0, 1.0, 1.0));
+      int color_channel_id = 0;
+      if(amesh->HasVertexColors(color_channel_id))
+      {
+        for(unsigned int i=0; i<amesh->mNumVertices; i++)
+        {
+          m_colors[numVertices + i].r = amesh->mColors[color_channel_id][i].r;
+          m_colors[numVertices + i].g = amesh->mColors[color_channel_id][i].g;
+          m_colors[numVertices + i].b = amesh->mColors[color_channel_id][i].b;
+          m_colors[numVertices + i].a = amesh->mColors[color_channel_id][i].a;
+        }
+      }
+
+        // store texture coordinates
+        m_texCoords.resize(numVertices + amesh->mNumVertices, TexCoords(0.0, 0.0));
+        if (amesh->HasTextureCoords(0))
+        {
+          for (unsigned int i = 0; i < amesh->mNumVertices; i++)
+          {
+            m_texCoords[numVertices + i].u = amesh->mTextureCoords[0][i].x;
+            m_texCoords[numVertices + i].v = amesh->mTextureCoords[0][i].y;
+          }
+        }
+
+        if (ascene->HasMaterials())
+        {
+          // load material
+          aiMaterial* material = ascene->mMaterials[amesh->mMaterialIndex];
+          
+          aiColor3D color;
+          material->Get(AI_MATKEY_COLOR_DIFFUSE, color);
+
+          // store material and adjacent faces
+          m_materials[amesh->mMaterialIndex].color.r = color.r;
+          m_materials[amesh->mMaterialIndex].color.g = color.g;
+          m_materials[amesh->mMaterialIndex].color.b = color.b;
+          m_materials[amesh->mMaterialIndex].color.a = 1.0f;
+
+          m_materials[amesh->mMaterialIndex].faceIndices.resize(amesh->mNumFaces);
+          std::iota(m_materials[amesh->mMaterialIndex].faceIndices.begin(), m_materials[amesh->mMaterialIndex].faceIndices.end(), numFaces);
+
+          m_materials[amesh->mMaterialIndex].textureIndex = boost::none;
+
+          // load textures from file
+          aiString textureFile;
+          if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+          {
+            material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFile);
+            
+            // get current file path
+            boost::filesystem::path mapFilePath(mapFile);
+            boost::filesystem::path texturePath = mapFilePath.parent_path() / textureFile.C_Str();
+
+            // If the texture image doesn't exist then try the next most likely path
+            if (!boost::filesystem::exists(texturePath))
+            {
+              texturePath = mapFilePath.parent_path() / "../materials/textures" / textureFile.C_Str();
+              if (!boost::filesystem::exists(texturePath))
+              {
+                ROS_ERROR_STREAM("Texture: " << texturePath.c_str() << " could not be found!");
+                continue;
+              }
+            }
+
+            std::ifstream ifs(texturePath.c_str(), std::ios::binary|std::ios::in);
+            if (ifs.is_open())
+            {
+              Ogre::FileStreamDataStream* file_stream = new Ogre::FileStreamDataStream(texturePath.c_str(), &ifs, false);
+              Ogre::DataStreamPtr data_stream(file_stream);
+              Ogre::Image img;
+              auto textureExt = texturePath.extension().string();
+              img.load(data_stream, textureExt.substr(1, textureExt.size() - 1));
+
+              m_textures.push_back(Texture());
+              m_textures[numTextures].width = img.getWidth();
+              m_textures[numTextures].height = img.getHeight();
+              m_textures[numTextures].channels = 3;
+              m_textures[numTextures].data.resize(img.getWidth() * img.getHeight() * m_textures[numTextures].channels);
+              m_textures[numTextures].pixelFormat = "rgb8";
+
+              // scale image in order to get the right pixel format
+              Ogre::PixelBox pb(img.getWidth(), img.getHeight(), img.getDepth(), Ogre::PF_BYTE_RGB, img.getData());
+              Ogre::Image::scale(img.getPixelBox(), pb);
+              uchar* pixelData = static_cast<uchar*>(pb.data);
+              unsigned int indexData = 0;
+              for (unsigned int y = 0; y < pb.getHeight(); y++)
+              {
+                for (unsigned int x = 0; x < pb.getWidth(); x++)
+                {
+                  unsigned int indexPData = y * pb.rowPitch * 3 + x * 3;
+                  m_textures[numTextures].data[indexData++] = pixelData[indexPData + 0];
+                  m_textures[numTextures].data[indexData++] = pixelData[indexPData + 1];
+                  m_textures[numTextures].data[indexData++] = pixelData[indexPData + 2];
+                }
+              }
+
+              m_materials[amesh->mMaterialIndex].textureIndex = numTextures++;
+            }
+            else
+            {
+              ROS_ERROR_STREAM("Texture: " << texturePath.c_str() << " could not be opened!");
+            }
+
+            ifs.close();
+          }
+        }
+      }
+
+      // delete texCoords if there are no textures
+      if (m_textures.empty())
+      {
+        m_texCoords.clear();
+      }
+
+      m_costs.clear();
     }
-    #endif // defined(WITH_ASSIMP)
+    #endif
   }
   catch (...)
   {
-    ROS_ERROR_STREAM("An unexpected error occurred while using Pluto Map IO");
-    setStatus(rviz::StatusProperty::Error, "IO", "An unexpected error occurred while using Pluto Map IO");
+    ROS_ERROR_STREAM("An unexpected error occurred while loading map");
+    setStatus(rviz::StatusProperty::Error, "IO", "An unexpected error occurred while loading map.");
     return false;
   }
 
