@@ -93,11 +93,7 @@ triangles and assign semantic labels to them. Some screenshots and videos demons
 The *TexturedMesh* displays a mesh with optional a fixed color, textures, vertex colors or vertex costs. Additionally, it can display the wire-frame as well as the vertex normals of the mesh. The *MeshGoal Tool* provides the possibility to select a *geometry_msgs/PoseStamped* on the surface of the mesh. 
 
 ### RViz Map Plugin
-The *Mesh Display* displays labeled faces. 
-
-Currently not available in ROS2 humble:
-
-The *ClusterLabel Display* displays labeled clusters. The *ClusterLabel Tool* enables the labeling of certain faces using different selection and de-selection methods as shown in a video (see Supplementary Material. The *ClusterLabel Panel* allows to manage your clusters and label names as well as the corresponding colors.
+The *Mesh Display* displays labeled faces. The *ClusterLabel Display* displays labeled clusters. The *ClusterLabel Tool* enables the labeling of certain faces using different selection and de-selection methods as shown in a video (see Supplementary Material. The *ClusterLabel Panel* allows to manage your clusters and label names as well as the corresponding colors.
 
 # Videos
 
