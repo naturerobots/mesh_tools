@@ -35,6 +35,33 @@ However, to make the maps accessible in ROS, corresponding message
 definitions and tools for storing, handling and editing such maps are
 required.
 
+### Citation
+
+Please reference the following papers when using mesh_tools in your scientific work.
+
+```latex
+@inproceedings{putz2019ecmr,
+  title={{Tools for visualizing, annotating and storing triangle meshes in ROS and RViz}},
+  author={P{\"u}tz, Sebastian and Wiemann, Thomas and Hertzberg, Joachim},
+  booktitle={2019 European Conference on Mobile Robots (ECMR)},
+  pages={1--6},
+  year={2019},
+  organization={IEEE}
+}
+```
+
+```latex
+@article{putz2021ras,
+  title = {{The Mesh Tools Package – Introducing Annotated 3D Triangle Maps in ROS}},
+  journal = {Robotics and Autonomous Systems},
+  volume = {138},
+  pages = {103688},
+  year = {2021},
+  doi = {https://doi.org/10.1016/j.robot.2020.103688},
+  author = {P{\"u}tz, Sebastian and Wiemann, Thomas and Hertzberg, Joachim},
+}
+```
+
 ## Message Definitions
 
 We divided the mesh structure in its geometry, textures and cost layers. These different components are then associated using a UUID. This structure enables passing the geometry at first to RViz and other nodes. Theses nodes may analyze the geometry, e.g the roughness or height difference and compute corresponding mesh cost layers which are published as individual message with a corresponding mesh UUID. Thereby other nodes can associate these layers with a certain mesh object. In RViz a certain layer can then be selected by the user and visualized coloring the corresponding costs or displaying the textures. In the following gives an overview on most important mesh messages:
@@ -66,7 +93,11 @@ triangles and assign semantic labels to them. Some screenshots and videos demons
 The *TexturedMesh* displays a mesh with optional a fixed color, textures, vertex colors or vertex costs. Additionally, it can display the wire-frame as well as the vertex normals of the mesh. The *MeshGoal Tool* provides the possibility to select a *geometry_msgs/PoseStamped* on the surface of the mesh. 
 
 ### RViz Map Plugin
-The *Mesh Display* displays labeled faces. The *ClusterLabel Display* displays labeled clusters. The *ClusterLabel Tool* enables the labeling of certain faces using different selection and de-selection methods as shown in a video (see Supplementary Material. The *ClusterLanel Panel* allows to manage your clusters and label names as well as the corresponding colors.
+The *Mesh Display* displays labeled faces. 
+
+Currently not available in ROS2 humble:
+
+The *ClusterLabel Display* displays labeled clusters. The *ClusterLabel Tool* enables the labeling of certain faces using different selection and de-selection methods as shown in a video (see Supplementary Material. The *ClusterLabel Panel* allows to manage your clusters and label names as well as the corresponding colors.
 
 # Videos
 
