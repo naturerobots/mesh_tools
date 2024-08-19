@@ -912,7 +912,7 @@ bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costC
 bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords)
 {
   // check if there is a material index for each cluster
-  if (materials.size() >= 0)
+  if (materials.size() > 0)
   {
     ROS_INFO("Received %lu materials.", materials.size());
     m_materials_enabled = true;  // enable materials
@@ -995,7 +995,7 @@ void MeshVisual::loadImageIntoTextureMaterial(size_t textureIndex)
 
   Ogre::Pass* pass = m_textureMaterials[textureIndex]->getTechnique(0)->getPass(0);
   pass->removeAllTextureUnitStates();
-  pass->createTextureUnitState()->addFrameTextureName(textureNameStream.str());
+  pass->createTextureUnitState()->setTextureName(textureNameStream.str());
 }
 
 Ogre::ColourValue MeshVisual::calculateColorFromCost(float cost, int costColorType)
