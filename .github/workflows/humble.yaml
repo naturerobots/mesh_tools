@@ -1,24 +1,15 @@
-name: Humble CI
+name: Humble CI - Build and Test
+
 on:
   push:
     branches:
       - 'humble'
   pull_request:
-    branches:
-      - 'humble'
   workflow_dispatch:
     branches:
       - '*'
+
 jobs:
   build_and_test:
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ros-tooling/setup-ros@0.7.4
-        with:
-          required-ros-distributions: humble
-      - uses: ros-tooling/action-ros-ci@0.3.12
-        with:
-          target-ros2-distro: humble
-          vcs-repo-file-url: $GITHUB_WORKSPACE/source_dependencies.yaml
-          rosdep-check: true
+    uses: naturerobots/github_automation_public/.github/workflows/humble_ci.yaml@main
+    secrets: inherit
