@@ -23,15 +23,10 @@ find_package(PkgConfig REQUIRED)
 
 add_definitions(${LVR2_DEFINITIONS} ${OpenCV_DEFINITIONS})
 
-
-find_library(LVR2_LIBRARY NAMES lvr2)
-
 # enable openmp support
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
   ${LVR2_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
@@ -41,8 +36,8 @@ add_library(${PROJECT_NAME}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-  "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-  "$<INSTALL_INTERFACE:include>")
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
   ${LVR2_LIBRARY}

@@ -35,13 +35,13 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include <lvr2/geometry/BaseVector.hpp>
-#include <lvr2/io/PointBuffer.hpp>
-#include <lvr2/io/MeshBuffer.hpp>
+#include <lvr2/types/PointBuffer.hpp>
+#include <lvr2/types/MeshBuffer.hpp>
 #include <lvr2/geometry/BaseMesh.hpp>
 #include <lvr2/attrmaps/AttrMaps.hpp>
 
-#include <lvr2/io/Model.hpp>
-#include <lvr2/io/PLYIO.hpp>
+#include <lvr2/types/Model.hpp>
+// #include <lvr2/io/PLYIO.hpp>
 #include <lvr2/io/DataStruct.hpp>
 #include <lvr2/io/ModelFactory.hpp>
 

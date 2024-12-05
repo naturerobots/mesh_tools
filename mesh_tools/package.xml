@@ -14,13 +14,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>hdf5_map_io</exec_depend>
-
-  <!-- <exec_depend>mesh_msgs</exec_depend> -->
-  <!-- <exec_depend>mesh_msgs_transform</exec_depend> -->
-  <!-- <exec_depend>mesh_msgs_conversions</exec_depend> -->
-  <!-- <exec_depend>rviz_map_plugin</exec_depend> -->
-  <!-- <exec_depend>label_manager</exec_depend> -->
+  <exec_depend>mesh_msgs</exec_depend>
+  <exec_depend>mesh_msgs_transform</exec_depend>
+  <exec_depend>mesh_msgs_conversions</exec_depend>
+  <exec_depend>rviz_mesh_tools_plugins</exec_depend>
   
   <export>
     <build_type>ament_cmake</build_type>
