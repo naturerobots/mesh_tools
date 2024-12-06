@@ -72,11 +72,28 @@
 
 #include <lvr2/io/deprecated/hdf5/MeshIO.hpp>
 
+#include <unordered_set>
+
 
 using HDF5MeshIO = lvr2::Hdf5Build<lvr2::hdf5features::MeshIO>;
 
 namespace rviz_mesh_tools_plugins
 {
+
+template<typename T>
+std::vector<T> copy_1d_channel_to_vector(const lvr2::Channel<T>& lvr_channel)
+{
+    if(lvr_channel.width() != 1)
+    {
+        throw std::runtime_error("channel is not 1d!");
+    }
+    std::vector<T> ret(lvr_channel.numElements());
+    for(size_t i=0; i<lvr_channel.numElements(); i++)
+    {
+        ret[i] = lvr_channel[i][0];
+    }
+    return ret;
+}
 
 MapDisplay::MapDisplay()
 :m_clusterLabelDisplay(nullptr)
@@ -374,17 +391,31 @@ bool MapDisplay::loadData()
       auto hdf5_mesh_io = std::make_shared<HDF5MeshIO>();
 
       hdf5_mesh_io->open(mapFile);
-      // hdf5_mesh_io->setMeshName("mesh"); // TODO: dynamic
+      auto mesh_buffer = hdf5_mesh_io->MeshIO::load("mesh"); // TODO dynamic
 
-      auto mesh_buffer = hdf5_mesh_io->MeshIO::load("mesh");
-
+      // the mesh buffer is a map from a string to a Channel
+      // example:
+      // "vertices" -> Channel<float>
       std::cout << *mesh_buffer << std::endl;
 
-      
+      // "mesh_navigatio_tutorials/maps/floor_is_lava.h5"
+      // [ VariantChannelMap ]
+      // vertex_normals: type: float, size: [8100,3]
+      // vertices: type: float, size: [8100,3]
+      // roughness: type: float, size: [8100,1]
+      // height_diff: type: float, size: [8100,1]
+      // freespace: type: float, size: [8100,1]
+      // face_indices: type: unsigned int, size: [15960,3]
+      // edge_distances_idx: type: unsigned int, size: [24059,1]
+      // edge_distances: type: float, size: [24059,1]
+      // border: type: float, size: [8100,1]
+      // face_normals: type: float, size: [15960,3]
+      // average_angles: type: float, size: [8100,1]
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load geometry");
-      m_geometry = std::make_shared<Geometry>();
 
+      // Read geometry
+      m_geometry = std::make_shared<Geometry>();
       { // fill
         lvr2::Channel<float> lvr_vertices = *mesh_buffer->getChannel<float>("vertices");
         
@@ -407,35 +438,13 @@ bool MapDisplay::loadData()
         }
       }
 
-      // Read vertex normals
-      // vector<float> normals = map_io.getVertexNormals();
-      m_normals.clear();
-      auto lvr2_vertex_normals_opt = mesh_buffer->getChannel<float>("vertex_normals");
-      if(lvr2_vertex_normals_opt)
-      {
-        lvr2::Channel<float> lvr2_vertex_normals = *lvr2_vertex_normals_opt;
-        m_normals.reserve(lvr2_vertex_normals.numElements());
-        for (size_t i = 0; i < lvr2_vertex_normals.numElements(); i++)
-        {
-          m_normals.push_back(Normal(lvr2_vertex_normals[i][0], lvr2_vertex_normals[i][1], lvr2_vertex_normals[i][2]));
-        }
-      }
-
-
-
-
-      /// OLD
-     
-      // // Open file IO
-      // hdf5_map_io::HDF5MapIO map_io(mapFile);
-
-      // Read geometry
-
-      // m_geometry = std::make_shared<Geometry>(Geometry(map_io.getVertices(), map_io.getFaceIds()));
+      // TODO: Read textures/materials is missing
+      // Description:
+      // the old code was including loading texutures. However this was never tested for ROS 2 nor do we have any h5 files 
+      // to test this (only h5 files with vertex colors). Therefore I removed it until we have a working test case.
 
       // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load textures");
 
-      // // Read textures
       // vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
       // m_textures.resize(textures.size());
       // for (size_t i = 0; i < textures.size(); i++)
@@ -485,29 +494,48 @@ bool MapDisplay::loadData()
       //   m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
       // }
 
-      // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex colors");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex colors");
 
-      // // Read vertex colors
-      // vector<uint8_t> colors = map_io.getVertexColors();
-      // m_colors.clear();
-      // m_colors.reserve(colors.size() / 3);
-      // for (size_t i = 0; i < colors.size(); i += 3)
-      // {
-      //   // convert from 0-255 (uint8) to 0.0-1.0 (float)
-      //   m_colors.push_back(Color(colors[i + 0] / 255.0f, colors[i + 1] / 255.0f, colors[i + 2] / 255.0f, 1.0));
-      // }
+      // Read vertex colors
+      m_colors.clear();
+      if(auto lvr2_vertex_colors_opt = mesh_buffer->getChannel<unsigned char>("vertex_colors"))
+      {
+        lvr2::Channel<unsigned char> lvr_vertex_colors = *lvr2_vertex_colors_opt;
+        m_colors.resize(lvr_vertex_colors.numElements());
+        const bool has_alpha = lvr_vertex_colors.width() > 3;
+        for (size_t i = 0; i < lvr_vertex_colors.numElements(); i ++)
+        {
+          // convert from 0-255 (uint8) to 0.0-1.0 (float)
+          m_colors[i].r = lvr_vertex_colors[i][0] / 255.0f;
+          m_colors[i].g = lvr_vertex_colors[i][1] / 255.0f;
+          m_colors[i].b = lvr_vertex_colors[i][2] / 255.0f;
+          if(has_alpha)
+          {
+            m_colors[i].a = lvr_vertex_colors[i][3] / 255.0f;
+          } else {
+            m_colors[i].a = 1.0;
+          }
+        }
+      }
 
-      // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex normals");
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex normals");
 
       // Read vertex normals
-      // vector<float> normals = map_io.getVertexNormals();
-      // m_normals.clear();
-      // m_normals.reserve(normals.size() / 3);
-      // for (size_t i = 0; i < normals.size(); i += 3)
-      // {
-      //   m_normals.push_back(Normal(normals[i + 0], normals[i + 1], normals[i + 2]));
-      // }
+      m_normals.clear();
+      if(auto lvr2_vertex_normals_opt = mesh_buffer->getChannel<float>("vertex_normals"))
+      {
+        lvr2::Channel<float> lvr2_vertex_normals = *lvr2_vertex_normals_opt;
+        m_normals.reserve(lvr2_vertex_normals.numElements());
+        for (size_t i = 0; i < lvr2_vertex_normals.numElements(); i++)
+        {
+          m_normals.push_back(Normal(
+            lvr2_vertex_normals[i][0],
+            lvr2_vertex_normals[i][1],
+            lvr2_vertex_normals[i][2]));
+        }
+      }
 
+      // Same problem as above: This is a piece of code we cannot test. Therefore I removed it.
       // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load texture coordinates");
 
       // // Read tex cords
@@ -521,6 +549,7 @@ bool MapDisplay::loadData()
 
       // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load clusters");
 
+      // Same problem as above: This is a piece of code we cannot test. Therefore I removed it.
       // // Read labels
       // m_clusterList.clear();
       // // m_clusterList.push_back(Cluster("__NEW__", vector<uint32_t>()));
@@ -538,18 +567,27 @@ bool MapDisplay::loadData()
       //   }
       // }
 
-      // m_costs.clear();
-      // for (std::string costlayer : map_io.getCostLayers())
-      // {
-      //     try
-      //     {
-      //         m_costs[costlayer] = map_io.getVertexCosts(costlayer);
-      //     }
-      //     catch (const hf::DataSpaceException& e)
-      //     {
-      //         RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not load channel " << costlayer << " as a costlayer!");
-      //     }
-      // }
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load costs");
+      std::unordered_set<std::string> channels_to_exclude = {
+        "vertices",
+        "vertex_normals"
+      };
+
+      m_costs.clear();
+      for(auto elem : *mesh_buffer)
+      { 
+        // this is checking if a channel is a vertex cost channel
+        // I suggest for future changes to somehow mark a channel as "vertex_cost" instead
+        if(elem.second.is_type<float>()
+          && elem.second.numElements() == m_geometry->vertices.size() 
+          && channels_to_exclude.find(elem.first) == channels_to_exclude.end()
+          && elem.second.width() == 1)
+        {
+          // vertex channel of type float
+          RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Loading '" << elem.first << "' as vertex cost layer");
+          m_costs[elem.first] = copy_1d_channel_to_vector(elem.second.extract<float>());
+        }
+      }
     }
     else 
     {
