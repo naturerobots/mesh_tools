@@ -396,7 +396,7 @@ bool MapDisplay::loadData()
       // the mesh buffer is a map from a string to a Channel
       // example:
       // "vertices" -> Channel<float>
-      std::cout << *mesh_buffer << std::endl;
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loaded: " << *mesh_buffer);
 
       // "mesh_navigatio_tutorials/maps/floor_is_lava.h5"
       // [ VariantChannelMap ]
@@ -438,62 +438,6 @@ bool MapDisplay::loadData()
         }
       }
 
-      // TODO: Read textures/materials is missing
-      // Description:
-      // the old code was including loading texutures. However this was never tested for ROS 2 nor do we have any h5 files 
-      // to test this (only h5 files with vertex colors). Therefore I removed it until we have a working test case.
-
-      // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load textures");
-
-      // vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
-      // m_textures.resize(textures.size());
-      // for (size_t i = 0; i < textures.size(); i++)
-      // {
-      //   // Find out the texture index because textures are not stored in ascending order
-      //   int textureIndex = std::stoi(textures[i].name);
-
-      //   // Copy metadata
-      //   m_textures[textureIndex].width = textures[i].width;
-      //   m_textures[textureIndex].height = textures[i].height;
-      //   m_textures[textureIndex].channels = textures[i].channels;
-      //   m_textures[textureIndex].data = textures[i].data;
-      //   m_textures[textureIndex].pixelFormat = "rgb8";
-      // }
-
-      // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load materials");
-
-      // // Read materials
-      // vector<hdf5_map_io::MapMaterial> materials = map_io.getMaterials();
-      // vector<uint32_t> faceToMaterialIndexArray = map_io.getMaterialFaceIndices();
-      // m_materials.resize(materials.size());
-      // for (size_t i = 0; i < materials.size(); i++)
-      // {
-      //   // Copy material color
-      //   m_materials[i].color.r = materials[i].r / 255.0f;
-      //   m_materials[i].color.g = materials[i].g / 255.0f;
-      //   m_materials[i].color.b = materials[i].b / 255.0f;
-      //   m_materials[i].color.a = 1.0f;
-
-      //   // Look for texture index
-      //   if (materials[i].textureIndex == -1)
-      //   {
-      //     // texture index -1: no texture
-      //     m_materials[i].textureIndex = boost::none;
-      //   }
-      //   else
-      //   {
-      //     m_materials[i].textureIndex = materials[i].textureIndex;
-      //   }
-
-      //   m_materials[i].faceIndices.clear();
-      // }
-
-      // // Copy face indices
-      // for (size_t k = 0; k < faceToMaterialIndexArray.size(); k++)
-      // {
-      //   m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
-      // }
-
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex colors");
 
       // Read vertex colors
@@ -534,38 +478,6 @@ bool MapDisplay::loadData()
             lvr2_vertex_normals[i][2]));
         }
       }
-
-      // Same problem as above: This is a piece of code we cannot test. Therefore I removed it.
-      // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load texture coordinates");
-
-      // // Read tex cords
-      // vector<float> texCoords = map_io.getVertexTextureCoords();
-      // m_texCoords.clear();
-      // m_texCoords.reserve(texCoords.size() / 3);
-      // for (size_t i = 0; i < texCoords.size(); i += 3)
-      // {
-      //   m_texCoords.push_back(TexCoords(texCoords[i], texCoords[i + 1]));
-      // }
-
-      // RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load clusters");
-
-      // Same problem as above: This is a piece of code we cannot test. Therefore I removed it.
-      // // Read labels
-      // m_clusterList.clear();
-      // // m_clusterList.push_back(Cluster("__NEW__", vector<uint32_t>()));
-      // for (auto labelGroup : map_io.getLabelGroups())
-      // {
-      //   for (auto labelObj : map_io.getAllLabelsOfGroup(labelGroup))
-      //   {
-      //     auto faceIds = map_io.getFaceIdsOfLabel(labelGroup, labelObj);
-
-      //     std::stringstream ss;
-      //     ss << labelGroup << "_" << labelObj;
-      //     std::string label = ss.str();
-
-      //     m_clusterList.push_back(Cluster(label, faceIds));
-      //   }
-      // }
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load costs");
       std::unordered_set<std::string> channels_to_exclude = {

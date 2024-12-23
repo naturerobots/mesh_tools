@@ -28,7 +28,6 @@ find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_assimp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(mesh_msgs REQUIRED)
-find_package(resource_retriever REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
@@ -133,7 +132,6 @@ ament_target_dependencies(${PROJECT_NAME}
   rviz_assimp_vendor
   std_msgs
   mesh_msgs
-  resource_retriever
   tf2_ros
   message_filters
   std_msgs
@@ -153,7 +151,6 @@ ament_export_dependencies(
   rviz_assimp_vendor
   std_msgs
   mesh_msgs
-  resource_retriever
   tf2_ros
   message_filters
   std_msgs
