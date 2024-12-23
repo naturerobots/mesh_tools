@@ -71,11 +71,14 @@
 #include <fstream>
 
 #include <lvr2/io/deprecated/hdf5/MeshIO.hpp>
+#include <lvr2/io/deprecated/hdf5/PointCloudIO.hpp>
 
 #include <unordered_set>
 
 
-using HDF5MeshIO = lvr2::Hdf5Build<lvr2::hdf5features::MeshIO>;
+using HDF5MeshIO = lvr2::Hdf5IO<>::AddFeatures<
+  lvr2::hdf5features::MeshIO,
+  lvr2::hdf5features::PointCloudIO>;
 
 namespace rviz_mesh_tools_plugins
 {
@@ -390,27 +393,22 @@ bool MapDisplay::loadData()
 
       auto hdf5_mesh_io = std::make_shared<HDF5MeshIO>();
 
+      // TODO: dynamic
+      const std::string mesh_part = "mesh";
+
       hdf5_mesh_io->open(mapFile);
-      auto mesh_buffer = hdf5_mesh_io->MeshIO::load("mesh"); // TODO dynamic
+      auto mesh_buffer = hdf5_mesh_io->MeshIO::load(mesh_part);
 
       // the mesh buffer is a map from a string to a Channel
       // example:
       // "vertices" -> Channel<float>
       RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loaded: " << *mesh_buffer);
 
-      // "mesh_navigatio_tutorials/maps/floor_is_lava.h5"
-      // [ VariantChannelMap ]
-      // vertex_normals: type: float, size: [8100,3]
+      // For "mesh_navigation_tutorials/maps/floor_is_lava.h5":
+      // Loaded: [ VariantChannelMap ]
       // vertices: type: float, size: [8100,3]
-      // roughness: type: float, size: [8100,1]
-      // height_diff: type: float, size: [8100,1]
-      // freespace: type: float, size: [8100,1]
+      // vertex_normals: type: float, size: [8100,3]
       // face_indices: type: unsigned int, size: [15960,3]
-      // edge_distances_idx: type: unsigned int, size: [24059,1]
-      // edge_distances: type: float, size: [24059,1]
-      // border: type: float, size: [8100,1]
-      // face_normals: type: float, size: [15960,3]
-      // average_angles: type: float, size: [8100,1]
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load geometry");
 
@@ -479,20 +477,26 @@ bool MapDisplay::loadData()
         }
       }
 
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load costs");
-      std::unordered_set<std::string> channels_to_exclude = {
-        "vertices",
-        "vertex_normals"
-      };
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex costs...");
+
+      auto vertex_attributes = hdf5_mesh_io->PointCloudIO::load(mesh_part + "/vertex_attributes");
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Vertex Costs: " << *vertex_attributes);
+      
+      // For "mesh_navigation_tutorials/maps/floor_is_lava.h5":
+      // Vertex Attributes: [ VariantChannelMap ]
+      // vertex_normals: type: float, size: [8100,3]
+      // roughness: type: float, size: [8100,1]
+      // inflation: type: float, size: [8100,1]
+      // height_diff: type: float, size: [8100,1]
+      // border: type: float, size: [8100,1]
 
       m_costs.clear();
-      for(auto elem : *mesh_buffer)
+      for(auto elem : *vertex_attributes)
       { 
         // this is checking if a channel is a vertex cost channel
         // I suggest for future changes to somehow mark a channel as "vertex_cost" instead
         if(elem.second.is_type<float>()
-          && elem.second.numElements() == m_geometry->vertices.size() 
-          && channels_to_exclude.find(elem.first) == channels_to_exclude.end()
+          && elem.second.numElements() == m_geometry->vertices.size()
           && elem.second.width() == 1)
         {
           // vertex channel of type float
