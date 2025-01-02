@@ -91,8 +91,6 @@
 #include <mesh_msgs/srv/get_geometry.hpp>
 #include <mesh_msgs/srv/get_labeled_clusters.hpp>
 
-#include <hdf5_map_io/hdf5_map_io.h>
-
 #ifndef Q_MOC_RUN
 #include <rviz_rendering/mesh_loader.hpp>
 

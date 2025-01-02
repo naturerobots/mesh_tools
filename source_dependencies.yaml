@@ -4,4 +4,4 @@ repositories:
   uos/lvr2:
     type: git
     url: https://github.com/uos/lvr2.git
-    version: humble
+    version: version-upgrade

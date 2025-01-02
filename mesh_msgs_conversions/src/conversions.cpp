@@ -239,11 +239,10 @@ bool fromMeshGeometryToMeshBuffer(
     const mesh_msgs::msg::MeshGeometry& mesh_geometry,
     lvr2::MeshBuffer& buffer)
 {
-
     const size_t numVertices = mesh_geometry.vertices.size();
     lvr2::floatArr vertices( new float[ numVertices * 3 ] );
     const auto& mg_vertices = mesh_geometry.vertices;
-    for(size_t i; i<numVertices; i++)
+    for(size_t i = 0; i<numVertices; i++)
     {
         vertices[ i * 3 + 0 ] = static_cast<float>(mg_vertices[i].x);
         vertices[ i * 3 + 1 ] = static_cast<float>(mg_vertices[i].y);
@@ -254,7 +253,7 @@ bool fromMeshGeometryToMeshBuffer(
     const size_t numFaces = mesh_geometry.faces.size();
     lvr2::indexArray faces( new unsigned int[ numVertices * 3 ] );
     const auto& mg_faces = mesh_geometry.faces;
-    for(size_t i; i<numFaces; i++)
+    for(size_t i = 0; i<numFaces; i++)
     {
         faces[ i * 3 + 0 ] = mg_faces[i].vertex_indices[0];
         faces[ i * 3 + 1 ] = mg_faces[i].vertex_indices[1];
@@ -265,7 +264,7 @@ bool fromMeshGeometryToMeshBuffer(
     const size_t numNormals = mesh_geometry.vertex_normals.size();
     lvr2::floatArr normals( new float[ numNormals * 3 ] );
     const auto& mg_normals = mesh_geometry.vertex_normals;
-    for(size_t i; i<numNormals; i++)
+    for(size_t i = 0; i<numNormals; i++)
     {
         normals[ i * 3 + 0 ] = static_cast<float>(mg_normals[i].x);
         normals[ i * 3 + 1 ] = static_cast<float>(mg_normals[i].y);
@@ -276,7 +275,7 @@ bool fromMeshGeometryToMeshBuffer(
     return true;
 }
 
-bool readMeshBuffer(lvr2::MeshBufferPtr& buffer_ptr, string path)
+bool readMeshBuffer(lvr2::MeshBufferPtr& buffer_ptr, std::string path)
 {
     lvr2::ModelFactory io_factory;
     lvr2::ModelPtr model = io_factory.readModel(path);
@@ -292,7 +291,7 @@ bool readMeshBuffer(lvr2::MeshBufferPtr& buffer_ptr, string path)
     }
 }
 
-bool writeMeshBuffer(lvr2::MeshBufferPtr& buffer, string path)
+bool writeMeshBuffer(lvr2::MeshBufferPtr& buffer, std::string path)
 {
     lvr2::ModelPtr model(new lvr2::Model(buffer));
     lvr2::ModelFactory::saveModel(model, path);

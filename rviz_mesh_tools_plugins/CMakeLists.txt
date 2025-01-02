@@ -10,6 +10,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+if (NOT EXISTS ${CMAKE_BINARY_DIR}/CMakeCache.txt)
+  if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  endif()
+endif()
+
 add_definitions(-D_BUILD_DIR_PATH="${CMAKE_CURRENT_BINARY_DIR}")
 add_definitions(-D_SRC_DIR_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -21,7 +27,6 @@ find_package(rviz_rendering REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_assimp_vendor REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(hdf5_map_io REQUIRED)
 find_package(mesh_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(pluginlib REQUIRED)
@@ -39,7 +44,7 @@ find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 
 # LVR2 includes HighFive that we need here
 # - it was compiling before because globale lvr2 header were accessible
-# find_package(LVR2 REQUIRED)
+find_package(LVR2 REQUIRED)
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 # set(CMAKE_AUTOMOC ON)
@@ -49,7 +54,7 @@ find_package(Qt5 COMPONENTS Core Widgets)
 
 include_directories(
   include
-  ${catkin_INCLUDE_DIRS}
+  ${LVR2_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${HDF5_INCLUDE_DIRS}
   ${OpenCL_INCLUDE_DIRS}
@@ -87,18 +92,11 @@ set(MOC_HEADER_FILES
   include/rviz_mesh_tools_plugins/InteractionHelper.hpp
 )
 
-# foreach(header "${RVIZ_MESH_TOOLS_PLUGINS_MOC_FILES}")
-#   qt5_wrap_cpp(RVIZ_MESH_TOOLS_PLUGINS_MOC "${header}")
-# endforeach()
-
-
+add_definitions(${LVR2_DEFINITIONS})
 
 add_library(${PROJECT_NAME} SHARED
   ${SOURCE_FILES} 
-  ${MOC_HEADER_FILES} 
-  ${HDF5_LIBRARIES}
-  ${HDF5_HL_LIBRARIES}
-  ${OpenCL_LIBRARIES}
+  ${MOC_HEADER_FILES}
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -108,6 +106,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
+  ${LVR2_LIBRARIES}
   rviz_ogre_vendor::OgreMain
   rviz_ogre_vendor::OgreOverlay
   Boost::system
@@ -132,9 +131,7 @@ ament_target_dependencies(${PROJECT_NAME}
   rviz_rendering
   rviz_assimp_vendor
   std_msgs
-  hdf5_map_io
   mesh_msgs
-  resource_retriever
   tf2_ros
   message_filters
   std_msgs
@@ -153,11 +150,10 @@ ament_export_dependencies(
   rviz_rendering
   rviz_assimp_vendor
   std_msgs
-  hdf5_map_io
   mesh_msgs
-  resource_retriever
   tf2_ros
   message_filters
+  std_msgs
 )
 
 install(

@@ -35,17 +35,17 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include <lvr2/geometry/BaseVector.hpp>
-#include <lvr2/io/PointBuffer.hpp>
-#include <lvr2/io/MeshBuffer.hpp>
+#include <lvr2/types/PointBuffer.hpp>
+#include <lvr2/types/MeshBuffer.hpp>
 #include <lvr2/geometry/BaseMesh.hpp>
 #include <lvr2/attrmaps/AttrMaps.hpp>
 
-#include <lvr2/io/Model.hpp>
-#include <lvr2/io/PLYIO.hpp>
+#include <lvr2/types/Model.hpp>
 #include <lvr2/io/DataStruct.hpp>
 #include <lvr2/io/ModelFactory.hpp>
 
 #include <lvr2/texture/Texture.hpp>
+#include <lvr2/geometry/BaseMesh.hpp>
 #include <lvr2/geometry/HalfEdgeMesh.hpp>
 
 #include "std_msgs/msg/string.h"
@@ -87,6 +87,67 @@ struct MaterialGroup
 
 typedef std::vector <boost::shared_ptr<MaterialGroup>> GroupVector;
 typedef boost::shared_ptr <MaterialGroup> MaterialGroupPtr;
+
+template<typename CoordType>
+inline const mesh_msgs::msg::MeshGeometry toMeshGeometry(
+    const std::shared_ptr<lvr2::BaseMesh<lvr2::BaseVector<CoordType>>> hem,
+    const lvr2::VertexMap<lvr2::Normal<CoordType>>& normals = lvr2::DenseVertexMap<lvr2::Normal<CoordType>>())
+{
+  mesh_msgs::msg::MeshGeometry mesh_msg;
+  mesh_msg.vertices.reserve(hem->numVertices());
+  mesh_msg.faces.reserve(hem->numFaces());
+
+  mesh_msg.vertex_normals.reserve(normals.numValues());
+
+  lvr2::DenseVertexMap<size_t> new_indices;
+  new_indices.reserve(hem->numVertices());
+
+  size_t k = 0;
+  for(auto vH : hem->vertices())
+  {
+    new_indices.insert(vH, k++);
+    const auto& pi = hem->getVertexPosition(vH);
+    geometry_msgs::msg::Point p;
+    p.x = pi.x; p.y = pi.y; p.z = pi.z;
+    mesh_msg.vertices.push_back(p);
+  }
+
+  for(auto fH : hem->faces())
+  {
+    mesh_msgs::msg::MeshTriangleIndices indices;
+    auto vHs = hem->getVerticesOfFace(fH);
+    indices.vertex_indices[0] = new_indices[vHs[0]];
+    indices.vertex_indices[1] = new_indices[vHs[1]];
+    indices.vertex_indices[2] = new_indices[vHs[2]];
+    mesh_msg.faces.push_back(indices);
+  }
+
+  for(auto vH : hem->vertices())
+  {
+    const auto& n = normals[vH];
+    geometry_msgs::msg::Point v;
+    v.x = n.x; v.y = n.y; v.z = n.z;
+    mesh_msg.vertex_normals.push_back(v);
+  }
+
+  return mesh_msg;
+}
+
+template<typename CoordType>
+inline const mesh_msgs::msg::MeshGeometryStamped toMeshGeometryStamped(
+    const std::shared_ptr<lvr2::BaseMesh<lvr2::BaseVector<CoordType>>> hem,
+    const std::string& frame_id,
+    const std::string& uuid,
+    const lvr2::VertexMap<lvr2::Normal<CoordType>>& normals = lvr2::DenseVertexMap<lvr2::Normal<CoordType>>(),
+    const rclcpp::Time& stamp = rclcpp::Time())
+{
+  mesh_msgs::msg::MeshGeometryStamped mesh_msg;
+  mesh_msg.mesh_geometry = toMeshGeometry<CoordType>(hem, normals);
+  mesh_msg.uuid = uuid;
+  mesh_msg.header.frame_id = frame_id;
+  mesh_msg.header.stamp = stamp;
+  return mesh_msg;
+}
 
 
 template<typename CoordType>

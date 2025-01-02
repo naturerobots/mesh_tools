@@ -70,8 +70,34 @@
 #include <OgreDataStream.h>
 #include <fstream>
 
+#include <lvr2/io/deprecated/hdf5/MeshIO.hpp>
+#include <lvr2/io/deprecated/hdf5/PointCloudIO.hpp>
+
+#include <unordered_set>
+
+
+using HDF5MeshIO = lvr2::Hdf5IO<>::AddFeatures<
+  lvr2::hdf5features::MeshIO,
+  lvr2::hdf5features::PointCloudIO>;
+
 namespace rviz_mesh_tools_plugins
 {
+
+template<typename T>
+std::vector<T> copy_1d_channel_to_vector(const lvr2::Channel<T>& lvr_channel)
+{
+    if(lvr_channel.width() != 1)
+    {
+        throw std::runtime_error("channel is not 1d!");
+    }
+    std::vector<T> ret(lvr_channel.numElements());
+    for(size_t i=0; i<lvr_channel.numElements(); i++)
+    {
+        ret[i] = lvr_channel[i][0];
+    }
+    return ret;
+}
+
 MapDisplay::MapDisplay()
 :m_clusterLabelDisplay(nullptr)
 ,m_meshDisplay(nullptr)
@@ -364,130 +390,119 @@ bool MapDisplay::loadData()
       enableMeshDisplay();
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load HDF5 map");
-      // Open file IO
-      hdf5_map_io::HDF5MapIO map_io(mapFile);
+
+      auto hdf5_mesh_io = std::make_shared<HDF5MeshIO>();
+
+      // TODO: dynamic
+      const std::string mesh_part = "mesh";
+
+      hdf5_mesh_io->open(mapFile);
+      auto mesh_buffer = hdf5_mesh_io->MeshIO::load(mesh_part);
+
+      // the mesh buffer is a map from a string to a Channel
+      // example:
+      // "vertices" -> Channel<float>
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Loaded: " << *mesh_buffer);
+
+      // For "mesh_navigation_tutorials/maps/floor_is_lava.h5":
+      // Loaded: [ VariantChannelMap ]
+      // vertices: type: float, size: [8100,3]
+      // vertex_normals: type: float, size: [8100,3]
+      // face_indices: type: unsigned int, size: [15960,3]
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load geometry");
 
       // Read geometry
-      m_geometry = std::make_shared<Geometry>(Geometry(map_io.getVertices(), map_io.getFaceIds()));
-
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load textures");
-
-      // Read textures
-      vector<hdf5_map_io::MapImage> textures = map_io.getTextures();
-      m_textures.resize(textures.size());
-      for (size_t i = 0; i < textures.size(); i++)
-      {
-        // Find out the texture index because textures are not stored in ascending order
-        int textureIndex = std::stoi(textures[i].name);
-
-        // Copy metadata
-        m_textures[textureIndex].width = textures[i].width;
-        m_textures[textureIndex].height = textures[i].height;
-        m_textures[textureIndex].channels = textures[i].channels;
-        m_textures[textureIndex].data = textures[i].data;
-        m_textures[textureIndex].pixelFormat = "rgb8";
-      }
-
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load materials");
-
-      // Read materials
-      vector<hdf5_map_io::MapMaterial> materials = map_io.getMaterials();
-      vector<uint32_t> faceToMaterialIndexArray = map_io.getMaterialFaceIndices();
-      m_materials.resize(materials.size());
-      for (size_t i = 0; i < materials.size(); i++)
-      {
-        // Copy material color
-        m_materials[i].color.r = materials[i].r / 255.0f;
-        m_materials[i].color.g = materials[i].g / 255.0f;
-        m_materials[i].color.b = materials[i].b / 255.0f;
-        m_materials[i].color.a = 1.0f;
-
-        // Look for texture index
-        if (materials[i].textureIndex == -1)
+      m_geometry = std::make_shared<Geometry>();
+      { // fill
+        lvr2::Channel<float> lvr_vertices = *mesh_buffer->getChannel<float>("vertices");
+        
+        m_geometry->vertices.resize(lvr_vertices.numElements());
+        for(size_t i=0; i<lvr_vertices.numElements(); i++)
         {
-          // texture index -1: no texture
-          m_materials[i].textureIndex = boost::none;
-        }
-        else
-        {
-          m_materials[i].textureIndex = materials[i].textureIndex;
+          m_geometry->vertices[i].x = lvr_vertices[i][0];
+          m_geometry->vertices[i].y = lvr_vertices[i][1];
+          m_geometry->vertices[i].z = lvr_vertices[i][2];
         }
 
-        m_materials[i].faceIndices.clear();
-      }
+        lvr2::Channel<unsigned int> lvr_face_ids = *mesh_buffer->getChannel<unsigned int>("face_indices");
 
-      // Copy face indices
-      for (size_t k = 0; k < faceToMaterialIndexArray.size(); k++)
-      {
-        m_materials[faceToMaterialIndexArray[k]].faceIndices.push_back(k);
+        m_geometry->faces.resize(lvr_face_ids.numElements());
+        for(size_t i=0; i<lvr_face_ids.numElements(); i++)
+        {
+          m_geometry->faces[i].vertexIndices[0] = lvr_face_ids[i][0];
+          m_geometry->faces[i].vertexIndices[1] = lvr_face_ids[i][1];
+          m_geometry->faces[i].vertexIndices[2] = lvr_face_ids[i][2];
+        }
       }
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex colors");
 
       // Read vertex colors
-      vector<uint8_t> colors = map_io.getVertexColors();
       m_colors.clear();
-      m_colors.reserve(colors.size() / 3);
-      for (size_t i = 0; i < colors.size(); i += 3)
+      if(auto lvr2_vertex_colors_opt = mesh_buffer->getChannel<unsigned char>("vertex_colors"))
       {
-        // convert from 0-255 (uint8) to 0.0-1.0 (float)
-        m_colors.push_back(Color(colors[i + 0] / 255.0f, colors[i + 1] / 255.0f, colors[i + 2] / 255.0f, 1.0));
+        lvr2::Channel<unsigned char> lvr_vertex_colors = *lvr2_vertex_colors_opt;
+        m_colors.resize(lvr_vertex_colors.numElements());
+        const bool has_alpha = lvr_vertex_colors.width() > 3;
+        for (size_t i = 0; i < lvr_vertex_colors.numElements(); i ++)
+        {
+          // convert from 0-255 (uint8) to 0.0-1.0 (float)
+          m_colors[i].r = lvr_vertex_colors[i][0] / 255.0f;
+          m_colors[i].g = lvr_vertex_colors[i][1] / 255.0f;
+          m_colors[i].b = lvr_vertex_colors[i][2] / 255.0f;
+          if(has_alpha)
+          {
+            m_colors[i].a = lvr_vertex_colors[i][3] / 255.0f;
+          } else {
+            m_colors[i].a = 1.0;
+          }
+        }
       }
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex normals");
 
       // Read vertex normals
-      vector<float> normals = map_io.getVertexNormals();
       m_normals.clear();
-      m_normals.reserve(normals.size() / 3);
-      for (size_t i = 0; i < normals.size(); i += 3)
+      if(auto lvr2_vertex_normals_opt = mesh_buffer->getChannel<float>("vertex_normals"))
       {
-        m_normals.push_back(Normal(normals[i + 0], normals[i + 1], normals[i + 2]));
-      }
-
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load texture coordinates");
-
-      // Read tex cords
-      vector<float> texCoords = map_io.getVertexTextureCoords();
-      m_texCoords.clear();
-      m_texCoords.reserve(texCoords.size() / 3);
-      for (size_t i = 0; i < texCoords.size(); i += 3)
-      {
-        m_texCoords.push_back(TexCoords(texCoords[i], texCoords[i + 1]));
-      }
-
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load clusters");
-
-      // Read labels
-      m_clusterList.clear();
-      // m_clusterList.push_back(Cluster("__NEW__", vector<uint32_t>()));
-      for (auto labelGroup : map_io.getLabelGroups())
-      {
-        for (auto labelObj : map_io.getAllLabelsOfGroup(labelGroup))
+        lvr2::Channel<float> lvr2_vertex_normals = *lvr2_vertex_normals_opt;
+        m_normals.reserve(lvr2_vertex_normals.numElements());
+        for (size_t i = 0; i < lvr2_vertex_normals.numElements(); i++)
         {
-          auto faceIds = map_io.getFaceIdsOfLabel(labelGroup, labelObj);
-
-          std::stringstream ss;
-          ss << labelGroup << "_" << labelObj;
-          std::string label = ss.str();
-
-          m_clusterList.push_back(Cluster(label, faceIds));
+          m_normals.push_back(Normal(
+            lvr2_vertex_normals[i][0],
+            lvr2_vertex_normals[i][1],
+            lvr2_vertex_normals[i][2]));
         }
       }
 
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load vertex costs...");
+
+      auto vertex_attributes = hdf5_mesh_io->PointCloudIO::load(mesh_part + "/vertex_attributes");
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Vertex Costs: " << *vertex_attributes);
+      
+      // For "mesh_navigation_tutorials/maps/floor_is_lava.h5":
+      // Vertex Attributes: [ VariantChannelMap ]
+      // vertex_normals: type: float, size: [8100,3]
+      // roughness: type: float, size: [8100,1]
+      // inflation: type: float, size: [8100,1]
+      // height_diff: type: float, size: [8100,1]
+      // border: type: float, size: [8100,1]
+
       m_costs.clear();
-      for (std::string costlayer : map_io.getCostLayers())
-      {
-          try
-          {
-              m_costs[costlayer] = map_io.getVertexCosts(costlayer);
-          }
-          catch (const hf::DataSpaceException& e)
-          {
-              RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not load channel " << costlayer << " as a costlayer!");
-          }
+      for(auto elem : *vertex_attributes)
+      { 
+        // this is checking if a channel is a vertex cost channel
+        // I suggest for future changes to somehow mark a channel as "vertex_cost" instead
+        if(elem.second.is_type<float>()
+          && elem.second.numElements() == m_geometry->vertices.size()
+          && elem.second.width() == 1)
+        {
+          // vertex channel of type float
+          RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Loading '" << elem.first << "' as vertex cost layer");
+          m_costs[elem.first] = copy_1d_channel_to_vector(elem.second.extract<float>());
+        }
       }
     }
     else 
@@ -731,11 +746,12 @@ void MapDisplay::saveLabel(Cluster cluster)
       return;
     }
 
-    // Open IO
-    hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getFilename());
+    // is not working anyway
+    // // Open IO
+    // hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getFilename());
 
-    // Add label with faces list
-    map_io.addOrUpdateLabel(results[0], results[1], faces);
+    // // Add label with faces list
+    // map_io.addOrUpdateLabel(results[0], results[1], faces);
 
     // Add to cluster list
     m_clusterList.push_back(Cluster(label, faces));
