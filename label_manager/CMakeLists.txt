@@ -18,7 +18,6 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(actionlib_msgs REQUIRED)
 find_package(mesh_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -61,7 +60,6 @@ ament_target_dependencies(${PROJECT_NAME}_node
   rclcpp
   rclcpp_action
   rclcpp_components
-  actionlib_msgs
   mesh_msgs
   sensor_msgs
   std_msgs
