@@ -102,9 +102,10 @@ namespace rviz_mesh_tools_plugins
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
-, m_meshQos(rclcpp::SystemDefaultsQoS())
-, m_vertexColorsQos(rclcpp::SystemDefaultsQoS())
-, m_vertexCostsQos(rclcpp::SystemDefaultsQoS())
+, m_meshQos(rclcpp::QoS(1).transient_local())
+, m_vertexColorsQos(rclcpp::QoS(5))
+, m_vertexCostsQos(rclcpp::QoS(5))
+, m_vertexCostUpdateQos(rclcpp::QoS(10))
 {
   // mesh topic
   m_meshTopic = new rviz_common::properties::RosTopicProperty(
@@ -181,11 +182,20 @@ MeshDisplay::MeshDisplay()
       
 
       m_vertexCostsTopic = new rviz_common::properties::RosTopicProperty(
-          "Vertex Costs Topic", "",
+          "Costs Topic", "",
           QString::fromStdString(rosidl_generator_traits::name<mesh_msgs::msg::MeshVertexCostsStamped>()),
           "Vertex cost topic to subscribe to.", m_displayType, SLOT(updateVertexCostsSubscription()), this);
 
       m_vertexCostsTopicQos = new rviz_common::properties::QosProfileProperty(m_vertexCostsTopic, m_vertexCostsQos);
+
+      m_vertexCostUpdateTopic = new rviz_common::properties::RosTopicProperty(
+        "Update Topic", "",
+        QString::fromStdString(
+          rosidl_generator_traits::name<mesh_msgs::msg::MeshVertexCostsSparseStamped>()
+        ),
+        "Vertex cost update topic to subscribe to.", m_displayType, SLOT(updateVertexCostsUpdateSubscription()), this
+      );
+      m_vertexCostUpdateTopicQos = new rviz_common::properties::QosProfileProperty(m_vertexCostUpdateTopic, m_vertexCostUpdateQos);
 
       m_selectVertexCostMap = new rviz_common::properties::EnumProperty("Vertex Costs Type", "-- None --",
                                                      "Select the type of vertex cost map to be displayed. New types "
@@ -775,12 +785,48 @@ void MeshDisplay::updateVertexCostsSubscription()
       auto node = context_->getRosNodeAbstraction().lock()->get_raw_node();
       m_vertexCostsSubscriber.subscribe(node, m_vertexCostsTopic->getTopicStd(), m_vertexCostsQos.get_rmw_qos_profile());
 
-      m_costsMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>>(m_vertexCostsSubscriber, 1);
+      // TODO: What is a good cache size? Could it be configurable by the user? Also it is not possible to clear the message cache after we processed the messages?
+      m_costsMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>>(m_vertexCostsSubscriber, 10);
       m_costsMsgCache->registerCallback(std::bind(&MeshDisplay::vertexCostsCallback, this, _1));
+
+      // Update update topic
+      const std::string update_topic = m_vertexCostsTopic->getTopicStd() + "/updates";
+      m_vertexCostUpdateTopic->setStdString(update_topic);
     } else {
       setStatus(rviz_common::properties::StatusProperty::Warn, "Topic", QString("Error subscribing: Empty cost topic name"));
     }
   }
+}
+
+void MeshDisplay::updateVertexCostsUpdateSubscription()
+{
+  if (m_vertexCostUpdateTopic->getHidden())
+  {
+    return;
+  }
+
+  if (m_vertexCostUpdateTopic->getTopic().isEmpty())
+  {
+    return;
+  }
+
+  // Update the subscription
+  auto node_abstraction = context_->getRosNodeAbstraction().lock();
+  if (nullptr == node_abstraction)
+  {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("rviz_mesh_tools_plugins"),
+      "[MeshDisplay::updateVertexCostsUpdateSubscription] Could not get the ROS Node abstraction instance from RViz context!"
+    );
+    return;
+  }
+
+  // Update the subscription
+  rclcpp::Node::SharedPtr node = node_abstraction->get_raw_node();
+  m_vertexCostUpdateSubscriber.subscribe(node, m_vertexCostUpdateTopic->getTopicStd(), m_vertexCostUpdateQos.get_rmw_qos_profile());
+  // Update the cache
+  m_costsUpdateMsgCache = std::make_shared<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsSparseStamped>>(m_vertexCostUpdateSubscriber, 10);
+  m_costsUpdateMsgCache->registerCallback(std::bind(&MeshDisplay::vertexCostsUpdateCallback, this, _1));
 }
 
 void MeshDisplay::updateMaterialAndTextureServices()
@@ -984,6 +1030,7 @@ void MeshDisplay::meshGeometryCallback(
   m_messagesReceived++;
   setStatus(rviz_common::properties::StatusProperty::Ok, "Topic", QString::number(m_messagesReceived) + " messages received");
   processMessage(*meshMsg);
+  const rclcpp::Time now = context_->getClock()->now();
 
   // check for cached color and cost msgs that might have arrived earlier:
   if (m_colorsMsgCache) {
@@ -999,8 +1046,8 @@ void MeshDisplay::meshGeometryCallback(
     }
   }
   if (m_costsMsgCache) {
-    const auto costMsgs = m_costsMsgCache->getInterval(meshMsg->header.stamp, meshMsg->header.stamp); // get msgs where header.stamp match exactly (this should usually be only one msg)
-    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << costMsgs.size() << " cost msgs from cache with header.stamp=" << rclcpp::Time(meshMsg->header.stamp).seconds());
+    const auto costMsgs = m_costsMsgCache->getInterval(meshMsg->header.stamp, now);
+    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Got " << costMsgs.size() << " cost msgs from cache");
     for (const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costMsg : costMsgs) {
       if (costMsg->uuid == meshMsg->uuid) {
         RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found cached cost msg with matching UUID, applying its information now");
@@ -1042,6 +1089,92 @@ void MeshDisplay::vertexCostsCallback(
 
   cacheVertexCosts(costsStamped->type, costsStamped->mesh_vertex_costs.costs);
   updateVertexCosts();
+}
+
+void MeshDisplay::vertexCostsUpdateCallback(
+  const mesh_msgs::msg::MeshVertexCostsSparseStamped::ConstSharedPtr& update
+)
+{
+  if (update->uuid.compare(m_lastUuid) != 0)
+  {
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received vertex costs update, but its UUID does not match the latest mesh geometry UUID. Not updating costs.");
+    return;
+  }
+
+  if (update->mesh_vertex_costs.vertices.empty() || update->mesh_vertex_costs.costs.empty())
+  {
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received an empty vertex costs update.");
+    return;
+  }
+
+  // Vertex cost have to be applied to the cached layer
+  auto result = m_costCache.find(update->type);
+  // Unknown layer
+  if (result == m_costCache.end())
+  {
+    //TODO: We could create an empty layer
+    return;
+  }
+
+  // Update data in the cache
+  const auto& data = update->mesh_vertex_costs;
+  for (size_t i = 0; i < data.vertices.size(); i++)
+  {
+    result->second[data.vertices[i]] = data.costs[i];
+  }
+
+  // Update the mesh if we updated the current visual
+  if (update->type == m_selectVertexCostMap->getStdString())
+  {
+    if (m_costUseCustomLimits->getBool())
+    {
+      if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
+      {
+        std::shared_ptr<MeshVisual> visual = getLatestVisual();
+        if (visual)
+        {
+          visual->updateVertexCosts(
+            data.vertices,
+            data.costs,
+            m_costColorType->getOptionInt(),
+            m_costLowerLimit->getFloat(),
+            m_costUpperLimit->getFloat()
+          );
+        }
+      }
+    }
+    else
+    {
+      if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
+      {
+        // The correct way is the get the limits from the whole layer
+        // TODO: Cache this with the layer itself
+        float maxCost = std::numeric_limits<float>::min();
+        float minCost = std::numeric_limits<float>::max();
+        for (float cost : result->second)
+        {
+          if (std::isfinite(cost) && cost > maxCost)
+            maxCost = cost;
+          if (std::isfinite(cost) && cost < minCost)
+            minCost = cost;
+        }
+
+
+        std::shared_ptr<MeshVisual> visual = getLatestVisual();
+        if (visual)
+        {
+          visual->updateVertexCosts(
+            data.vertices,
+            data.costs,
+            m_costColorType->getOptionInt(),
+            minCost,
+            maxCost
+          );
+        }
+      }
+    }
+    updateMeshMaterial();
+  }
 }
 
 void MeshDisplay::requestVertexColors(std::string uuid)

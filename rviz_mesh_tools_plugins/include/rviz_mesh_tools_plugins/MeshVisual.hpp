@@ -167,6 +167,23 @@ public:
   bool setVertexCosts(const std::vector<float>& vertexCosts, int costColorType, float minCost, float maxCost);
 
   /**
+   * @brief Update a subset of the vertex costs
+   *
+   * @param vertices Vector containing the vertex indices to update
+   * @param costs Vector containing the vertex cost information
+   * @param costColorType colorization method (0 = rainbow; 1 = red-green)
+   * @param minCost minimum value for colorization
+   * @param maxCost maximum value for colorization
+   */
+  bool updateVertexCosts(
+    const std::vector<uint32_t>& vertices,
+    const std::vector<float>& costs,
+    int costColorType,
+    float minCost,
+    float maxCost
+  );
+
+  /**
    * @brief Extracts data from the ros-messages and creates a textured mesh.
    *
    * @param materials Vector containing all materials

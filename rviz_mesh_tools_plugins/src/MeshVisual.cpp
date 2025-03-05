@@ -1066,6 +1066,68 @@ bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costC
   return true;
 }
 
+bool MeshVisual::updateVertexCosts(
+  const std::vector<uint32_t>& vertices,
+  const std::vector<float>& costs,
+  int costColorType,
+  float minCost,
+  float maxCost
+)
+{
+
+  float range = maxCost - minCost;
+  if (range <= 0)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Illegal vertex cost limits!");
+    return false;
+  }
+
+  if (!m_vertexCostMaterial)
+  {
+    // We only update existing materials, the caller has to make sure that the layer already exists
+    return false;
+  }
+
+  // Get the needed information about the raw vertex buffer
+  Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSections().front()->getRenderOperation();
+  // Information about the Vertex Colour attribute
+  const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
+  const Ogre::VertexElement* color_sem = v_decl->findElementBySemantic(Ogre::VES_COLOUR);
+
+  // Get and lock the hardware vertex buffer of the mesh
+  Ogre::HardwareVertexBufferSharedPtr vbuf = render_op->vertexData->vertexBufferBinding->getBuffer(0);
+  Ogre::HardwareBufferLockGuard vbuf_lock(vbuf, Ogre::HardwareBuffer::HBL_WRITE_ONLY);
+  std::byte* raw = reinterpret_cast<std::byte*>(vbuf_lock.pData);
+
+  // write vertex colors
+  const auto& mesh = m_geometry;
+  for (uint32_t i = 0; i < vertices.size(); i++)
+  {
+    // Vertex handle
+    const uint32_t v = vertices[i];
+
+    if (v >= mesh.vertices.size())
+    {
+      continue;
+    }
+
+    // Point to the beginning of the vertex
+    std::byte* vertex = raw + v * vbuf->getVertexSize();
+    // Pointer to the color
+    Ogre::ABGR* vcolor = nullptr;
+    color_sem->baseVertexPointerToElement(vertex, &vcolor);
+
+    // write vertex colors that are calculated from the cost values
+    float normalizedCost = (costs[i] - minCost) / range;
+    normalizedCost = std::max(0.0f, normalizedCost);
+    normalizedCost = std::min(1.0f, normalizedCost);
+
+    *vcolor = calculateColorFromCost(normalizedCost, costColorType).getAsABGR();
+  }
+
+  return true;
+}
+
 bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords)
 {
   // check if there is a material index for each cluster

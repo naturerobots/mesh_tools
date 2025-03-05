@@ -101,6 +101,8 @@
 #include <mesh_msgs/srv/get_texture.hpp>
 #include <mesh_msgs/srv/get_uui_ds.hpp>
 
+#include <mesh_msgs/msg/mesh_vertex_costs_sparse_stamped.hpp>
+
 #endif // Q_MOC_RUN
 
 #include "rclcpp/rclcpp.hpp"
@@ -309,6 +311,11 @@ private Q_SLOTS:
   void updateVertexCostsSubscription();
 
   /**
+   * @brief Updates the subscribed vertex costs update topic.
+   */
+  void updateVertexCostsUpdateSubscription();
+
+  /**
    * @brief Updates the vertex color service.
    */
   void updateVertexColorService();
@@ -364,6 +371,12 @@ private:
   void vertexCostsCallback(const mesh_msgs::msg::MeshVertexCostsStamped::ConstSharedPtr& costsStamped);
 
   /**
+   * @brief Handler for incoming vertex cost update messages. Validate data and update the cost layer
+   * @param costsStamped The vertex costs
+   */
+  void vertexCostsUpdateCallback(const mesh_msgs::msg::MeshVertexCostsSparseStamped::ConstSharedPtr& update);
+
+  /**
    * @brief Requests vertex colors from the specified service
    * @param uuid Mesh UUID
    */
@@ -413,6 +426,8 @@ private:
   message_filters::Subscriber<mesh_msgs::msg::MeshVertexColorsStamped> m_vertexColorsSubscriber;
   /// Subscriber for vertex costs
   message_filters::Subscriber<mesh_msgs::msg::MeshVertexCostsStamped> m_vertexCostsSubscriber;
+  /// Subscriber for vertex cost updates
+  message_filters::Subscriber<mesh_msgs::msg::MeshVertexCostsSparseStamped> m_vertexCostUpdateSubscriber;
 
   /// TF2 message filter for incoming mesh data. Ensures we only process meshes for which a suitable TF is available
   tf2_ros::RVizMessageFilterPtr<mesh_msgs::msg::MeshGeometryStamped> m_tfMeshFilter;
@@ -421,6 +436,8 @@ private:
   std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexColorsStamped>> m_colorsMsgCache;
   /// Cache for vertex costs, useful for when cost information arrives before the mesh geometry
   std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>> m_costsMsgCache;
+  /// Cache for vertex costs updates
+  std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsSparseStamped>> m_costsUpdateMsgCache;
 
   /// Counter for the received messages
   uint32_t m_messagesReceived;
@@ -475,6 +492,11 @@ private:
   rviz_common::properties::RosTopicProperty* m_vertexCostsTopic;
   rviz_common::properties::QosProfileProperty* m_vertexCostsTopicQos;
   rclcpp::QoS m_vertexCostsQos;
+
+  /// Properties to handle topic vor vertex cost updates
+  rviz_common::properties::RosTopicProperty* m_vertexCostUpdateTopic;
+  rviz_common::properties::QosProfileProperty* m_vertexCostUpdateTopicQos;
+  rclcpp::QoS m_vertexCostUpdateQos;
 
   /// Property to select different types of vertex cost maps to be shown
   rviz_common::properties::EnumProperty* m_selectVertexCostMap;
