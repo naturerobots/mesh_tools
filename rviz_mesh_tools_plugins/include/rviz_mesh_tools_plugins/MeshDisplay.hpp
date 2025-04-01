@@ -402,6 +402,9 @@ private:
   /// Visual data
   std::queue<std::shared_ptr<MeshVisual>> m_visuals;
 
+  /// TF Frame of the last received message
+  std::string mesh_frame_;
+
   // ================= UI members =================
 
   /// Properties to handle topic for meshMsg

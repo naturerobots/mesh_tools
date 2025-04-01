@@ -326,7 +326,22 @@ void MeshDisplay::fixedFrameChanged()
   {
     m_tfMeshFilter->setTargetFrame(fixed_frame_.toStdString());
   }
-  reset();
+
+  // Update the pose relative to the fixed frame (Ogres top level scene node)
+  Ogre::Vector3 position;
+  Ogre::Quaternion orientation;
+  if (scene_node_)
+  {
+    if (!context_->getFrameManager()->getTransform(mesh_frame_, position, orientation))
+    {
+      this->setMissingTransformToFixedFrame(mesh_frame_);
+      return;
+    }
+
+    this->setTransformOk();
+  }
+
+  this->setPose(position, orientation);
 }
 
 void MeshDisplay::reset()
@@ -878,6 +893,7 @@ void MeshDisplay::processMessage(
   }
   setGeometry(mesh);
   setPose(position, orientation);
+  mesh_frame_ = meshMsg.header.frame_id;
 
   // set Normals
   std::vector<Normal> normals;
