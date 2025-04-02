@@ -100,8 +100,9 @@ std::vector<T> copy_1d_channel_to_vector(const lvr2::Channel<T>& lvr_channel)
 }
 
 MapDisplay::MapDisplay()
-:m_clusterLabelDisplay(nullptr)
-,m_meshDisplay(nullptr)
+: m_mapTfFrame(nullptr)
+, m_clusterLabelDisplay(nullptr)
+, m_meshDisplay(nullptr)
 {
   m_mapFilePath = new rviz_common::properties::FileProperty("Map file path", "/path/to/map.h5", "Absolute path of the map file", this,
                                          SLOT(updateMap()));
@@ -229,8 +230,14 @@ void MapDisplay::onInitialize()
 void MapDisplay::update(float wall_dt, float ros_dt)
 {
   // Pass update down to the subplugins
-  m_meshDisplay->update(wall_dt, ros_dt);
-  m_clusterLabelDisplay->update(wall_dt, ros_dt);
+  if (m_meshDisplay)
+  {
+    m_meshDisplay->update(wall_dt, ros_dt);
+  }
+  if (m_clusterLabelDisplay)
+  {
+    m_clusterLabelDisplay->update(wall_dt, ros_dt);
+  }
 }
 
 void MapDisplay::onEnable()
@@ -377,7 +384,7 @@ void MapDisplay::updateMap()
 
 void MapDisplay::updateMapFrame()
 {
-  if (m_meshDisplay)
+  if (m_meshDisplay && m_mapTfFrame)
   {
     m_meshDisplay->setMapFrame(m_mapTfFrame->getStdString());
   }
