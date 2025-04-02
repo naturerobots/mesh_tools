@@ -153,6 +153,11 @@ public:
   // virtual void load(const rviz_common::Config& config);
 
   /**
+   * @brief Periodically called from rviz
+   */
+  void update(float wall_dt, float ros_dt) override;
+
+  /**
    * @brief RViz callback on enable
    */
   void onEnable() override;
@@ -189,6 +194,12 @@ public:
    * @param geometry The geometry
    */
   void setGeometry(std::shared_ptr<Geometry> geometry);
+
+  /**
+   * @brief Set the reference frame of the map
+   * @param frame the frame to set
+   */
+  void setMapFrame(const std::string& frame);
 
   /**
    * @brief Set the vertex colors
@@ -306,12 +317,6 @@ private:
    * @brief RViz callback on initialize
    */
   void onInitialize() override;
-
-  /**
-   * @brief Periodically called from rviz
-   */
-  void update(float wall_dt, float ros_dt) override;
-
 
   /**
    * @brief Update the transform to the map

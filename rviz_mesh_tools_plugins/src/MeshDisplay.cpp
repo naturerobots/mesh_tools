@@ -472,6 +472,11 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
   setStatus(rviz_common::properties::StatusProperty::Ok, "Display", "");
 }
 
+void MeshDisplay::setMapFrame(const std::string& frame)
+{
+  this->m_meshFrame = frame;
+}
+
 void MeshDisplay::setVertexColors(vector<Color>& vertexColors)
 {
   std::shared_ptr<MeshVisual> visual = getLatestVisual();
