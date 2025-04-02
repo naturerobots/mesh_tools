@@ -338,7 +338,7 @@ void MapDisplay::updateMap()
       this,
       nullptr,
       true,
-      SLOT(updateMapFrame)
+      SLOT(updateMapFrame())
     );
     m_mapTfFrame->setFrameManager(context_->getFrameManager());
   }
