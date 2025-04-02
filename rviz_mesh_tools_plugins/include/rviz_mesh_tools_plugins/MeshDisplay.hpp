@@ -305,7 +305,18 @@ private:
   /**
    * @brief RViz callback on initialize
    */
-  void onInitialize();
+  void onInitialize() override;
+
+  /**
+   * @brief Periodically called from rviz
+   */
+  void update(float wall_dt, float ros_dt) override;
+
+
+  /**
+   * @brief Update the transform to the map
+   */
+  void transformMesh();
 
   /**
    * @brief initial service call for UUID & geometry
@@ -403,7 +414,7 @@ private:
   std::queue<std::shared_ptr<MeshVisual>> m_visuals;
 
   /// TF Frame of the last received message
-  std::string mesh_frame_;
+  std::string m_meshFrame;
 
   // ================= UI members =================
 

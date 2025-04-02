@@ -289,6 +289,52 @@ void MeshDisplay::onInitialize()
   //m_geometryClient = node->create_client<mesh_msgs::srv::GetGeometry>("get_geometry");
 }
 
+void MeshDisplay::update(float wall_dt, float ros_dt) 
+{
+  (void) wall_dt;
+  (void) ros_dt;
+
+  this->transformMesh();
+}
+
+void MeshDisplay::transformMesh()
+{
+  auto logger = rclcpp::get_logger("rviz_mesh_tools_plugins");
+  RCLCPP_DEBUG(logger, "MeshDisplay::transformMesh() - called");
+
+  // TODO: Check if we already received a Mesh. Using getLatestVisual segfaults.
+
+  // Happens if this is called after the constructor before onInitialize()
+  if (!context_)
+  {
+    RCLCPP_DEBUG(logger, "MeshDisplay::transformMesh() - context_ is not initialized");
+    return;
+  }
+
+  // Update the pose relative to the fixed frame (Ogres top level scene node)
+  if (!scene_node_)
+  {
+    RCLCPP_DEBUG(logger, "MeshDisplay::transformMesh() - scene_node_ is not initialized");
+    return;
+  }
+  Ogre::Vector3 position;
+  Ogre::Quaternion orientation;
+  if (!context_->getFrameManager()->getTransform(m_meshFrame, position, orientation))
+  {
+    this->setMissingTransformToFixedFrame(m_meshFrame);
+    RCLCPP_DEBUG(logger, "MeshDisplay::transformMesh() - missing transform");
+    return;
+  }
+
+  this->setTransformOk();
+
+  this->setPose(position, orientation);
+  RCLCPP_DEBUG(
+    logger, "MeshDisplay::transformMesh() - Set pose to [%f, %f, %f] [%f, %f, %f, %f]",
+    position.x, position.y, position.z, orientation.x, orientation.y, orientation.z, orientation.w
+  );
+}
+
 void MeshDisplay::onEnable()
 {
   rviz_common::Display::onEnable();
@@ -322,26 +368,17 @@ void MeshDisplay::transformerChangedCallback()
 
 void MeshDisplay::fixedFrameChanged()
 {
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rviz_mesh_tools_plugins"),
+    "MeshDisplay::fixedFrameChanged() - called"
+  );
+
   if (m_tfMeshFilter) 
   {
     m_tfMeshFilter->setTargetFrame(fixed_frame_.toStdString());
   }
 
-  // Update the pose relative to the fixed frame (Ogres top level scene node)
-  Ogre::Vector3 position;
-  Ogre::Quaternion orientation;
-  if (scene_node_)
-  {
-    if (!context_->getFrameManager()->getTransform(mesh_frame_, position, orientation))
-    {
-      this->setMissingTransformToFixedFrame(mesh_frame_);
-      return;
-    }
-
-    this->setTransformOk();
-  }
-
-  this->setPose(position, orientation);
+  this->transformMesh();
 }
 
 void MeshDisplay::reset()
@@ -893,7 +930,7 @@ void MeshDisplay::processMessage(
   }
   setGeometry(mesh);
   setPose(position, orientation);
-  mesh_frame_ = meshMsg.header.frame_id;
+  m_meshFrame = meshMsg.header.frame_id;
 
   // set Normals
   std::vector<Normal> normals;
