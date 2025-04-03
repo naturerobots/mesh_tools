@@ -52,10 +52,11 @@
 
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/color_property.hpp>
+#include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/properties/float_property.hpp>
 #include <rviz_common/properties/int_property.hpp>
-#include <rviz_common/properties/enum_property.hpp>
 #include <rviz_common/properties/string_property.hpp>
+#include <rviz_common/properties/tf_frame_property.hpp>
 
 // #include <rviz_common/failed_display.hpp>
 // #include <rviz_common/display_factory.hpp>
@@ -99,8 +100,9 @@ std::vector<T> copy_1d_channel_to_vector(const lvr2::Channel<T>& lvr_channel)
 }
 
 MapDisplay::MapDisplay()
-:m_clusterLabelDisplay(nullptr)
-,m_meshDisplay(nullptr)
+: m_mapTfFrame(nullptr)
+, m_clusterLabelDisplay(nullptr)
+, m_meshDisplay(nullptr)
 {
   m_mapFilePath = new rviz_common::properties::FileProperty("Map file path", "/path/to/map.h5", "Absolute path of the map file", this,
                                          SLOT(updateMap()));
@@ -225,6 +227,19 @@ void MapDisplay::onInitialize()
   }
 }
 
+void MapDisplay::update(float wall_dt, float ros_dt)
+{
+  // Pass update down to the subplugins
+  if (m_meshDisplay)
+  {
+    m_meshDisplay->update(wall_dt, ros_dt);
+  }
+  if (m_clusterLabelDisplay)
+  {
+    m_clusterLabelDisplay->update(wall_dt, ros_dt);
+  }
+}
+
 void MapDisplay::onEnable()
 {
   if(m_clusterLabelDisplay)
@@ -321,6 +336,20 @@ void MapDisplay::updateMap()
     return;
   }
 
+  if (nullptr == m_mapTfFrame)
+  {
+    m_mapTfFrame = new rviz_common::properties::TfFrameProperty(
+      "Frame",
+      "map",
+      "The TF frame of the loaded map.",
+      this,
+      nullptr,
+      true,
+      SLOT(updateMapFrame())
+    );
+    m_mapTfFrame->setFrameManager(context_->getFrameManager());
+  }
+
   if(m_meshDisplay)
   {
     // Update sub-plugins
@@ -328,6 +357,7 @@ void MapDisplay::updateMap()
     m_meshDisplay->setVertexColors(m_colors);
     m_meshDisplay->setVertexNormals(m_normals);
     m_meshDisplay->clearVertexCosts();
+    m_meshDisplay->setMapFrame(m_mapTfFrame->getFrameStd());
     for (const auto& vertexCosts : m_costs)
     {
         std::vector<float> costs = vertexCosts.second;
@@ -350,6 +380,18 @@ void MapDisplay::updateMap()
   setStatus(rviz_common::properties::StatusProperty::Ok, "Map", "");
 
   m_map_file_loaded = m_mapFilePath->getFilename();
+}
+
+void MapDisplay::updateMapFrame()
+{
+  if (m_meshDisplay && m_mapTfFrame)
+  {
+    m_meshDisplay->setMapFrame(m_mapTfFrame->getStdString());
+  }
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rviz_mesh_tools_plugins"),
+    "Map frame set to %s", m_mapTfFrame->getFrameStd().c_str()
+  );
 }
 
 // =====================================================================================================================

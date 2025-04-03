@@ -120,6 +120,7 @@ class FloatProperty;
 class IntProperty;
 class EnumProperty;
 class StringProperty;
+class TfFrameProperty;
 } // namespace properties
 } // namespace rviz
 
@@ -173,6 +174,8 @@ private Q_SLOTS:
    */
   void updateMap();
 
+  void updateMapFrame();
+
 private:
   void enableClusterLabelDisplay();
   void disableClusterLabelDisplay();
@@ -182,6 +185,11 @@ private:
    * @brief RViz callback on initialize
    */
   virtual void onInitialize() override;
+
+  /**
+   * @brief Periodically called from rviz
+   */
+  void update(float wall_dt, float ros_dt) override;
 
   /**
    * @brief RViz callback on enable
@@ -220,6 +228,9 @@ private:
   /// Path to map file
   rviz_common::properties::FileProperty* m_mapFilePath;
   std::string m_map_file_loaded;
+
+  /// Set the TF Frame of the map
+  rviz_common::properties::TfFrameProperty* m_mapTfFrame;
 
   /// Subdisplay: ClusterLabel (for showing the clusters)
   rviz_mesh_tools_plugins::ClusterLabelDisplay* m_clusterLabelDisplay;
