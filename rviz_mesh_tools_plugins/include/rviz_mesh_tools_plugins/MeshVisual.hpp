@@ -197,6 +197,13 @@ public:
   void setFrameOrientation(const Ogre::Quaternion& orientation);
 
   /**
+   * @brief Sets the hardware culling mode of the mesh.
+   *
+   * @param mode The hardware culling mode
+   */
+  void setCullingMode(Ogre::CullingMode mode);
+
+  /**
    * @brief Updates the visible parts of the mesh depending on input from the rviz display.
    *
    * @param showFaces             When TRUE faces are visible
@@ -381,6 +388,9 @@ private:
 
   /// Factor the normal-size is multiplied with.
   float m_normalsScalingFactor;
+
+  /// Hardware culling mode
+  Ogre::CullingMode m_cullingMode;
 
   /// raw Triangle Mesh
   Geometry m_geometry;
