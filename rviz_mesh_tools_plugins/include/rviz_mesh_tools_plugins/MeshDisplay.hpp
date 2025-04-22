@@ -312,6 +312,11 @@ private Q_SLOTS:
    */
   void updateMaterialAndTextureServices();
 
+  /**
+   * @brief Updates the hardware culling mode of the mesh
+   */
+  void updateCullingMode();
+
 private:
   /**
    * @brief RViz callback on initialize
@@ -497,6 +502,9 @@ private:
 
   /// Property to set wireframe transparency
   rviz_common::properties::FloatProperty* m_wireframeAlpha;
+
+  /// Property to select the hardware culling mode
+  rviz_common::properties::EnumProperty* m_cullingMode;
 
   /// Cache for received vertex cost messages
   std::map<std::string, std::vector<float>> m_costCache;

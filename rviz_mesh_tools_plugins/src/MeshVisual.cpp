@@ -106,6 +106,7 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
   , m_postfix(meshID)
   , m_random(randomID)
   , m_normalsScalingFactor(1)
+  , m_cullingMode(Ogre::CULL_NONE)
 {
   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Creating MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
@@ -411,7 +412,7 @@ void MeshVisual::showWireframe(Ogre::Pass* pass, Ogre::ColourValue wireframeColo
     pass->setDepthWriteEnabled(true);
   }
   pass->setPolygonMode(Ogre::PM_WIREFRAME);
-  pass->setCullingMode(Ogre::CULL_NONE);
+  pass->setCullingMode(m_cullingMode);
 }
 
 void MeshVisual::showFaces(Ogre::Pass* pass, Ogre::ColourValue facesColor, float facesAlpha,
@@ -431,7 +432,7 @@ void MeshVisual::showFaces(Ogre::Pass* pass, Ogre::ColourValue facesColor, float
     pass->setDepthWriteEnabled(false);
   }
   pass->setPolygonMode(Ogre::PM_SOLID);
-  pass->setCullingMode(Ogre::CULL_NONE);
+  pass->setCullingMode(m_cullingMode);
 }
 
 void MeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normalsColor, float normalsAlpha)
@@ -444,7 +445,7 @@ void MeshVisual::showNormals(Ogre::Pass* pass, Ogre::ColourValue normalsColor, f
     pass->setDepthWriteEnabled(true);
   }
   pass->setPolygonMode(Ogre::PM_WIREFRAME);
-  pass->setCullingMode(Ogre::CULL_NONE);
+  pass->setCullingMode(m_cullingMode);
 }
 
 void MeshVisual::updateMaterial(
@@ -720,7 +721,7 @@ void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const
         sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
 
     Ogre::Pass* pass = m_vertexCostMaterial->getTechnique(0)->getPass(0);
-    pass->setCullingMode(Ogre::CULL_NONE);
+    pass->setCullingMode(m_cullingMode);
     pass->setLightingEnabled(false);
 
     // start entering data
@@ -771,7 +772,7 @@ void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector
   m_noTexCluMesh->setVisible(false);
 
   Ogre::Pass* pass = m_noTexCluMaterial->getTechnique(0)->getPass(0);
-  pass->setCullingMode(Ogre::CULL_NONE);
+  pass->setCullingMode(m_cullingMode);
   pass->setLightingEnabled(false);
 
   m_noTexCluMesh->begin(m_noTexCluMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
@@ -794,7 +795,7 @@ void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector
       // set some rendering options for textured clusters
       Ogre::Pass* pass = m_textureMaterials[textureIndex]->getTechnique(0)->getPass(0);
       // pass->setTextureFiltering(Ogre::TFO_NONE);
-      pass->setCullingMode(Ogre::CULL_NONE);
+      pass->setCullingMode(m_cullingMode);
       pass->setLightingEnabled(false);
 
       // check if image was already loaded
@@ -1181,6 +1182,40 @@ void MeshVisual::setFramePosition(const Ogre::Vector3& position)
 void MeshVisual::setFrameOrientation(const Ogre::Quaternion& orientation)
 {
   m_sceneNode->setOrientation(orientation);
+}
+
+void MeshVisual::setCullingMode(Ogre::CullingMode cullingMode)
+{
+  m_cullingMode = cullingMode;
+
+  if (m_meshGeneralMaterial)
+  {
+    m_meshGeneralMaterial->setCullingMode(cullingMode);
+  }
+  if (m_normalMaterial)
+  {
+    m_normalMaterial->setCullingMode(cullingMode);
+  }
+  if (m_vertexCostMaterial)
+  {
+    m_vertexCostMaterial->setCullingMode(cullingMode);
+  }
+  if (m_noTexCluMaterial)
+  {
+    m_noTexCluMaterial->setCullingMode(cullingMode);
+  }
+  if (m_texturedMeshMaterial)
+  {
+    m_texturedMeshMaterial->setCullingMode(cullingMode);
+  }
+  if (m_meshTexturedTrianglesMaterial)
+  {
+    m_meshTexturedTrianglesMaterial->setCullingMode(cullingMode);
+  }
+  for (auto& material : m_textureMaterials)
+  {
+    material->setCullingMode(cullingMode);
+  }
 }
 
 }  // end namespace rviz_mesh_tools_plugins

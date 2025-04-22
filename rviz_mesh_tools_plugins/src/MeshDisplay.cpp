@@ -235,6 +235,15 @@ MeshDisplay::MeshDisplay()
     m_scalingFactor = new rviz_common::properties::FloatProperty("Normals Scaling Factor", 0.1, "Scaling factor of the normals",
                                               m_showNormals, SLOT(updateNormalsSize()), this);
   }
+
+  // Culling
+  {
+    m_cullingMode = new rviz_common::properties::EnumProperty("Culling Mode (HW)", "None", "Select Hardware Culling Mode for Mesh", this,
+      SLOT(updateCullingMode()), this);
+    m_cullingMode->addOption("None", Ogre::CULL_NONE);
+    m_cullingMode->addOption("Clockwise", Ogre::CULL_CLOCKWISE);
+    m_cullingMode->addOption("Anticlockwise", Ogre::CULL_ANTICLOCKWISE);
+  }
 }
 
 MeshDisplay::~MeshDisplay()
@@ -358,7 +367,10 @@ void MeshDisplay::onDisable()
   }
 
   unsubscribe();
-  reset();
+  if (!m_ignoreMsgs)
+  {
+    reset();
+  }
 }
 
 void MeshDisplay::transformerChangedCallback()
@@ -468,6 +480,7 @@ void MeshDisplay::setGeometry(shared_ptr<Geometry> geometry)
     updateMeshMaterial();
     updateNormals();
     updateWireframe();
+    updateCullingMode();
   }
   setStatus(rviz_common::properties::StatusProperty::Ok, "Display", "");
 }
@@ -835,6 +848,15 @@ void MeshDisplay::updateVertexColorService()
   else
   {
     setStatus(rviz_common::properties::StatusProperty::Warn, "Services", QString("The specified Vertex Color Service doesn't exist."));
+  }
+}
+
+void MeshDisplay::updateCullingMode()
+{
+  std::shared_ptr<MeshVisual> visual = getLatestVisual();
+  if (visual)
+  {
+    visual->setCullingMode(static_cast<Ogre::CullingMode>(m_cullingMode->getOptionInt()));
   }
 }
 
