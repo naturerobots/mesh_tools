@@ -1,3 +1,4 @@
+#include <OgreCommon.h>
 #include <rviz_mesh_tools_plugins/InteractionHelper.hpp>
 
 #include <rviz_common/display_context.hpp>
@@ -7,6 +8,7 @@
 #include <OgreViewport.h>
 #include <OgreCamera.h>
 #include <OgreSceneManager.h>
+#include <OgreTechnique.h>
 
 namespace rviz_mesh_tools_plugins
 {
@@ -25,8 +27,8 @@ Ogre::Ray getMouseEventRay(
 
 
 void getRawManualObjectData(
-  const Ogre::ManualObject* mesh, 
-  const size_t sectionNumber,
+  const Ogre::Affine3& to_world,
+  Ogre::ManualObject::ManualObjectSection& section,
   size_t& vertexCount, Ogre::Vector3*& vertices, 
   size_t& indexCount, unsigned long*& indices)
 {
@@ -36,7 +38,7 @@ void getRawManualObjectData(
   unsigned char* vertexChar;
   float* vertexFloat;
 
-  vertexData = mesh->getSection(sectionNumber)->getRenderOperation()->vertexData;
+  vertexData = section.getRenderOperation()->vertexData;
   vertexElement = vertexData->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
   vertexBuffer = vertexData->vertexBufferBinding->getBuffer(vertexElement->getSource());
   vertexChar = static_cast<unsigned char*>(vertexBuffer->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
@@ -47,17 +49,14 @@ void getRawManualObjectData(
   for (size_t i = 0; i < vertexCount; i++, vertexChar += vertexBuffer->getVertexSize())
   {
     vertexElement->baseVertexPointerToElement(vertexChar, &vertexFloat);
-    vertices[i] =
-        (mesh->getParentNode()->_getDerivedOrientation() *
-         (Ogre::Vector3(vertexFloat[0], vertexFloat[1], vertexFloat[2]) * mesh->getParentNode()->_getDerivedScale())) +
-        mesh->getParentNode()->_getDerivedPosition();
+    vertices[i] = to_world * Ogre::Vector3(vertexFloat[0], vertexFloat[1], vertexFloat[2]);
   }
 
   vertexBuffer->unlock();
 
   Ogre::IndexData* indexData;
   Ogre::HardwareIndexBufferSharedPtr indexBuffer;
-  indexData = mesh->getSection(sectionNumber)->getRenderOperation()->indexData;
+  indexData = section.getRenderOperation()->indexData;
   indexCount = indexData->indexCount;
   indices = new unsigned long[indexCount];
   indexBuffer = indexData->indexBuffer;
@@ -93,11 +92,49 @@ bool selectFace(
   Ogre::Vector3* vertices;
   size_t index_count = 0;
   unsigned long* indices;
-  size_t num_sections = mesh->getNumSections();
+  Ogre::Affine3 mesh_to_world = mesh->_getParentNodeFullTransform();
 
-  for (size_t i = 0; i < num_sections; i++)
+  for (auto& section: mesh->getSections())
   {
-    getRawManualObjectData(mesh, i, vertex_count, vertices, index_count, indices);
+    getRawManualObjectData(mesh_to_world, *section, vertex_count, vertices, index_count, indices);
+
+    // All sections and materials should have the same culling mode, so we use the first we find
+    std::optional<Ogre::CullingMode> culling_mode;
+    for (auto technique: section->getMaterial()->getTechniques())
+    {
+      for (auto pass: technique->getPasses())
+      {
+        culling_mode = pass->getCullingMode();
+        break;
+      }
+      if (culling_mode)
+      {
+        break;
+      }
+    }
+
+    if (!culling_mode)
+    {
+      culling_mode = Ogre::CullingMode::CULL_NONE;
+    }
+
+    bool int_pos = true;
+    bool int_neg = true;
+    switch(culling_mode.value())
+    {
+      case Ogre::CULL_CLOCKWISE:
+        int_pos = true;
+        int_neg = false;
+        break;
+      case Ogre::CULL_ANTICLOCKWISE:
+        int_pos = false;
+        int_neg = true;
+        break;
+      case Ogre::CULL_NONE:
+        int_pos = true;
+        int_neg = true;
+    }
+
     if (index_count != 0)
     {
       for (size_t face_id = 0; face_id < index_count / 3; face_id++)
@@ -108,7 +145,7 @@ bool selectFace(
         std::pair<bool, Ogre::Real> goal = Ogre::Math::intersects(ray, 
             vertices[indices[face_id * 3 + 0]], 
             vertices[indices[face_id * 3 + 1]],
-            vertices[indices[face_id * 3 + 2]], true, true);
+            vertices[indices[face_id * 3 + 2]], int_pos, int_neg);
 
         if (goal.first)
         {
@@ -157,9 +194,6 @@ bool selectFace(
     if (result[i].movable->getName().find("TriangleMesh") != std::string::npos)
     {
       Ogre::ManualObject* mesh = static_cast<Ogre::ManualObject*>(result[i].movable);
-      size_t goal_section = -1;
-      size_t goal_index = -1;
-      Ogre::Real dist = -1;
       if (selectFace(mesh, ray, intersection))
       {
         return true;
