@@ -82,6 +82,8 @@
 #include "rclcpp/executor.hpp"
 #include "rmw/validate_full_topic_name.h"
 
+#include <lvr2/attrmaps/AttrMaps.hpp>
+
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
@@ -102,6 +104,7 @@ namespace rviz_mesh_tools_plugins
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
+, m_timeSinceLastUpdateApply(0.0)
 , m_meshQos(rclcpp::QoS(1).transient_local())
 , m_vertexColorsQos(rclcpp::QoS(5))
 , m_vertexCostsQos(rclcpp::QoS(5))
@@ -310,8 +313,17 @@ void MeshDisplay::onInitialize()
 
 void MeshDisplay::update(float wall_dt, float ros_dt) 
 {
-  (void) wall_dt;
   (void) ros_dt;
+
+  if (m_timeSinceLastUpdateApply >= 1.0e9)
+  {
+    this->applyCachedCostUpdates();
+    m_timeSinceLastUpdateApply = 0.0;
+  }
+  else
+  {
+    m_timeSinceLastUpdateApply += wall_dt;
+  }
 
   this->transformMesh();
 }
@@ -1107,74 +1119,127 @@ void MeshDisplay::vertexCostsUpdateCallback(
     return;
   }
 
-  // Vertex cost have to be applied to the cached layer
-  auto result = m_costCache.find(update->type);
-  // Unknown layer
-  if (result == m_costCache.end())
-  {
-    //TODO: We could create an empty layer
-    return;
-  }
+  this->m_costsUpdateCache.push(update);
+}
 
-  // Update data in the cache
-  const auto& data = update->mesh_vertex_costs;
-  for (size_t i = 0; i < data.vertices.size(); i++)
-  {
-    result->second[data.vertices[i]] = data.costs[i];
-  }
+void MeshDisplay::applyCachedCostUpdates()
+{
 
-  // Update the mesh if we updated the current visual
-  if (update->type == m_selectVertexCostMap->getStdString())
+  const auto updates = m_costsUpdateCache.popAll();
+
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Processing %lu updates", updates.size());
+
+  // Space to combine updates per layer
+  std::map<std::string, lvr2::SparseVertexMap<float>> combined;
+  
+  for (const auto& update: updates)
   {
-    if (m_costUseCustomLimits->getBool())
+    // Vertex cost have to be applied to the cached layer
+    auto result = combined.find(update->type);
+    // Unknown layer
+    if (result == combined.end())
     {
-      if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
+      result = combined.insert({update->type, lvr2::SparseVertexMap<float>()}).first;
+    }
+
+    // Update data in the cache
+    const auto& data = update->mesh_vertex_costs;
+    for (size_t i = 0; i < data.vertices.size(); i++)
+    {
+      result->second.insert(lvr2::VertexHandle(data.vertices[i]), data.costs[i]);
+    }
+  }
+
+  for (const auto& [type, update]: combined)
+  {
+    // Vertex cost have to be applied to the cached layer
+    auto result = m_costCache.find(type);
+    // Unknown layer
+    if (result == m_costCache.end())
+    {
+      //TODO: We could create an empty layer
+      return;
+    }
+
+    // Update data in the cache
+    for (lvr2::VertexHandle v: update)
+    {
+      result->second[v.idx()] = update[v];
+    }
+
+    // Update the mesh if we updated the current visual
+    if (type == m_selectVertexCostMap->getStdString())
+    {
+      if (m_costUseCustomLimits->getBool())
       {
-        std::shared_ptr<MeshVisual> visual = getLatestVisual();
-        if (visual)
+        if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
         {
-          visual->updateVertexCosts(
-            data.vertices,
-            data.costs,
-            m_costColorType->getOptionInt(),
-            m_costLowerLimit->getFloat(),
-            m_costUpperLimit->getFloat()
-          );
+          std::shared_ptr<MeshVisual> visual = getLatestVisual();
+          if (visual)
+          {
+            std::vector<uint32_t> vertices;
+            std::vector<float> costs;
+            vertices.reserve(update.numValues());
+            costs.reserve(update.numValues());
+            for (lvr2::VertexHandle v: update)
+            {
+              vertices.push_back(v.idx());
+              costs.push_back(update[v]);
+            }
+
+            visual->updateVertexCosts(
+              vertices,
+              costs,
+              m_costColorType->getOptionInt(),
+              m_costLowerLimit->getFloat(),
+              m_costUpperLimit->getFloat()
+            );
+          }
         }
       }
-    }
-    else
+      else
     {
-      if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
-      {
-        // The correct way is the get the limits from the whole layer
-        // TODO: Cache this with the layer itself
-        float maxCost = std::numeric_limits<float>::min();
-        float minCost = std::numeric_limits<float>::max();
-        for (float cost : result->second)
+        if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
         {
-          if (std::isfinite(cost) && cost > maxCost)
-            maxCost = cost;
-          if (std::isfinite(cost) && cost < minCost)
-            minCost = cost;
-        }
+          // The correct way is the get the limits from the whole layer
+          // TODO: Cache this with the layer itself
+          float maxCost = std::numeric_limits<float>::min();
+          float minCost = std::numeric_limits<float>::max();
+          for (float cost : result->second)
+          {
+            if (std::isfinite(cost) && cost > maxCost)
+              maxCost = cost;
+            if (std::isfinite(cost) && cost < minCost)
+              minCost = cost;
+          }
 
 
-        std::shared_ptr<MeshVisual> visual = getLatestVisual();
-        if (visual)
-        {
-          visual->updateVertexCosts(
-            data.vertices,
-            data.costs,
-            m_costColorType->getOptionInt(),
-            minCost,
-            maxCost
-          );
+          std::shared_ptr<MeshVisual> visual = getLatestVisual();
+          if (visual)
+          {
+            std::vector<uint32_t> vertices;
+            std::vector<float> costs;
+            vertices.reserve(update.numValues());
+            costs.reserve(update.numValues());
+            for (lvr2::VertexHandle v: update)
+            {
+              vertices.push_back(v.idx());
+              costs.push_back(update[v]);
+            }
+            visual->updateVertexCosts(
+              vertices,
+              costs,
+              m_costColorType->getOptionInt(),
+              minCost,
+              maxCost
+            );
+          }
         }
       }
+      updateMeshMaterial();
     }
-    updateMeshMaterial();
   }
+
 }
 
 void MeshDisplay::requestVertexColors(std::string uuid)

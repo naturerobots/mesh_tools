@@ -85,6 +85,7 @@
 #include <message_filters/cache.h>
 
 #include <rviz_mesh_tools_plugins/RVizMessageFilter.hpp>
+#include <rviz_mesh_tools_plugins/ThreadSaveQueue.hpp>
 
 #include <rviz_rendering/mesh_loader.hpp>
 
@@ -156,6 +157,9 @@ public:
 
   /**
    * @brief Periodically called from rviz
+   *
+   * @param wall_dt Time since last update in NANOSECONDS (rviz doc says seconds)
+   * @param ros_dt Same as wall_dt but in ROS Time also NANOSECONDS
    */
   void update(float wall_dt, float ros_dt) override;
 
@@ -377,6 +381,11 @@ private:
   void vertexCostsUpdateCallback(const mesh_msgs::msg::MeshVertexCostsSparseStamped::ConstSharedPtr& update);
 
   /**
+   * @brief Apply all cached vertex cost updates
+   */
+  void applyCachedCostUpdates();
+
+  /**
    * @brief Requests vertex colors from the specified service
    * @param uuid Mesh UUID
    */
@@ -438,6 +447,11 @@ private:
   std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsStamped>> m_costsMsgCache;
   /// Cache for vertex costs updates
   std::shared_ptr<message_filters::Cache<mesh_msgs::msg::MeshVertexCostsSparseStamped>> m_costsUpdateMsgCache;
+
+  /// Cache for batching cost updates
+  ThreadSafeQueue<mesh_msgs::msg::MeshVertexCostsSparseStamped::ConstSharedPtr> m_costsUpdateCache;
+  float m_timeSinceLastUpdateApply;
+
 
   /// Counter for the received messages
   uint32_t m_messagesReceived;
