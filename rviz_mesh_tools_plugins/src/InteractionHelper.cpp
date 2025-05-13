@@ -1,4 +1,3 @@
-#include <OgreCommon.h>
 #include <rviz_mesh_tools_plugins/InteractionHelper.hpp>
 
 #include <rviz_common/display_context.hpp>
@@ -94,8 +93,21 @@ bool selectFace(
   unsigned long* indices;
   Ogre::Affine3 mesh_to_world = mesh->_getParentNodeFullTransform();
 
-  for (auto& section: mesh->getSections())
+/* ManualObject::getNumSections and ManualObject::getSection are deprecated
+ * in the Ogre version ROS Jazzy (and future versions) uses. Since the new
+ * API is not available in the Ogre version used by ROS Humble we use this
+ * check to keep Humble support.
+ *
+ * This can be removed when Humble support is dropped.
+ */
+#if OGRE_VERSION < ((1 << 16) | (12 << 8) | 7)
+  for (size_t i = 0; i < mesh->getNumSections(); i++)
   {
+    const auto& section = mesh->getSection(i);
+#else
+  for (const auto& section: mesh->getSections())
+  {
+#endif
     getRawManualObjectData(mesh_to_world, *section, vertex_count, vertices, index_count, indices);
 
     // All sections and materials should have the same culling mode, so we use the first we find
