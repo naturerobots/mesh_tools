@@ -232,9 +232,12 @@ private:
   void onInitialize();
 
   /**
-   * @brief Programmatically create an instance of the label tool from this package
+   * @brief Find the instance of the ClusterLabelTool or create one.
+   *
+   * We cannot store a pointer to the tool because RViz could sometimes replaces
+   * the Tool instance, and that would invalidate our pointer.
    */
-  void initializeLabelTool();
+  ClusterLabelTool* getOrCreateLabelTool();
 
   /**
    * @brief Create visuals for each cluster in the list
@@ -265,9 +268,6 @@ private:
 
   /// Cluster data
   vector<Cluster> m_clusterList;
-
-  /// Label tool
-  ClusterLabelTool* m_tool;
 
   /// Property for the current active visual
   rviz_common::properties::EnumProperty* m_activeVisualProperty;

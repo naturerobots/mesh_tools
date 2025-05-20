@@ -893,7 +893,6 @@ void ClusterLabelTool::resetFaces()
 
 void ClusterLabelTool::resetVisual()
 {
-  // TODO: Segfault here, when using RViz config
   m_visual.reset();
 }
 
