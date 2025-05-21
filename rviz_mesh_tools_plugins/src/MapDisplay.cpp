@@ -546,6 +546,46 @@ bool MapDisplay::loadData()
           m_costs[elem.first] = copy_1d_channel_to_vector(elem.second.extract<float>());
         }
       }
+
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load labeled clusters...");
+      m_clusterList.clear();
+
+      auto& hdf5_file = hdf5_mesh_io->m_hdf5_file;
+      const std::string labels_group_name = mesh_part + "/labels";
+      if (hdf5_file->exist(labels_group_name))
+      {
+        auto labels_group = hdf5_file->getGroup(mesh_part + "/labels");
+        for (const auto& gname: labels_group.listObjectNames())
+        {
+          RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Loading label: %s", gname.c_str());
+          // Load this labels instances
+          auto group = labels_group.getGroup(gname);
+          for (const auto& iname: group.listObjectNames())
+          {
+            // Check if we have a dataset
+            if (HighFive::ObjectType::Dataset != group.getObjectType(iname))
+            {
+              continue;
+            }
+
+            // Load the dataset
+            size_t n = 0;
+            const auto cluster_array = hdf5_mesh_io->loadArray<unsigned int>(group.getPath(), iname, n);
+            if (0 == n)
+            {
+              continue;
+            }
+
+            // Convert to vector
+            Cluster instance("", {});
+            // Instance 5 of label door = door_5
+            instance.name = gname + "_" + iname;
+            instance.faces.resize(n);
+            std::copy(cluster_array.get(), cluster_array.get() + n,instance.faces.begin());
+            m_clusterList.push_back(std::move(instance));
+          }
+        }
+      }
     }
     else 
     {
@@ -788,12 +828,19 @@ void MapDisplay::saveLabel(Cluster cluster)
       return;
     }
 
-    // is not working anyway
-    // // Open IO
-    // hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getFilename());
+    // Open IO
+    auto hdf5_mesh_io = std::make_shared<HDF5MeshIO>();
+    hdf5_mesh_io->open(m_mapFilePath->getFilename());
 
-    // // Add label with faces list
-    // map_io.addOrUpdateLabel(results[0], results[1], faces);
+    // Build HDF Group name
+    const std::string mesh_part = "mesh";
+    const std::string label_group = mesh_part + "/labels/" + results[0];
+
+    // Use Array IO to save each instance as a dataset
+    // Array IO needs shared array
+    auto faces_array = lvr2::indexArray(new unsigned int[faces.size()]);
+    std::copy(faces.begin(), faces.end(), faces_array.get());
+    hdf5_mesh_io->ArrayIO::save(label_group, results[1], faces.size(), faces_array);
 
     // Add to cluster list
     m_clusterList.push_back(Cluster(label, faces));
