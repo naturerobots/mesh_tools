@@ -1,0 +1,22 @@
+name: ROS2 CI - Build and Test
+
+on:
+  push:
+    branches:
+      - 'humble'
+  pull_request:
+  workflow_dispatch:
+    branches:
+      - '*'
+
+jobs:
+  jazzy_build_and_test:
+    uses: naturerobots/github_automation_public/.github/workflows/ros_ci.yaml@feature/parameterize-ros-distro
+    secrets: inherit
+    with:
+      ros_distro: jazzy
+  humble_build_and_test:
+    uses: naturerobots/github_automation_public/.github/workflows/ros_ci.yaml@feature/parameterize-ros-distro
+    secrets: inherit
+    with:
+      ros_distro: humble
