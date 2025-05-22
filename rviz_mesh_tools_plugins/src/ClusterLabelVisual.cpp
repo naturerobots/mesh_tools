@@ -147,6 +147,7 @@ ClusterLabelVisual::ClusterLabelVisual(
       RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "nullptr return: sceneManager->createEntity(\"ClusterLabelEntity\", \"ClusterLabelMesh\", \"General\"); ");
     }
     entity->setMaterialName("CustomMaterial", "General");
+    entity->setVisibilityFlags(m_displayContext->getDefaultVisibilityBit());
     m_sceneNode->attachObject(entity);
   }
 

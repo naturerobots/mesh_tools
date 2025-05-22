@@ -261,22 +261,12 @@ private:
   std::vector<float> m_boxData;
   std::vector<float> m_resultDistances;
 
-  // OpenCL
-  // cl::Device m_clDevice;
-  // cl::Context m_clContext;
-  // cl::Program::Sources m_clProgramSources;
-  // cl::Program m_clProgram;
-  // cl::CommandQueue m_clQueue;
-  // cl::Buffer m_clVertexBuffer;
-  // cl::Buffer m_clResultBuffer;
-  // cl::Buffer m_clRayBuffer;
-  // cl::Buffer m_clSphereBuffer;
-  // cl::Buffer m_clBoxBuffer;
-  // cl::Buffer m_clStartNormalBuffer;
-  // cl::Kernel m_clKernelSingleRay;
-  // cl::Kernel m_clKernelSphere;
-  // cl::Kernel m_clKernelBox;
-  // cl::Kernel m_clKernelDirAndDist;
+  // Accelerated area picking via Ogre render pass
+  Ogre::TexturePtr m_selectionTexture;
+  Ogre::MaterialPtr m_selectionMaterial;
+  Ogre::ManualObject* m_selectionMesh;
+  Ogre::SceneNode* m_selectionSceneNode;
+  uint32_t m_selectionVisibilityBit;
 };
 }  // end namespace rviz_mesh_tools_plugins
 
