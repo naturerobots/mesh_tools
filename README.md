@@ -1,6 +1,7 @@
-This is the active ROS2 branch of this repository, which targets [ROS2 humble](https://docs.ros.org/en/humble/index.html).
-Our CI runs on Ubuntu Jammy (22.04), but other distros might work as well.
+[![ROS2 CI - Build and Test](https://github.com/naturerobots/mesh_tools/actions/workflows/jazzy.yaml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/jazzy.yaml)
+[![Humble CI](https://github.com/naturerobots/mesh_tools/actions/workflows/humble.yaml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/humble.yaml)
 
+This is the active ROS2 branch of this repository.
 If your are looking for the old ROS1 version, checkout the [noetic branch](https://github.com/naturerobots/mesh_tools/tree/noetic).
 
 # Mesh Tools
@@ -111,10 +112,3 @@ This Video shows a textured dataset of the botanical garden of Osnabrück includ
 This video shows the labeling tool, which is used to cluster faces to an object or a union, (in the example a door) using a mesh inside a building
 
 [![Label Tool](http://img.youtube.com/vi/3IV2yo0D_CU/0.jpg)](http://www.youtube.com/watch?v=3IV2yo0D_CU)
-
-## Build Status
-
-| ROS Distro  | GitHub CI | Develop | Documentation | Source Deb | Binary Deb |
-|-------------|-----------|---------|---------------|------------|------------|
-| **Humble**  | [![Humble CI](https://github.com/naturerobots/mesh_tools/actions/workflows/humble.yaml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/humble.yaml) | N/A | N/A | N/A | N/A |
-| **Noetic**  | [![Noetic CI](https://github.com/naturerobots/mesh_tools/actions/workflows/noetic.yml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/noetic.yml) | [![Build Dev Status](http://build.ros.org/buildStatus/icon?job=Ndev__mesh_tools__ubuntu_focal_amd64)](http://build.ros.org/job/Ndev__mesh_tools__ubuntu_focal_amd64) | [![Build Doc Status](http://build.ros.org/buildStatus/icon?job=Ndoc__mesh_tools__ubuntu_focal_amd64)](http://build.ros.org/job/Ndoc__mesh_tools__ubuntu_focal_amd64) | [![Build Src Status](http://build.ros.org/buildStatus/icon?job=Nsrc_uF__mesh_tools__ubuntu_focal__source)](http://build.ros.org/job/Nsrc_uF__mesh_tools__ubuntu_focal__source) | [![Build Bin Status](http://build.ros.org/buildStatus/icon?job=Nbin_uF64__mesh_tools__ubuntu_focal_amd64__binary)](http://build.ros.org/job/Nbin_uF64__mesh_tools__ubuntu_focal_amd64__binary) | 
