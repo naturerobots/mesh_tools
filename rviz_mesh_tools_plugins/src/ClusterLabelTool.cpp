@@ -108,6 +108,7 @@ ClusterLabelTool::~ClusterLabelTool()
   context_->getSceneManager()->destroySceneNode(m_sceneNode);
   context_->getSceneManager()->destroySceneNode(m_selectionSceneNode);
   context_->getSceneManager()->destroyManualObject(m_selectionMesh);
+  context_->visibilityBits()->freeBits(m_selectionVisibilityBit);
 }
 
 // onInitialize() is called by the superclass after scene_manager_ and
@@ -149,6 +150,7 @@ void ClusterLabelTool::onInitialize()
 
   // Setup texture for accelerated picking
   // We render the scene in a 1280x720 resolution
+  // There should only ever be one instance of this Tool so we can reuse the texture
   m_selectionTexture = Ogre::TextureManager::getSingleton().getByName("ClusterLabelToolPickRenderTex");
   if (nullptr == m_selectionTexture)
   {
@@ -163,6 +165,7 @@ void ClusterLabelTool::onInitialize()
     );
   }
 
+  // Create a material
   m_selectionMaterial = Ogre::MaterialManager::getSingleton().getByName("ClusterLabelToolSelectionMat");
   if (nullptr == m_selectionMaterial)
   {
@@ -189,12 +192,16 @@ void ClusterLabelTool::setVisual(std::shared_ptr<ClusterLabelVisual> visual)
   // set new visual
   m_visual = visual;
   m_selectedFaces = visual->getFaces();
-  m_faceSelectedArray.clear();
+
+  // Reset the selected faces
+  std::fill(m_faceSelectedArray.begin(), m_faceSelectedArray.end(), false);
   for (auto faceId : m_selectedFaces)
   {
     if (m_faceSelectedArray.size() <= faceId)
     {
-      m_faceSelectedArray.resize(faceId + 1);
+      // The faceSelectedArray has space for all faces
+      // This is an error from the Visual
+      continue;
     }
     m_faceSelectedArray[faceId] = true;
   }
@@ -218,7 +225,8 @@ void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
 {
   m_display = display;
   m_meshGeometry = m_display->getGeometry();
-  m_faceSelectedArray.reserve(m_meshGeometry->faces.size());
+  m_faceSelectedArray.resize(m_meshGeometry->faces.size());
+  std::fill(m_faceSelectedArray.begin(), m_faceSelectedArray.end(), false);
   m_displayInitialized = true;
 
   m_vertexData.reserve(m_meshGeometry->faces.size() * 3 * 3);
@@ -238,68 +246,8 @@ void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
     }
   }
 
-  // For GPU accelerated picking we need per face attributes in the shader.
-  // Sadly Ogre 1.12 does not have a way to do this.
-  // Solution: Create a renderable geometry with 3 vertices per face and
-  // add a vertex property with the original face_id
-  // Then we can write a shader to write the face id to rendered pixels.
-  if (nullptr == m_selectionMesh)
-  {
-    m_selectionMesh = scene_manager_->createManualObject("ClusterLabelToolPickingMesh");
-    m_selectionMesh->setDynamic(false);
-    m_selectionMesh->begin(m_selectionBoxMaterial, Ogre::RenderOperation::OT_TRIANGLE_LIST);
-  }
-  else
-  {
-    m_selectionMesh->beginUpdate(0);
-  }
-
-  // We can only use RGB (24) bits to to represent triangle id
-  const uint32_t MAX_NUM_FACES = std::pow<uint32_t>(2, 24);
-  if (MAX_NUM_FACES > m_meshGeometry->faces.size())
-  {
-    RCLCPP_WARN(
-      rclcpp::get_logger("rviz_mesh_tools_plugins"),
-      "ClusterLabelTool: Mesh to label has more than the supported number of triangles (%u). This can lead to faces not being selected!",
-      MAX_NUM_FACES
-    );
-  }
-
-  for (uint32_t faceID = 0; faceID < m_meshGeometry->faces.size(); faceID++)
-  {
-    const auto& face = m_meshGeometry->faces[faceID];
-    for (int i = 0; i < 3; i++)
-    {
-      const auto& v = m_meshGeometry->vertices[face.vertexIndices[i]];
-      m_selectionMesh->position(v.x, v.y, v.z);
-      Ogre::ColourValue color;
-      color.setAsARGB(faceID);
-      color.a = 1.0;
-      m_selectionMesh->colour(color);
-    }
-    m_selectionMesh->triangle(faceID * 3 + 0, faceID * 3 + 1, faceID * 3 + 2);
-  }
-  m_selectionMesh->end();
-  m_selectionMesh->setVisibilityFlags(m_selectionVisibilityBit);
-  m_selectionMesh->setMaterial(0, m_selectionMaterial);
-
-  if (auto* parent = m_selectionSceneNode->getParentSceneNode())
-  {
-    parent->removeChild(m_selectionSceneNode);
-  }
-
-  const auto& c = display->getSceneNode()->getChildren();
-  if (c.end() == std::find(c.begin(), c.end(), m_selectionSceneNode))
-  {
-    display->getSceneNode()->addChild(m_selectionSceneNode);
-  }
-  m_selectionSceneNode->detachObject(m_selectionMesh);
-  RCLCPP_INFO(
-    rclcpp::get_logger("rviz_mesh_tools_plugins"),
-    "ClusterLabelTool: Load Mesh with %lu faces", m_meshGeometry->faces.size()
-  );
-  m_faceSelectedArray.clear();
-  m_faceSelectedArray.resize(m_meshGeometry->faces.size());
+  // Prepare for GPU accelerated selection
+  updateSelectionMesh();
 }
 
 void ClusterLabelTool::updateSelectionBox()
@@ -340,14 +288,6 @@ void ClusterLabelTool::updateSelectionBox()
 
 void ClusterLabelTool::selectionBoxStart(rviz_common::ViewportMouseEvent& event)
 {
-  // OLD: doesnt work anymore
-  // m_selectionStart.x = (float)event.x / event.viewport->getActualWidth();
-  // m_selectionStart.y = (float)event.y / event.viewport->getActualHeight();
-  // NEW: 
-  // TODO: Check if this is right
-  // m_selectionStart.x = (float)event.x / event.panel->getRenderWindow()->width();
-  // m_selectionStart.y = (float)event.y / event.panel->getRenderWindow()->height();
-
   m_bb_x1 = event.x;
   m_bb_y1 = event.y;
   m_evt_panel = event.panel;
@@ -360,13 +300,6 @@ void ClusterLabelTool::selectionBoxStart(rviz_common::ViewportMouseEvent& event)
 
 void ClusterLabelTool::selectionBoxMove(rviz_common::ViewportMouseEvent& event)
 {
-  // m_selectionStop.x = (float)event.x / event.viewport->getActualWidth();
-  // m_selectionStop.y = (float)event.y / event.viewport->getActualHeight();
-  
-  // Not possible
-  // m_selectionStop.x = (float)event.x / event.panel->getRenderWindow()->width();
-  // m_selectionStop.y = (float)event.y / event.panel->getRenderWindow()->height();
-
   m_bb_x2 = event.x;
   m_bb_y2 = event.y;
   m_evt_panel = event.panel;
@@ -378,44 +311,22 @@ void ClusterLabelTool::selectMultipleFaces(
   rviz_common::ViewportMouseEvent& event, 
   bool selectMode)
 {
+  (void) event;
   m_selectionBox->setVisible(false);
 
-  // Attach the mesh to scene node
-  m_selectionSceneNode->attachObject(m_selectionMesh);
+  Ogre::Image img = renderMeshWithFaceID();
+  img.save("test.png");
 
-  // Get the current rviz camera
-  Ogre::Camera* camera = context_->getViewManager()->getCurrent()->getCamera();
+  // Translate the selection box to uv coordinates
+  uint32_t x0 = std::min(m_bb_x1, m_bb_x2);
+  uint32_t x1 = std::max(m_bb_x1, m_bb_x2);
+  uint32_t y0 = std::min(m_bb_y1, m_bb_y2);
+  uint32_t y1 = std::max(m_bb_y1, m_bb_y2);
 
-  // Setup the render target to be the texture
-  Ogre::RenderTexture* render_texture = m_selectionTexture->getBuffer()->getRenderTarget();
-  Ogre::Viewport* viewport = render_texture->addViewport(camera);
-  viewport->setClearEveryFrame(true);
-  viewport->setOverlaysEnabled(false);
-  viewport->setBackgroundColour(Ogre::ColourValue::White);
-  viewport->setVisibilityMask(m_selectionVisibilityBit);
-
-  // Actually render offscreen
-  render_texture->update();
-
-  // Copy the data to ram
-  // TODO: We could copy only the rect we are interested in?
-  Ogre::Image img(Ogre::PF_R8G8B8, render_texture->getWidth(), render_texture->getHeight());
-  Ogre::PixelBox pixels = img.getPixelBox();
-
-  render_texture->copyContentsToMemory(pixels, pixels);
-
-  // At this point we need to inspect the contents
-  
-  // Translate to uv coordinates
-  uint32_t xl = std::min(m_bb_x1, m_bb_x2);
-  uint32_t xr = std::max(m_bb_x1, m_bb_x2);
-  uint32_t yl = std::min(m_bb_y1, m_bb_y2);
-  uint32_t yr = std::max(m_bb_y1, m_bb_y2);
-
-  const float u_min = std::clamp((float) xl / m_evt_panel->width(), 0.0f, 1.0f);
-  const float u_max = std::clamp((float) xr / m_evt_panel->width(), 0.0f, 1.0f);
-  const float v_min = std::clamp((float) yl / m_evt_panel->height(), 0.0f, 1.0f);
-  const float v_max = std::clamp((float) yr / m_evt_panel->height(), 0.0f, 1.0f);
+  const float u_min = std::clamp((float) x0 / m_evt_panel->width(), 0.0f, 1.0f);
+  const float u_max = std::clamp((float) x1 / m_evt_panel->width(), 0.0f, 1.0f);
+  const float v_min = std::clamp((float) y0 / m_evt_panel->height(), 0.0f, 1.0f);
+  const float v_max = std::clamp((float) y1 / m_evt_panel->height(), 0.0f, 1.0f);
 
   RCLCPP_DEBUG(
     rclcpp::get_logger("rviz_mesh_tools_plugins"),
@@ -423,10 +334,11 @@ void ClusterLabelTool::selectMultipleFaces(
     u_min, v_min, u_max, v_max
   );
 
-  const uint32_t tex_x0 = u_min * m_selectionTexture->getWidth();
-  const uint32_t tex_x1 = u_max * m_selectionTexture->getWidth();
-  const uint32_t tex_y0 = v_min * m_selectionTexture->getHeight();
-  const uint32_t tex_y1 = v_max * m_selectionTexture->getHeight();
+  // Translate to image coordinates
+  const uint32_t tex_x0 = u_min * img.getWidth();
+  const uint32_t tex_x1 = u_max * img.getWidth();
+  const uint32_t tex_y0 = v_min * img.getHeight();
+  const uint32_t tex_y1 = v_max * img.getHeight();
 
   RCLCPP_DEBUG(
     rclcpp::get_logger("rviz_mesh_tools_plugins"),
@@ -434,7 +346,6 @@ void ClusterLabelTool::selectMultipleFaces(
     tex_x0, tex_y0, tex_x1, tex_y1
   );
 
-  img.save("test.png");
   // Update all faces in the selected region
   for (uint32_t y = tex_y0; y < tex_y1; y++)
   {
@@ -454,10 +365,10 @@ void ClusterLabelTool::selectMultipleFaces(
       }
     }
   }
-  m_selectionSceneNode->detachAllObjects();
-  render_texture->removeAllViewports();
 
   // Update the visual with the selected faces
+  // TODO: How to do this without creating the tmpFaceList all the time
+  // Maybe use a std::set?
   std::vector<uint32_t> tmpFaceList;
   for(size_t faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
   {
@@ -470,63 +381,6 @@ void ClusterLabelTool::selectMultipleFaces(
   m_visual->setFacesInCluster(tmpFaceList);
 }
 
-void ClusterLabelTool::selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume, bool selectMode)
-{
-  m_boxData.clear();
-  for (Ogre::Plane plane : volume.planes)
-  {
-    m_boxData.push_back(plane.normal.x);
-    m_boxData.push_back(plane.normal.y);
-    m_boxData.push_back(plane.normal.z);
-    m_boxData.push_back(plane.d);
-  }
-
-  // try
-  // {
-  //   m_clQueue.enqueueWriteBuffer(m_clBoxBuffer, CL_TRUE, 0, sizeof(float) * 4 * 6, m_boxData.data());
-
-  //   m_clQueue.enqueueNDRangeKernel(m_clKernelBox, cl::NullRange, cl::NDRange(m_meshGeometry->faces.size()),
-  //                                  cl::NullRange, nullptr);
-  //   m_clQueue.finish();
-
-  //   m_resultDistances.resize(m_meshGeometry->faces.size());
-  //   m_clQueue.enqueueReadBuffer(m_clResultBuffer, CL_TRUE, 0, sizeof(float) * m_meshGeometry->faces.size(),
-  //                               m_resultDistances.data());
-  // }
-  // catch (cl::Error err)
-  // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
-  // }
-
-  for (int faceId = 0; faceId < m_meshGeometry->faces.size(); faceId++)
-  {
-    if (m_resultDistances[faceId] > 0)
-    {
-      if (m_faceSelectedArray.size() <= faceId)
-      {
-        m_faceSelectedArray.resize(faceId + 1);
-      }
-      m_faceSelectedArray[faceId] = selectMode;
-    }
-  }
-
-  std::vector<uint32_t> tmpFaceList;
-
-  for (uint32_t faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
-  {
-    if (m_faceSelectedArray[faceId])
-    {
-      tmpFaceList.push_back(faceId);
-    }
-  }
-
-  if (m_displayInitialized && m_visual)
-  {
-    m_visual->setFacesInCluster(tmpFaceList);
-    // m_visual->setColor(Ogre::ColourValue(0.0f, 0.0f, 1.0f, 1.0f));
-  }
-}
 
 void ClusterLabelTool::selectSingleFace(
   rviz_common::ViewportMouseEvent& event,
@@ -551,7 +405,7 @@ void ClusterLabelTool::selectSingleFace(
       }
       m_faceSelectedArray[intersection.face_id] = selectMode;
 
-      for(int faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
+      for(size_t faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
       {
         if (m_faceSelectedArray[faceId])
         {
@@ -568,185 +422,13 @@ void ClusterLabelTool::selectSingleFace(
   }
 }
 
-void ClusterLabelTool::selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode)
-{
-  m_rayData = { ray.getOrigin().x,    ray.getOrigin().y,    ray.getOrigin().z,
-                ray.getDirection().x, ray.getDirection().y, ray.getDirection().z };
-
-  std::vector<std::pair<uint32_t, float>> intersectedFaceList;
-
-  // try
-  // {
-  //   m_clQueue.enqueueWriteBuffer(m_clRayBuffer, CL_TRUE, 0, sizeof(float) * 6, m_rayData.data());
-
-  //   m_clQueue.enqueueNDRangeKernel(m_clKernelSingleRay, cl::NullRange, cl::NDRange(m_meshGeometry->faces.size()),
-  //                                  cl::NullRange, nullptr);
-  //   m_clQueue.finish();
-
-  //   m_resultDistances.resize(m_meshGeometry->faces.size());
-  //   m_clQueue.enqueueReadBuffer(m_clResultBuffer, CL_TRUE, 0, sizeof(float) * m_meshGeometry->faces.size(),
-  //                               m_resultDistances.data());
-  // }
-  // catch (cl::Error err)
-  // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
-  // }
-
-  int closestFaceId = -1;
-  float minDist = std::numeric_limits<float>::max();
-
-  for (int i = 0; i < m_meshGeometry->faces.size(); i++)
-  {
-    if (m_resultDistances[i] > 0 && m_resultDistances[i] < minDist)
-    {
-      closestFaceId = i;
-      minDist = m_resultDistances[i];
-    }
-  }
-
-  if (m_displayInitialized && m_visual && closestFaceId != -1)
-  {
-    std::vector<uint32_t> tmpFaceList;
-
-    if (m_faceSelectedArray.size() <= closestFaceId)
-    {
-      m_faceSelectedArray.resize(closestFaceId + 1);
-    }
-    m_faceSelectedArray[closestFaceId] = selectMode;
-
-    for (int faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
-    {
-      if (m_faceSelectedArray[faceId])
-      {
-        tmpFaceList.push_back(faceId);
-      }
-    }
-
-    m_visual->setFacesInCluster(tmpFaceList);
-    RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "selectSingleFaceParallel() found face with id %d", closestFaceId);
-  }
-}
 
 void ClusterLabelTool::selectSphereFaces(
   rviz_common::ViewportMouseEvent& event, bool selectMode)
 {
-  // Ogre::Ray ray = event.viewport->getCamera()->getCameraToViewportRay(
-  //     (float)event.x / event.viewport->getActualWidth(), (float)event.y / event.viewport->getActualHeight());
-  // Ogre::Ray ray = event.panel->getViewController()->getCamera()->getCameraToViewportRay(
-  //   (float)event.x / event.panel->getRenderWindow()->width(),
-  //   (float)event.y / event.panel->getRenderWindow()->height()
-  // );
   throw std::runtime_error("TODO");
-  Ogre::Ray ray;
-  selectSphereFacesParallel(ray, selectMode);
 }
 
-void ClusterLabelTool::selectSphereFacesParallel(
-  Ogre::Ray& ray, bool selectMode)
-{
-  auto raycastResult = getClosestIntersectedFaceParallel(ray);
-
-  if (raycastResult)
-  {
-    Ogre::Vector3 sphereCenter = ray.getPoint(raycastResult->second);
-
-    m_sphereData = { sphereCenter.x, sphereCenter.y, sphereCenter.z, raycastResult->second };
-
-    // try
-    // {
-    //   m_clQueue.enqueueWriteBuffer(m_clSphereBuffer, CL_TRUE, 0, sizeof(float) * 4, m_sphereData.data());
-
-    //   m_clQueue.enqueueNDRangeKernel(m_clKernelSphere, cl::NullRange, cl::NDRange(m_meshGeometry->faces.size()),
-    //                                  cl::NullRange, nullptr);
-    //   m_clQueue.finish();
-
-    //   m_resultDistances.resize(m_meshGeometry->faces.size());
-    //   m_clQueue.enqueueReadBuffer(m_clResultBuffer, CL_TRUE, 0, sizeof(float) * m_meshGeometry->faces.size(),
-    //                               m_resultDistances.data());
-    // }
-    // catch (cl::Error err)
-    // {
-    //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-    //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
-    // }
-
-    for (int faceId = 0; faceId < m_meshGeometry->faces.size(); faceId++)
-    {
-      // if face is inside sphere, select it
-      if (m_resultDistances[faceId] > 0)
-      {
-        if (m_faceSelectedArray.size() <= faceId)
-        {
-          m_faceSelectedArray.resize(faceId + 1);
-        }
-        m_faceSelectedArray[faceId] = selectMode;
-      }
-    }
-
-    if (m_displayInitialized && m_visual)
-    {
-      std::vector<uint32_t> tmpFaceList;
-      for (int faceId = 0; faceId < m_faceSelectedArray.size(); faceId++)
-      {
-        if (m_faceSelectedArray[faceId])
-        {
-          tmpFaceList.push_back(faceId);
-        }
-      }
-
-      m_visual->setFacesInCluster(tmpFaceList);
-    }
-  }
-}
-
-boost::optional<std::pair<uint32_t, float>> ClusterLabelTool::getClosestIntersectedFaceParallel(
-  Ogre::Ray& ray)
-{
-  m_rayData = { ray.getOrigin().x,    ray.getOrigin().y,    ray.getOrigin().z,
-                ray.getDirection().x, ray.getDirection().y, ray.getDirection().z };
-
-  // try
-  // {
-  //   m_clQueue.enqueueWriteBuffer(m_clRayBuffer, CL_TRUE, 0, sizeof(float) * 6, m_rayData.data());
-
-  //   m_clQueue.enqueueNDRangeKernel(m_clKernelSingleRay, cl::NullRange, cl::NDRange(m_meshGeometry->faces.size()),
-  //                                  cl::NullRange, nullptr);
-  //   m_clQueue.finish();
-
-  //   m_resultDistances.resize(m_meshGeometry->faces.size());
-  //   m_clQueue.enqueueReadBuffer(m_clResultBuffer, CL_TRUE, 0, sizeof(float) * m_meshGeometry->faces.size(),
-  //                               m_resultDistances.data());
-  // }
-  // catch (cl::Error err)
-  // {
-  //   RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), err.what() << ": " << CLUtil::getErrorString(err.err()));
-  //   RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "(" << CLUtil::getErrorDescription(err.err()) << ")");
-  // }
-
-  uint32_t closestFaceId;
-  bool faceFound = false;
-  float minDist = std::numeric_limits<float>::max();
-
-  for (uint32_t i = 0; i < m_meshGeometry->faces.size(); i++)
-  {
-    if (m_resultDistances[i] > 0 && m_resultDistances[i] < minDist)
-    {
-      closestFaceId = i;
-      faceFound = true;
-      minDist = m_resultDistances[i];
-    }
-  }
-
-  if (faceFound)
-  {
-    return std::make_pair(closestFaceId, minDist);
-  }
-  else
-  {
-    return {};
-  }
-}
 
 void ClusterLabelTool::publishLabel(std::string label)
 {
@@ -765,40 +447,48 @@ void ClusterLabelTool::publishLabel(std::string label)
 // Handling mouse event and mark the clicked faces
 int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
 {
-  if (event.leftDown() && event.control())
+  /* 
+   * Left Mouse is to select something, Right Mouse is to deselect something.
+   *
+   * Modifiers:
+   *
+   * None: Mark all faces inside a circle around the current mouse position
+   * Shift: Create a rectangle and mark all faces inside on mouse up
+   */
+
+
+  if (event.leftDown() && event.shift())
+  {
+    m_multipleSelect = true;
+    selectionBoxStart(event);
+  }
+  else if (event.leftDown()) // Option without modifier needs to come last
   {
     m_singleSelect = true;
-    selectSphereFaces(event, true);
+    selectSingleFace(event, true);
   }
   else if (event.leftUp() && m_singleSelect)
   {
     m_singleSelect = false;
-    selectSphereFaces(event, true);
-  }
-  else if (event.rightDown() && event.control())
-  {
-    m_singleDeselect = true;
-    selectSphereFaces(event, false);
-  }
-  else if (event.rightUp() && m_singleDeselect)
-  {
-    m_singleDeselect = false;
-    selectSphereFaces(event, false);
-  }
-  else if (event.leftDown())
-  {
-    m_multipleSelect = true;
-    selectionBoxStart(event);
   }
   else if (event.leftUp() && m_multipleSelect)
   {
     m_multipleSelect = false;
     selectMultipleFaces(event, true);
   }
-  else if (event.rightDown())
+  else if (event.rightDown() && event.shift())
   {
     m_multipleSelect = true;
     selectionBoxStart(event);
+  }
+  else if (event.rightDown())
+  {
+    m_singleSelect = true;
+    selectSingleFace(event, false);
+  }
+  else if (event.rightUp() && m_singleSelect)
+  {
+    m_singleSelect = false;
   }
   else if (event.rightUp() && m_multipleSelect)
   {
@@ -808,14 +498,6 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   else if (m_multipleSelect)
   {
     selectionBoxMove(event);
-  }
-  else if (m_singleSelect)
-  {
-    selectSphereFaces(event, true);
-  }
-  else if (m_singleDeselect)
-  {
-    selectSphereFaces(event, false);
   }
 
   return Render;
@@ -847,6 +529,107 @@ void ClusterLabelTool::resetFaces()
 void ClusterLabelTool::resetVisual()
 {
   m_visual.reset();
+}
+
+Ogre::Image ClusterLabelTool::renderMeshWithFaceID()
+{
+  // Attach the mesh to scene node
+  m_selectionSceneNode->attachObject(m_selectionMesh);
+
+  // Get the current RViz camera
+  Ogre::Camera* camera = context_->getViewManager()->getCurrent()->getCamera();
+
+  // Setup the render target to be the texture
+  Ogre::RenderTexture* render_texture = m_selectionTexture->getBuffer()->getRenderTarget();
+  Ogre::Viewport* viewport = render_texture->addViewport(camera);
+  viewport->setClearEveryFrame(true);
+  viewport->setOverlaysEnabled(false);
+  viewport->setBackgroundColour(Ogre::ColourValue::White);
+  viewport->setVisibilityMask(m_selectionVisibilityBit);
+
+  // Actually render offscreen
+  render_texture->update();
+
+  // Copy the data to ram
+  Ogre::Image img(Ogre::PF_R8G8B8, render_texture->getWidth(), render_texture->getHeight());
+  Ogre::PixelBox pixels = img.getPixelBox();
+  render_texture->copyContentsToMemory(pixels, pixels);
+
+  // Detach the rviz camera
+  render_texture->removeAllViewports();
+  // Prevent our copied Mesh to be visible in the RViz Camera
+  m_selectionSceneNode->detachAllObjects();
+
+  return img;
+}
+
+
+void ClusterLabelTool::updateSelectionMesh()
+{
+  // For GPU accelerated picking we need per face attributes in the shader.
+  // Sadly Ogre 1.12 does not have a way to do this.
+  // Solution: Create a renderable geometry with 3 vertices per face and
+  // add a vertex property with the original face_id
+  // Then we can write a shader to write the face id to rendered pixels.
+  if (nullptr == m_selectionMesh)
+  {
+    m_selectionMesh = scene_manager_->createManualObject("ClusterLabelToolPickingMesh");
+    m_selectionMesh->setDynamic(false);
+    m_selectionMesh->begin(m_selectionBoxMaterial, Ogre::RenderOperation::OT_TRIANGLE_LIST);
+  }
+  else
+  {
+    m_selectionMesh->beginUpdate(0);
+  }
+
+  // We can only use RGB (24) bits to to represent triangle id
+  const uint32_t MAX_NUM_FACES = std::pow<uint32_t>(2, 24);
+  if (MAX_NUM_FACES <= m_meshGeometry->faces.size())
+  {
+    RCLCPP_WARN(
+      rclcpp::get_logger("rviz_mesh_tools_plugins"),
+      "ClusterLabelTool: Mesh to label has more than the supported number of triangles (%u). This can lead to faces not being selected!",
+      MAX_NUM_FACES
+    );
+  }
+
+  for (uint32_t faceID = 0; faceID < m_meshGeometry->faces.size(); faceID++)
+  {
+    const auto& face = m_meshGeometry->faces[faceID];
+    for (int i = 0; i < 3; i++)
+    {
+      const auto& v = m_meshGeometry->vertices[face.vertexIndices[i]];
+      m_selectionMesh->position(v.x, v.y, v.z);
+      Ogre::ColourValue color;
+      color.setAsARGB(faceID);
+      color.a = 1.0;
+      m_selectionMesh->colour(color);
+    }
+    m_selectionMesh->triangle(faceID * 3 + 0, faceID * 3 + 1, faceID * 3 + 2);
+  }
+  m_selectionMesh->end();
+  m_selectionMesh->setVisibilityFlags(m_selectionVisibilityBit);
+  m_selectionMesh->setMaterial(0, m_selectionMaterial);
+
+  // Remove the selection node from the previous parent
+  if (auto* parent = m_selectionSceneNode->getParentSceneNode())
+  {
+    parent->removeChild(m_selectionSceneNode);
+  }
+
+  // TODO: This could or should be MeshDisplays scene node instead of the ClusterLabelDisplays
+  // Or the ClusterLabelDisplay also needs to honor the map to fixed frame transform
+
+  // Add our scene node below the displays scene node
+  const auto& c = m_display->getSceneNode()->getChildren();
+  if (c.end() == std::find(c.begin(), c.end(), m_selectionSceneNode))
+  {
+    m_display->getSceneNode()->addChild(m_selectionSceneNode);
+  }
+  RCLCPP_INFO(
+    rclcpp::get_logger("rviz_mesh_tools_plugins"),
+    "ClusterLabelTool: Load Mesh with %lu faces", m_meshGeometry->faces.size()
+  );
 }
 
 }  // End namespace rviz_mesh_tools_plugins

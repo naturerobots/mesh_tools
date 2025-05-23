@@ -245,12 +245,8 @@ private:
   void selectionBoxStart(rviz_common::ViewportMouseEvent& event);
   void selectionBoxMove(rviz_common::ViewportMouseEvent& event);
   void selectMultipleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume, bool selectMode);
   void selectSingleFace(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode);
   void selectSphereFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode);
-  boost::optional<std::pair<uint32_t, float>> getClosestIntersectedFaceParallel(Ogre::Ray& ray);
 
   rclcpp::Publisher<mesh_msgs::msg::MeshFaceClusterStamped>::SharedPtr m_labelPublisher;
 
@@ -260,6 +256,20 @@ private:
   std::array<float, 3> m_startNormalData;
   std::vector<float> m_boxData;
   std::vector<float> m_resultDistances;
+
+  /**
+   *  @brief Renders the current Mesh to an Offscreen Buffer using the FaceIDs as colors.
+   *
+   *  The resulting Image can be used to determine which faces are visible from the Camera.
+   *  
+   *  @return The rendered Image.
+   */
+  Ogre::Image renderMeshWithFaceID();
+
+  /**
+   *  @brief Setup the Selection Mesh from the current geometry
+   */
+  void updateSelectionMesh();
 
   // Accelerated area picking via Ogre render pass
   Ogre::TexturePtr m_selectionTexture;

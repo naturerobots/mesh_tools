@@ -374,20 +374,11 @@ ClusterLabelTool* ClusterLabelDisplay::getOrCreateLabelTool()
       RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not create ClusterLabelTool");
       return nullptr;
     }
+
+    // Set all settings the ClusterLabelTool needs to know
+    tool->setSphereSize(m_sphereSizeProperty->getFloat());
   }
 
-  // Set all settings the ClusterLabelTool needs to know
-  tool->setSphereSize(m_sphereSizeProperty->getFloat());
-  if (!m_visuals.empty())
-  {
-    tool->setVisual(m_visuals[m_activeVisualId]);
-  }
-
-  // The Tool will request the geometry and segfault (also we will log an error in getGeometry)
-  if (m_geometry)
-  {
-    tool->setDisplay(this);
-  }
 
   return tool;
 }
