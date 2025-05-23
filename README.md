@@ -1,4 +1,4 @@
-[![Jazzy CI - Build and Test](https://github.com/naturerobots/mesh_tools/actions/workflows/jazzy.yaml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/jazzy.yaml)
+[![Jazzy CI](https://github.com/naturerobots/mesh_tools/actions/workflows/jazzy.yaml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/jazzy.yaml)
 [![Humble CI](https://github.com/naturerobots/mesh_tools/actions/workflows/humble.yaml/badge.svg)](https://github.com/naturerobots/mesh_tools/actions/workflows/humble.yaml)
 
 This is the active ROS2 branch of this repository.
