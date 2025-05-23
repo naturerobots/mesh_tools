@@ -49,8 +49,6 @@
 #include <rviz_mesh_tools_plugins/ClusterLabelTool.hpp>
 #include <rviz_mesh_tools_plugins/ClusterLabelVisual.hpp>
 #include <rviz_mesh_tools_plugins/ClusterLabelDisplay.hpp>
-#include <rviz_mesh_tools_plugins/CLUtil.hpp>
-
 #include <rviz_mesh_tools_plugins/InteractionHelper.hpp>
 
 #include <fstream>
@@ -88,6 +86,7 @@ ClusterLabelTool::ClusterLabelTool()
 , m_display(nullptr)
 , m_selectionCircle(nullptr)
 , m_selectionMesh(nullptr)
+, m_selectionVisibilityBit(0)
 {
   shortcut_key_ = 'l';
 }
@@ -95,21 +94,42 @@ ClusterLabelTool::ClusterLabelTool()
 ClusterLabelTool::~ClusterLabelTool()
 {
   m_selectedFaces.clear();
-  scene_manager_->destroyManualObject(m_selectionBox->getName());
-  scene_manager_->destroyManualObject(m_selectionBoxMaterial->getName());
-  scene_manager_->destroyManualObject(m_selectionCircle);
-  scene_manager_->destroyManualObject(m_selectionMesh);
-  scene_manager_->destroySceneNode(m_sceneNode);
-  scene_manager_->destroySceneNode(m_selectionSceneNode);
-  scene_manager_->destroySceneNode(m_selectionCircleNode);
+  if (m_selectionBox)
+  {
+    scene_manager_->destroyManualObject(m_selectionBox->getName());
+    m_selectionBox = nullptr;
+  }
+  if (m_selectionBoxMaterial)
+  {
+    scene_manager_->destroyManualObject(m_selectionBoxMaterial->getName());
+    m_selectionBoxMaterial.reset();
+  }
+  if (m_selectionCircle)
+  {
+    scene_manager_->destroyManualObject(m_selectionCircle);
+    m_selectionCircle = nullptr;
+  }
+  if (m_selectionMesh)
+  {
+    scene_manager_->destroyManualObject(m_selectionMesh);
+    m_selectionMesh = nullptr;
+  }
+  if (m_sceneNode)
+  {
+    scene_manager_->destroySceneNode(m_sceneNode);
+    m_sceneNode = nullptr;
+  }
+  if (m_selectionSceneNode)
+  {
+    scene_manager_->destroySceneNode(m_selectionSceneNode);
+    m_selectionSceneNode = nullptr;
+  }
+  if (m_selectionCircleNode)
+  {
+    scene_manager_->destroySceneNode(m_selectionCircleNode);
+    m_selectionCircleNode = nullptr;
+  }
   context_->visibilityBits()->freeBits(m_selectionVisibilityBit);
-
-  m_display = nullptr;
-  m_selectionCircle = nullptr;
-  m_selectionCircleNode = nullptr;
-  m_evt_panel = nullptr;
-  m_selectionMesh = nullptr;
-  m_selectionSceneNode = nullptr;
 }
 
 // onInitialize() is called by the superclass after scene_manager_ and
@@ -229,6 +249,7 @@ void ClusterLabelTool::deactivate()
 
 void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
 {
+  RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelTool::setDisplay()");
   m_display = display;
   m_meshGeometry = m_display->getGeometry();
   m_faceSelectedArray.resize(m_meshGeometry->faces.size());
@@ -300,7 +321,12 @@ void ClusterLabelTool::selectMultipleFaces(
   bool selectMode)
 {
   (void) event;
-  m_selectionBox->setVisible(false);
+  // No map loaded or ClusterLabel display is not active
+  if (!m_visual)
+  {
+    return;
+  }
+
 
   Ogre::Image img = renderMeshWithFaceID();
 
@@ -365,7 +391,11 @@ void ClusterLabelTool::selectMultipleFaces(
     }
   }
 
-  m_visual->setFacesInCluster(tmpFaceList);
+  // Maybe the user has not loaded a map yet?
+  if (m_visual)
+  {
+    m_visual->setFacesInCluster(tmpFaceList);
+  }
 }
 
 
@@ -413,6 +443,12 @@ void ClusterLabelTool::selectSingleFace(
 void ClusterLabelTool::selectCircleFaces(
   rviz_common::ViewportMouseEvent& event, bool selectMode)
 {
+  // No map loaded or ClusterLabel display is not active
+  if (!m_visual)
+  {
+    return;
+  }
+
   // Get the selection buffer
   Ogre::Image buffer = renderMeshWithFaceID();
 
@@ -461,6 +497,13 @@ void ClusterLabelTool::selectCircleFaces(
       Ogre::ColourValue color = buffer.getColourAt(x, y, 0);
       color.a = 0.0;
       const uint32_t face_id = color.getAsARGB();
+
+      // Background color is white and results in an invalid face_id
+      if (face_id >= m_faceSelectedArray.size())
+      {
+        continue;
+      }
+
       m_faceSelectedArray[face_id] = selectMode;
     }
   }
@@ -508,6 +551,9 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   // Show circle overlay when control is pressed
   if (event.control())
   {
+    // Update the brush size with the wheel delta
+    m_brushSize = std::max(MIN_BRUSH_SIZE, m_brushSize + event.wheel_delta);
+
     updateSelectionCircle(event);
     m_selectionCircle->setVisible(true);
   }
@@ -540,6 +586,7 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   else if (event.leftUp() && m_multipleSelect)
   {
     m_multipleSelect = false;
+    m_selectionBox->setVisible(false);
     selectMultipleFaces(event, true);
   }
   else if (event.leftUp() && m_circleSelect)
@@ -569,6 +616,7 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   else if (event.rightUp() && m_multipleSelect)
   {
     m_multipleSelect = false;
+    m_selectionBox->setVisible(false);
     selectMultipleFaces(event, false);
   }
   else if (event.rightUp() && m_circleSelect)
@@ -657,14 +705,19 @@ void ClusterLabelTool::updateSelectionMesh()
   // Then we can write a shader to write the face id to rendered pixels.
   if (nullptr == m_selectionMesh)
   {
+    // Init the ManualObject used for offscreen rendering
     m_selectionMesh = scene_manager_->createManualObject("ClusterLabelToolPickingMesh");
-    m_selectionMesh->setDynamic(false);
+    m_selectionMesh->estimateVertexCount(m_meshGeometry->faces.size() * 3);
+    m_selectionMesh->estimateIndexCount(m_meshGeometry->faces.size() * 3);
     m_selectionMesh->begin(m_selectionBoxMaterial, Ogre::RenderOperation::OT_TRIANGLE_LIST);
   }
   else
   {
+    m_selectionMesh->estimateVertexCount(m_meshGeometry->faces.size() * 3);
+    m_selectionMesh->estimateIndexCount(m_meshGeometry->faces.size() * 3);
     m_selectionMesh->beginUpdate(0);
   }
+
 
   // We can only use RGB (24) bits to to represent triangle id
   const uint32_t MAX_NUM_FACES = std::pow<uint32_t>(2, 24);

@@ -37,9 +37,6 @@ find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 # find_package(assimp REQUIRED)
 
-# This needs to be optional for non CL devices
-# find_package(OpenCL 2 REQUIRED)
-
 # include_directories(${ASSIMP_INCLUDE_DIRS})
 
 # LVR2 includes HighFive that we need here
@@ -57,7 +54,6 @@ include_directories(
   ${LVR2_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${HDF5_INCLUDE_DIRS}
-  ${OpenCL_INCLUDE_DIRS}
 )
 
 set(SOURCE_FILES
@@ -84,7 +80,6 @@ set(MOC_HEADER_FILES
   include/rviz_mesh_tools_plugins/MeshDisplay.hpp
   include/rviz_mesh_tools_plugins/MeshVisual.hpp
   include/rviz_mesh_tools_plugins/ClusterLabelTool.hpp
-  include/rviz_mesh_tools_plugins/CLUtil.hpp
   include/rviz_mesh_tools_plugins/RvizFileProperty.hpp
   include/rviz_mesh_tools_plugins/MeshPoseTool.hpp
   include/rviz_mesh_tools_plugins/MeshGoalTool.hpp
@@ -116,7 +111,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 target_link_libraries(${PROJECT_NAME} PRIVATE
   ${HDF5_LIBRARIES}
   ${HDF5_HL_LIBRARIES}
-  ${OpenCL_LIBRARIES}
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "RVIZ_MESH_TOOLS_PLUGINS_BUILDING_LIBRARY")#
