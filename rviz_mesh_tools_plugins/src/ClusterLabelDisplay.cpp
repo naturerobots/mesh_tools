@@ -111,7 +111,7 @@ ClusterLabelDisplay::ClusterLabelDisplay()
   m_colorsProperty = new rviz_common::properties::Property("Colors", "", "colors", this, SLOT(updateColors()), this);
   m_colorsProperty->setReadOnly(true);
   m_sphereSizeProperty =
-      new rviz_common::properties::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
+      new rviz_common::properties::FloatProperty("Brush Size", 50.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
   m_phantomVisualProperty = new rviz_common::properties::BoolProperty("Show Phantom", false,
                                                    "Show a transparent silhouette of the whole mesh to help with "
                                                    "labeling",
@@ -167,7 +167,10 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
 void ClusterLabelDisplay::onInitialize()
 {
   // Look for an existing label tool or create a new one
-  getOrCreateLabelTool();
+  ClusterLabelTool* tool = getOrCreateLabelTool();
+
+  // Set the Tool related configuration
+  tool->setBrushSize(m_sphereSizeProperty->getFloat());
 }
 
 void ClusterLabelDisplay::onEnable()
@@ -263,7 +266,7 @@ void ClusterLabelDisplay::updateSphereSize()
 {
   if (auto* tool = getOrCreateLabelTool())
   {
-    tool->setSphereSize(m_sphereSizeProperty->getFloat());
+    tool->setBrushSize(m_sphereSizeProperty->getFloat());
   }
 }
 
@@ -374,11 +377,7 @@ ClusterLabelTool* ClusterLabelDisplay::getOrCreateLabelTool()
       RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not create ClusterLabelTool");
       return nullptr;
     }
-
-    // Set all settings the ClusterLabelTool needs to know
-    tool->setSphereSize(m_sphereSizeProperty->getFloat());
   }
-
 
   return tool;
 }

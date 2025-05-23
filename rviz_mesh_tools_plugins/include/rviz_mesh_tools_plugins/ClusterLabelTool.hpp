@@ -181,10 +181,10 @@ public:
   void setVisual(std::shared_ptr<ClusterLabelVisual> visual);
 
   /**
-   * @brief Adjust the sphere size for the brush tool
-   * @param size The sphere size
+   * @brief Adjust the circle size for the brush tool
+   * @param size The circle diameter in screen Pixels
    */
-  void setSphereSize(float size);
+  void setBrushSize(float size);
 
 public Q_SLOTS:
 
@@ -213,20 +213,19 @@ public Q_SLOTS:
 private:
   std::vector<uint32_t> m_selectedFaces;
   std::vector<bool> m_faceSelectedArray;
-  bool m_displayInitialized;
   ClusterLabelDisplay* m_display;
   std::shared_ptr<ClusterLabelVisual> m_visual;
   std::shared_ptr<Geometry> m_meshGeometry;
-  float m_sphereSize = 1.0f;
+  float m_brushSize = 1.0f;
 
   // Selection Box
-  rviz_common::DisplayContext* m_displayContext;
   Ogre::SceneNode* m_sceneNode;
   Ogre::ManualObject* m_selectionBox;
   Ogre::MaterialPtr m_selectionBoxMaterial;
-  
-  // rviz_common::ViewportMouseEvent m_evt_start;
-  // rviz_common::ViewportMouseEvent m_evt_stop;
+
+  // Selection Circle
+  Ogre::ManualObject* m_selectionCircle;
+  Ogre::SceneNode* m_selectionCircleNode;
 
   int m_bb_x1;
   int m_bb_y1;
@@ -234,28 +233,26 @@ private:
   int m_bb_y2;
 
   rviz_common::RenderPanel* m_evt_panel;
-  
+
+  // Selection Modes
   bool m_multipleSelect = false;
   bool m_singleSelect = false;
-  bool m_singleDeselect = false;
+  bool m_circleSelect = false;
+  // Select = true Deselect = false
+  bool m_selectionMode = false;
 
   std::vector<Ogre::Vector3> m_vertexPositions;
 
+  void initSelectionCircle();
+  void updateSelectionCircle(rviz_common::ViewportMouseEvent& event);
   void updateSelectionBox();
   void selectionBoxStart(rviz_common::ViewportMouseEvent& event);
   void selectionBoxMove(rviz_common::ViewportMouseEvent& event);
   void selectMultipleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
   void selectSingleFace(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectSphereFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
+  void selectCircleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
 
   rclcpp::Publisher<mesh_msgs::msg::MeshFaceClusterStamped>::SharedPtr m_labelPublisher;
-
-  std::vector<float> m_vertexData;
-  std::array<float, 6> m_rayData;
-  std::array<float, 4> m_sphereData;
-  std::array<float, 3> m_startNormalData;
-  std::vector<float> m_boxData;
-  std::vector<float> m_resultDistances;
 
   /**
    *  @brief Renders the current Mesh to an Offscreen Buffer using the FaceIDs as colors.
@@ -276,6 +273,7 @@ private:
   Ogre::MaterialPtr m_selectionMaterial;
   Ogre::ManualObject* m_selectionMesh;
   Ogre::SceneNode* m_selectionSceneNode;
+  // Used to render only the selectionMesh to the offscreen Texture
   uint32_t m_selectionVisibilityBit;
 };
 }  // end namespace rviz_mesh_tools_plugins
