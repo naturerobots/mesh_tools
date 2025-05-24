@@ -552,7 +552,15 @@ int ClusterLabelTool::processMouseEvent(rviz_common::ViewportMouseEvent& event)
   if (event.control())
   {
     // Update the brush size with the wheel delta
-    m_brushSize = std::max(MIN_BRUSH_SIZE, m_brushSize + event.wheel_delta);
+    // In my tests one wheel step was always +-120
+    if (event.wheel_delta > 0)
+    {
+      m_brushSize = std::max(MIN_BRUSH_SIZE, m_brushSize + MOUSE_WHEEL_BRUSH_SIZE_STEP);
+    }
+    else if (event.wheel_delta < 0)
+    {
+      m_brushSize = std::max(MIN_BRUSH_SIZE, m_brushSize - MOUSE_WHEEL_BRUSH_SIZE_STEP);
+    }
 
     updateSelectionCircle(event);
     m_selectionCircle->setVisible(true);

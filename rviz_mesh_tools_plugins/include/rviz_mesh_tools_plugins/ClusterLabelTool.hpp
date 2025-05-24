@@ -128,6 +128,10 @@ class ClusterLabelTool : public rviz_common::Tool
 {
   Q_OBJECT
 public:
+  // Constants
+  static constexpr float MIN_BRUSH_SIZE = 20.0f;
+  static constexpr float MOUSE_WHEEL_BRUSH_SIZE_STEP = 10;
+
   /**
    * @brief Constructor
    */
