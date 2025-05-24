@@ -677,7 +677,7 @@ std::vector<uint32_t> ClusterLabelTool::getSelectedFaces()
 
 void ClusterLabelTool::resetFaces()
 {
-  m_faceSelectedArray.clear();
+  std::fill(m_faceSelectedArray.begin(), m_faceSelectedArray.end(), false);
   if(m_visual)
   {
     m_visual->setFacesInCluster(std::vector<uint32_t>());
