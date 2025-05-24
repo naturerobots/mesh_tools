@@ -198,6 +198,11 @@ public Q_SLOTS:  // not sure wether any of those actually need to be q slots ...
    */
   void setData(shared_ptr<Geometry> geometry, vector<Cluster> clusters);
 
+  /**
+   * @brief Slot for changing the culling mode used in the LabelTool, and the LabelVisuals
+   */
+  void setCullingMode(Ogre::CullingMode mode);
+
 private Q_SLOTS:
 
   /**
@@ -292,6 +297,9 @@ private:
 
   /// A variable that will be set to true, once the initial data has arrived
   bool has_data = false;
+
+  /// Current Culling Mode
+  Ogre::CullingMode m_cullingMode;
 
   
 };

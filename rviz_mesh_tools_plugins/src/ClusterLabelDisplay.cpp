@@ -97,6 +97,7 @@ ClusterLabelDisplay::ClusterLabelDisplay()
 , m_colorsProperty(nullptr)
 , m_sphereSizeProperty(nullptr)
 , m_phantomVisualProperty(nullptr)
+, m_cullingMode(Ogre::CullingMode::CULL_NONE)
 {
   m_activeVisualProperty =
       new rviz_common::properties::EnumProperty("Active label", "__NEW__", "Current active label. Can be edited with Cluster Label Tool",
@@ -159,6 +160,19 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
   }
 
   setStatus(rviz_common::properties::StatusProperty::Ok, "Display", "");
+}
+
+void ClusterLabelDisplay::setCullingMode(Ogre::CullingMode mode)
+{
+  auto* tool = getOrCreateLabelTool();
+  if (tool)
+  {
+    tool->setCullingMode(mode);
+  }
+  for (auto& visual: m_visuals)
+  {
+    visual->setCullingMode(mode);
+  }
 }
 
 // =====================================================================================================================
@@ -329,6 +343,7 @@ void ClusterLabelDisplay::createVisualsFromClusterList()
     );
     visual->setFacesInCluster(m_clusterList[i].faces);
     visual->setColor(getRainbowColor((++colorIndex / m_clusterList.size())), m_alphaProperty->getFloat());
+    visual->setCullingMode(m_cullingMode);
     m_visuals.push_back(visual);
   }
 }

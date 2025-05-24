@@ -87,6 +87,7 @@ ClusterLabelTool::ClusterLabelTool()
 , m_selectionCircle(nullptr)
 , m_selectionMesh(nullptr)
 , m_selectionVisibilityBit(0)
+, m_cullingMode(Ogre::CullingMode::CULL_NONE)
 {
   shortcut_key_ = 'l';
 }
@@ -200,6 +201,7 @@ void ClusterLabelTool::onInitialize()
     );
   }
 
+  m_selectionMaterial->setCullingMode(m_cullingMode);
   Ogre::Technique* tech = m_selectionMaterial->getTechnique(0);
   Ogre::Pass* pass = tech->getPass(0);
   pass->setLightingEnabled(false);
@@ -838,6 +840,16 @@ void ClusterLabelTool::initSelectionCircle()
   m_selectionCircle->end();
   m_selectionCircle->setMaterial(0, m_selectionBoxMaterial);
 }
+
+void ClusterLabelTool::setCullingMode(Ogre::CullingMode mode)
+{
+  m_cullingMode = mode;
+  if (m_selectionMaterial)
+  {
+    m_selectionMaterial->setCullingMode(mode);
+  }
+}
+
 }  // End namespace rviz_mesh_tools_plugins
 
 

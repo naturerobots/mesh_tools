@@ -182,6 +182,11 @@ public:
    */
   void setBrushSize(float size);
 
+  /**
+   * @brief Set the culling mode for selection to match the MeshVisual
+   */
+  void setCullingMode(Ogre::CullingMode mode);
+
 public Q_SLOTS:
 
   /**
@@ -271,6 +276,7 @@ private:
   Ogre::SceneNode* m_selectionSceneNode;
   // Used to render only the selectionMesh to the offscreen Texture
   uint32_t m_selectionVisibilityBit;
+  Ogre::CullingMode m_cullingMode;
 };
 }  // end namespace rviz_mesh_tools_plugins
 

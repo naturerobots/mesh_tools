@@ -291,6 +291,14 @@ void ClusterLabelVisual::setColor(Ogre::ColourValue facesColor, float alpha)
   }
 }
 
+void ClusterLabelVisual::setCullingMode(Ogre::CullingMode mode)
+{
+  if (m_material)
+  {
+    m_material->setCullingMode(mode);
+  }
+}
+
 void ClusterLabelVisual::initMaterial()
 {
   m_material->setCullingMode(Ogre::CULL_NONE);

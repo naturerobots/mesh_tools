@@ -430,6 +430,8 @@ bool MapDisplay::loadData()
     {
       enableClusterLabelDisplay(); // enable label writing to hdf5
       enableMeshDisplay();
+      // The ClusterLabelDisplay shall be notified of CullingModeChanges in the MeshDisplay
+      QObject::connect(m_meshDisplay, &MeshDisplay::signalCullingModeChanged, m_clusterLabelDisplay, &ClusterLabelDisplay::setCullingMode);
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load HDF5 map");
 
