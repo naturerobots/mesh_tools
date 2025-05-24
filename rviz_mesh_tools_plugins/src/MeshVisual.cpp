@@ -133,30 +133,35 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
   sstm << m_prefix << "_TriangleMesh_" << m_postfix << "_" << m_random;
   m_mesh = sceneManager->createManualObject(sstm.str());
   m_mesh->setDynamic(false);
+  m_mesh->setVisibilityFlags(context->getDefaultVisibilityBit());
   m_sceneNode->attachObject(m_mesh);
 
   std::stringstream sstmNormals;
   sstmNormals << m_prefix << "_Normals_" << m_postfix << "_" << m_random;
   m_normals = sceneManager->createManualObject(sstmNormals.str());
   m_normals->setDynamic(false);
+  m_normals->setVisibilityFlags(context->getDefaultVisibilityBit());
   m_sceneNode->attachObject(m_normals);
 
   std::stringstream sstmTexturedMesh;
   sstmTexturedMesh << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random;
   m_texturedMesh = sceneManager->createManualObject(sstmTexturedMesh.str());
   m_texturedMesh->setDynamic(false);
+  m_texturedMesh->setVisibilityFlags(context->getDefaultVisibilityBit());
   m_sceneNode->attachObject(m_texturedMesh);
 
   std::stringstream sstmNoTexCluMesh;
   sstmNoTexCluMesh << m_prefix << "_NoTexCluMesh_" << m_postfix << "_" << m_random;
   m_noTexCluMesh = sceneManager->createManualObject(sstmNoTexCluMesh.str());
   m_noTexCluMesh->setDynamic(false);
+  m_noTexCluMesh->setVisibilityFlags(context->getDefaultVisibilityBit());
   m_sceneNode->attachObject(m_noTexCluMesh);
 
   std::stringstream sstmVertexCostsMesh;
   sstmVertexCostsMesh << m_prefix << "_VertexCostsMesh_" << m_postfix << "_" << m_random;
   m_vertexCostsMesh = sceneManager->createManualObject(sstmVertexCostsMesh.str());
   m_vertexCostsMesh->setDynamic(false);
+  m_vertexCostsMesh->setVisibilityFlags(context->getDefaultVisibilityBit());
   m_sceneNode->attachObject(m_vertexCostsMesh);
 }
 
