@@ -235,7 +235,6 @@ void ClusterLabelTool::setVisual(std::shared_ptr<ClusterLabelVisual> visual)
 
 void ClusterLabelTool::setBrushSize(float size)
 {
-  // m_clKernelSphere.setArg(3, size);
   m_brushSize = size;
 }
 
@@ -245,6 +244,8 @@ void ClusterLabelTool::activate()
 
 void ClusterLabelTool::deactivate()
 {
+  // Ensure that the Circle disappears when the tool is deactivated
+  m_selectionCircle->setVisible(false);
 }
 
 void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
@@ -252,8 +253,24 @@ void ClusterLabelTool::setDisplay(ClusterLabelDisplay* display)
   RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelTool::setDisplay()");
   m_display = display;
   m_meshGeometry = m_display->getGeometry();
+
+  // Allocate a buffer and init to unselected
   m_faceSelectedArray.resize(m_meshGeometry->faces.size());
   std::fill(m_faceSelectedArray.begin(), m_faceSelectedArray.end(), false);
+
+  // If a Visual is set ensure the tools internal state is in sync with it
+  // If the Visual is replaced later the internal state is updated again
+  if (m_visual)
+  {
+    for (size_t face_id: m_visual->getFaces())
+    {
+      if (m_faceSelectedArray.size() <= face_id)
+      {
+        continue;
+      }
+      m_faceSelectedArray[face_id] = true;
+    }
+  }
 
   // Prepare for GPU accelerated selection
   updateSelectionMesh();
@@ -526,14 +543,13 @@ void ClusterLabelTool::publishLabel(std::string label)
 {
   RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Label Tool: Publish label '" << label << "'");
 
-  vector<uint32_t> faces;
-  for (uint32_t i = 0; i < m_faceSelectedArray.size(); i++)
+  // Cannot save without having a marked visual
+  if (!m_visual)
   {
-    if (m_faceSelectedArray[i])
-      faces.push_back(i);
+    return;
   }
 
-  m_display->addLabel(label, faces);
+  m_display->addLabel(label, m_visual->getFaces());
 }
 
 // Handling mouse event and mark the clicked faces

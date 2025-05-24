@@ -811,8 +811,8 @@ bool MapDisplay::loadData()
 
 void MapDisplay::saveLabel(Cluster cluster)
 {
-  std::string label = cluster.name;
-  std::vector<uint32_t> faces = cluster.faces;
+  const std::string& label = cluster.name;
+  const std::vector<uint32_t>& faces = cluster.faces;
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: add label '" << label << "'");
 
@@ -842,8 +842,16 @@ void MapDisplay::saveLabel(Cluster cluster)
     std::copy(faces.begin(), faces.end(), faces_array.get());
     hdf5_mesh_io->ArrayIO::save(label_group, results[1], faces.size(), faces_array);
 
-    // Add to cluster list
-    m_clusterList.push_back(Cluster(label, faces));
+    // Add to cluster list or update existing cluster
+    auto it = std::find_if(m_clusterList.begin(), m_clusterList.end(), [label](const Cluster& c){ return label == c.name;});
+    if (it != m_clusterList.end())
+    {
+      *it = cluster;
+    }
+    else
+    {
+      m_clusterList.push_back(cluster);
+    }
 
     setStatus(rviz_common::properties::StatusProperty::Ok, "Label", "Successfully saved label");
     RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Successfully added label to map.");

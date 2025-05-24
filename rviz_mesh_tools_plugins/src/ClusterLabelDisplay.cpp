@@ -226,6 +226,7 @@ void ClusterLabelDisplay::updateMap()
     tool->resetVisual();
   } else {
     setStatus(rviz_common::properties::StatusProperty::Warn, "Map", "ClusterLabel Tool could not be initialized! It will not work!");
+    return;
   }
 
   // Now create the visuals for the loaded clusters
@@ -322,7 +323,10 @@ void ClusterLabelDisplay::createVisualsFromClusterList()
     ss << "ClusterLabelVisual_" << i;
 
     auto visual = std::make_shared<ClusterLabelVisual>(context_, ss.str(), m_geometry);
-    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Label Display: Create visual for label '" << m_clusterList[i].name << "'");
+    RCLCPP_DEBUG(
+      rclcpp::get_logger("rviz_mesh_tools_plugins"),
+      "Label Display: Create visual for label '%s' with %lu faces", m_clusterList[i].name.c_str(), m_clusterList[i].faces.size()
+    );
     visual->setFacesInCluster(m_clusterList[i].faces);
     visual->setColor(getRainbowColor((++colorIndex / m_clusterList.size())), m_alphaProperty->getFloat());
     m_visuals.push_back(visual);
