@@ -160,6 +160,11 @@ public:
     return m_faces;
   };
 
+  /**
+   * @brief Set the culling mode to match the MeshDisplay/MeshVisual
+   */
+  void setCullingMode(Ogre::CullingMode mode);
+
 private:
   void initMaterial();
 

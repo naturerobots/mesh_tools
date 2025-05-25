@@ -52,15 +52,7 @@
 
 #include <rviz_mesh_tools_plugins/Types.hpp>
 
-// TODO: Make CL optional
-// enable exceptions for OpenCL
-// #define CL_HPP_TARGET_OPENCL_VERSION 120
-// #define CL_HPP_MINIMUM_OPENCL_VERSION 110
-// #define CL_HPP_ENABLE_EXCEPTIONS
-// #include <CL/cl2.hpp>
-
 #include <vector>
-#include <map>
 #include <memory>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
@@ -136,6 +128,10 @@ class ClusterLabelTool : public rviz_common::Tool
 {
   Q_OBJECT
 public:
+  // Constants
+  static constexpr float MIN_BRUSH_SIZE = 20.0f;
+  static constexpr float MOUSE_WHEEL_BRUSH_SIZE_STEP = 10;
+
   /**
    * @brief Constructor
    */
@@ -181,10 +177,15 @@ public:
   void setVisual(std::shared_ptr<ClusterLabelVisual> visual);
 
   /**
-   * @brief Adjust the sphere size for the brush tool
-   * @param size The sphere size
+   * @brief Adjust the circle size for the brush tool
+   * @param size The circle diameter in screen Pixels
    */
-  void setSphereSize(float size);
+  void setBrushSize(float size);
+
+  /**
+   * @brief Set the culling mode for selection to match the MeshVisual
+   */
+  void setCullingMode(Ogre::CullingMode mode);
 
 public Q_SLOTS:
 
@@ -213,20 +214,19 @@ public Q_SLOTS:
 private:
   std::vector<uint32_t> m_selectedFaces;
   std::vector<bool> m_faceSelectedArray;
-  bool m_displayInitialized;
   ClusterLabelDisplay* m_display;
   std::shared_ptr<ClusterLabelVisual> m_visual;
   std::shared_ptr<Geometry> m_meshGeometry;
-  float m_sphereSize = 1.0f;
+  float m_brushSize;
 
   // Selection Box
-  rviz_common::DisplayContext* m_displayContext;
   Ogre::SceneNode* m_sceneNode;
   Ogre::ManualObject* m_selectionBox;
   Ogre::MaterialPtr m_selectionBoxMaterial;
-  
-  // rviz_common::ViewportMouseEvent m_evt_start;
-  // rviz_common::ViewportMouseEvent m_evt_stop;
+
+  // Selection Circle
+  Ogre::ManualObject* m_selectionCircle;
+  Ogre::SceneNode* m_selectionCircleNode;
 
   int m_bb_x1;
   int m_bb_y1;
@@ -234,49 +234,49 @@ private:
   int m_bb_y2;
 
   rviz_common::RenderPanel* m_evt_panel;
-  
+
+  // Selection Modes
   bool m_multipleSelect = false;
   bool m_singleSelect = false;
-  bool m_singleDeselect = false;
+  bool m_circleSelect = false;
+  // Select = true Deselect = false
+  bool m_selectionMode = false;
 
   std::vector<Ogre::Vector3> m_vertexPositions;
 
+  void initSelectionCircle();
+  void updateSelectionCircle(rviz_common::ViewportMouseEvent& event);
   void updateSelectionBox();
   void selectionBoxStart(rviz_common::ViewportMouseEvent& event);
   void selectionBoxMove(rviz_common::ViewportMouseEvent& event);
   void selectMultipleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectFacesInBoxParallel(Ogre::PlaneBoundedVolume& volume, bool selectMode);
   void selectSingleFace(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectSingleFaceParallel(Ogre::Ray& ray, bool selectMode);
-  void selectSphereFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
-  void selectSphereFacesParallel(Ogre::Ray& ray, bool selectMode);
-  boost::optional<std::pair<uint32_t, float>> getClosestIntersectedFaceParallel(Ogre::Ray& ray);
+  void selectCircleFaces(rviz_common::ViewportMouseEvent& event, bool selectMode);
 
   rclcpp::Publisher<mesh_msgs::msg::MeshFaceClusterStamped>::SharedPtr m_labelPublisher;
 
-  std::vector<float> m_vertexData;
-  std::array<float, 6> m_rayData;
-  std::array<float, 4> m_sphereData;
-  std::array<float, 3> m_startNormalData;
-  std::vector<float> m_boxData;
-  std::vector<float> m_resultDistances;
+  /**
+   *  @brief Renders the current Mesh to an Offscreen Buffer using the FaceIDs as colors.
+   *
+   *  The resulting Image can be used to determine which faces are visible from the Camera.
+   *  
+   *  @return The rendered Image.
+   */
+  Ogre::Image renderMeshWithFaceID();
 
-  // OpenCL
-  // cl::Device m_clDevice;
-  // cl::Context m_clContext;
-  // cl::Program::Sources m_clProgramSources;
-  // cl::Program m_clProgram;
-  // cl::CommandQueue m_clQueue;
-  // cl::Buffer m_clVertexBuffer;
-  // cl::Buffer m_clResultBuffer;
-  // cl::Buffer m_clRayBuffer;
-  // cl::Buffer m_clSphereBuffer;
-  // cl::Buffer m_clBoxBuffer;
-  // cl::Buffer m_clStartNormalBuffer;
-  // cl::Kernel m_clKernelSingleRay;
-  // cl::Kernel m_clKernelSphere;
-  // cl::Kernel m_clKernelBox;
-  // cl::Kernel m_clKernelDirAndDist;
+  /**
+   *  @brief Setup the Selection Mesh from the current geometry
+   */
+  void updateSelectionMesh();
+
+  // Accelerated area picking via Ogre render pass
+  Ogre::TexturePtr m_selectionTexture;
+  Ogre::MaterialPtr m_selectionMaterial;
+  Ogre::ManualObject* m_selectionMesh;
+  Ogre::SceneNode* m_selectionSceneNode;
+  // Used to render only the selectionMesh to the offscreen Texture
+  uint32_t m_selectionVisibilityBit;
+  Ogre::CullingMode m_cullingMode;
 };
 }  // end namespace rviz_mesh_tools_plugins
 

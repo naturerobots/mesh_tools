@@ -246,6 +246,12 @@ public:
    */
   void setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation);
 
+signals:
+  /**
+   *  @brief Signals that the Culling Mode of the MeshDisplay was set.
+   */
+  void signalCullingModeChanged(Ogre::CullingMode mode);
+
 private Q_SLOTS:
   void transformerChangedCallback();
 
