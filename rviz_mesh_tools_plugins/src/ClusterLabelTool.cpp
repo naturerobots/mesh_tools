@@ -84,6 +84,7 @@ namespace rviz_mesh_tools_plugins
 ClusterLabelTool::ClusterLabelTool() 
 :rviz_common::Tool()
 , m_display(nullptr)
+, m_brushSize(MIN_BRUSH_SIZE)
 , m_selectionCircle(nullptr)
 , m_selectionMesh(nullptr)
 , m_selectionVisibilityBit(0)
@@ -709,7 +710,25 @@ Ogre::Image ClusterLabelTool::renderMeshWithFaceID()
   render_texture->update();
 
   // Copy the data to ram
+  /* NOTE: Since Ogre 1.12.10 (which is available with ROS Jazzy), Ogre::Image has a constructor
+   * which creates an Image from a given size and PixelFormat.
+   * This #if-macro is to keep supporting ROS Humble (which uses Ogre 1.12.1) and can
+   * be removed when support for ROS Humble is dropped.
+   */
+#if OGRE_VERSION < ((1 << 16) | (12 << 8) | (10))
+  Ogre::Image img;
+  const size_t width = render_texture->getWidth();
+  const size_t height = render_texture->getHeight();
+  const size_t depth = 1;
+  Ogre::uchar* mem = OGRE_ALLOC_T(
+    Ogre::uchar,
+    Ogre::PixelUtil::getMemorySize(width, height, depth, Ogre::PF_R8G8B8),
+    Ogre::MEMCATEGORY_GENERAL
+  );
+  img.loadDynamicImage(mem, width, height, depth, Ogre::PF_R8G8B8, true);
+#else
   Ogre::Image img(Ogre::PF_R8G8B8, render_texture->getWidth(), render_texture->getHeight());
+#endif
   Ogre::PixelBox pixels = img.getPixelBox();
   render_texture->copyContentsToMemory(pixels, pixels);
 

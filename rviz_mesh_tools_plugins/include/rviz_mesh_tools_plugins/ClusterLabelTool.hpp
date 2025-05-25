@@ -217,7 +217,7 @@ private:
   ClusterLabelDisplay* m_display;
   std::shared_ptr<ClusterLabelVisual> m_visual;
   std::shared_ptr<Geometry> m_meshGeometry;
-  float m_brushSize = 1.0f;
+  float m_brushSize;
 
   // Selection Box
   Ogre::SceneNode* m_sceneNode;
