@@ -331,8 +331,15 @@ void MapDisplay::updateMap()
 
   // Load geometry and clusters
   bool successful = loadData();
-  if (!successful)
+  if (successful)
   {
+    enableClusterLabelDisplay();
+    enableMeshDisplay();
+  }
+  else
+  {
+    disableClusterLabelDisplay();
+    disableMeshDisplay();
     return;
   }
 
@@ -426,7 +433,7 @@ bool MapDisplay::loadData()
 
   try
   {
-    if (boost::filesystem::extension(mapFile).compare(".h5") == 0)
+    if (boost::filesystem::path(mapFile).extension().compare(".h5") == 0)
     {
       enableClusterLabelDisplay(); // enable label writing to hdf5
       enableMeshDisplay();
@@ -442,6 +449,16 @@ bool MapDisplay::loadData()
 
       hdf5_mesh_io->open(mapFile);
       auto mesh_buffer = hdf5_mesh_io->MeshIO::load(mesh_part);
+
+      if (nullptr == mesh_buffer)
+      {
+        RCLCPP_ERROR(
+          rclcpp::get_logger("rviz_mesh_tools_plugins"),
+          "Could not find a mesh with name '%s' in HDF5 file '%s'",
+          mesh_part.c_str(), mapFile.c_str()
+        );
+        return false;
+      }
 
       // the mesh buffer is a map from a string to a Channel
       // example:
