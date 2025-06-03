@@ -331,8 +331,15 @@ void MapDisplay::updateMap()
 
   // Load geometry and clusters
   bool successful = loadData();
-  if (!successful)
+  if (successful)
   {
+    enableClusterLabelDisplay();
+    enableMeshDisplay();
+  }
+  else
+  {
+    disableClusterLabelDisplay();
+    disableMeshDisplay();
     return;
   }
 
@@ -426,10 +433,12 @@ bool MapDisplay::loadData()
 
   try
   {
-    if (boost::filesystem::extension(mapFile).compare(".h5") == 0)
+    if (boost::filesystem::path(mapFile).extension().compare(".h5") == 0)
     {
       enableClusterLabelDisplay(); // enable label writing to hdf5
       enableMeshDisplay();
+      // The ClusterLabelDisplay shall be notified of CullingModeChanges in the MeshDisplay
+      QObject::connect(m_meshDisplay, &MeshDisplay::signalCullingModeChanged, m_clusterLabelDisplay, &ClusterLabelDisplay::setCullingMode);
 
       RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load HDF5 map");
 
@@ -440,6 +449,16 @@ bool MapDisplay::loadData()
 
       hdf5_mesh_io->open(mapFile);
       auto mesh_buffer = hdf5_mesh_io->MeshIO::load(mesh_part);
+
+      if (nullptr == mesh_buffer)
+      {
+        RCLCPP_ERROR(
+          rclcpp::get_logger("rviz_mesh_tools_plugins"),
+          "Could not find a mesh with name '%s' in HDF5 file '%s'",
+          mesh_part.c_str(), mapFile.c_str()
+        );
+        return false;
+      }
 
       // the mesh buffer is a map from a string to a Channel
       // example:
@@ -544,6 +563,46 @@ bool MapDisplay::loadData()
           // vertex channel of type float
           RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Loading '" << elem.first << "' as vertex cost layer");
           m_costs[elem.first] = copy_1d_channel_to_vector(elem.second.extract<float>());
+        }
+      }
+
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Load labeled clusters...");
+      m_clusterList.clear();
+
+      auto& hdf5_file = hdf5_mesh_io->m_hdf5_file;
+      const std::string labels_group_name = mesh_part + "/labels";
+      if (hdf5_file->exist(labels_group_name))
+      {
+        auto labels_group = hdf5_file->getGroup(mesh_part + "/labels");
+        for (const auto& gname: labels_group.listObjectNames())
+        {
+          RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Loading label: %s", gname.c_str());
+          // Load this labels instances
+          auto group = labels_group.getGroup(gname);
+          for (const auto& iname: group.listObjectNames())
+          {
+            // Check if we have a dataset
+            if (HighFive::ObjectType::Dataset != group.getObjectType(iname))
+            {
+              continue;
+            }
+
+            // Load the dataset
+            size_t n = 0;
+            const auto cluster_array = hdf5_mesh_io->loadArray<unsigned int>(group.getPath(), iname, n);
+            if (0 == n)
+            {
+              continue;
+            }
+
+            // Convert to vector
+            Cluster instance("", {});
+            // Instance 5 of label door = door_5
+            instance.name = gname + "_" + iname;
+            instance.faces.resize(n);
+            std::copy(cluster_array.get(), cluster_array.get() + n,instance.faces.begin());
+            m_clusterList.push_back(std::move(instance));
+          }
         }
       }
     }
@@ -771,8 +830,8 @@ bool MapDisplay::loadData()
 
 void MapDisplay::saveLabel(Cluster cluster)
 {
-  std::string label = cluster.name;
-  std::vector<uint32_t> faces = cluster.faces;
+  const std::string& label = cluster.name;
+  const std::vector<uint32_t>& faces = cluster.faces;
 
   RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: add label '" << label << "'");
 
@@ -788,15 +847,30 @@ void MapDisplay::saveLabel(Cluster cluster)
       return;
     }
 
-    // is not working anyway
-    // // Open IO
-    // hdf5_map_io::HDF5MapIO map_io(m_mapFilePath->getFilename());
+    // Open IO
+    auto hdf5_mesh_io = std::make_shared<HDF5MeshIO>();
+    hdf5_mesh_io->open(m_mapFilePath->getFilename());
 
-    // // Add label with faces list
-    // map_io.addOrUpdateLabel(results[0], results[1], faces);
+    // Build HDF Group name
+    const std::string mesh_part = "mesh";
+    const std::string label_group = mesh_part + "/labels/" + results[0];
 
-    // Add to cluster list
-    m_clusterList.push_back(Cluster(label, faces));
+    // Use Array IO to save each instance as a dataset
+    // Array IO needs shared array
+    auto faces_array = lvr2::indexArray(new unsigned int[faces.size()]);
+    std::copy(faces.begin(), faces.end(), faces_array.get());
+    hdf5_mesh_io->ArrayIO::save(label_group, results[1], faces.size(), faces_array);
+
+    // Add to cluster list or update existing cluster
+    auto it = std::find_if(m_clusterList.begin(), m_clusterList.end(), [label](const Cluster& c){ return label == c.name;});
+    if (it != m_clusterList.end())
+    {
+      *it = cluster;
+    }
+    else
+    {
+      m_clusterList.push_back(cluster);
+    }
 
     setStatus(rviz_common::properties::StatusProperty::Ok, "Label", "Successfully saved label");
     RCLCPP_INFO_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Successfully added label to map.");

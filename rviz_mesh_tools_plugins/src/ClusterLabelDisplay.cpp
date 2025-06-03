@@ -92,6 +92,12 @@ Ogre::ColourValue getRainbowColor(float value)
 }
 
 ClusterLabelDisplay::ClusterLabelDisplay()
+: m_activeVisualProperty(nullptr)
+, m_alphaProperty(nullptr)
+, m_colorsProperty(nullptr)
+, m_sphereSizeProperty(nullptr)
+, m_phantomVisualProperty(nullptr)
+, m_cullingMode(Ogre::CullingMode::CULL_NONE)
 {
   m_activeVisualProperty =
       new rviz_common::properties::EnumProperty("Active label", "__NEW__", "Current active label. Can be edited with Cluster Label Tool",
@@ -106,7 +112,7 @@ ClusterLabelDisplay::ClusterLabelDisplay()
   m_colorsProperty = new rviz_common::properties::Property("Colors", "", "colors", this, SLOT(updateColors()), this);
   m_colorsProperty->setReadOnly(true);
   m_sphereSizeProperty =
-      new rviz_common::properties::FloatProperty("Brush Size", 1.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
+      new rviz_common::properties::FloatProperty("Brush Size", 50.0f, "Brush Size", this, SLOT(updateSphereSize()), this);
   m_phantomVisualProperty = new rviz_common::properties::BoolProperty("Show Phantom", false,
                                                    "Show a transparent silhouette of the whole mesh to help with "
                                                    "labeling",
@@ -156,13 +162,29 @@ void ClusterLabelDisplay::setData(shared_ptr<Geometry> geometry, vector<Cluster>
   setStatus(rviz_common::properties::StatusProperty::Ok, "Display", "");
 }
 
+void ClusterLabelDisplay::setCullingMode(Ogre::CullingMode mode)
+{
+  auto* tool = getOrCreateLabelTool();
+  if (tool)
+  {
+    tool->setCullingMode(mode);
+  }
+  for (auto& visual: m_visuals)
+  {
+    visual->setCullingMode(mode);
+  }
+}
+
 // =====================================================================================================================
 // Callbacks
 
 void ClusterLabelDisplay::onInitialize()
 {
   // Look for an existing label tool or create a new one
-  initializeLabelTool();
+  ClusterLabelTool* tool = getOrCreateLabelTool();
+
+  // Set the Tool related configuration
+  tool->setBrushSize(m_sphereSizeProperty->getFloat());
 }
 
 void ClusterLabelDisplay::onEnable()
@@ -174,7 +196,11 @@ void ClusterLabelDisplay::onDisable()
 {
   m_visuals.clear();
   m_phantomVisual.reset();
-  m_tool->resetVisual();
+
+  if (auto* tool = getOrCreateLabelTool())
+  {
+    tool->resetVisual();
+  }
 }
 
 // =====================================================================================================================
@@ -206,12 +232,15 @@ void ClusterLabelDisplay::updateMap()
     return;
   }
 
-  if(m_tool)
+  auto* tool = getOrCreateLabelTool();
+
+  if(tool)
   {
     // Reset the visual of the label tool so that it can be deleted
-    m_tool->resetVisual();
+    tool->resetVisual();
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Cluster Label Tool not initialized!");
+    setStatus(rviz_common::properties::StatusProperty::Warn, "Map", "ClusterLabel Tool could not be initialized! It will not work!");
+    return;
   }
 
   // Now create the visuals for the loaded clusters
@@ -230,7 +259,10 @@ void ClusterLabelDisplay::updateMap()
   updateColors();
 
   // Update the tool's assigned display (to this display)
-  m_tool->setDisplay(this);
+  if (tool) 
+  {
+    tool->setDisplay(this);
+  }
 
   // All good
   setStatus(rviz_common::properties::StatusProperty::Ok, "Map", "");
@@ -238,7 +270,7 @@ void ClusterLabelDisplay::updateMap()
 
 void ClusterLabelDisplay::updateColors()
 {
-  for (int i = 0; i < m_colorProperties.size(); i++)
+  for (size_t i = 0; i < m_colorProperties.size(); i++)
   {
     auto colorProp = m_colorProperties[i];
     m_visuals[i]->setColor(colorProp->getOgreColor(), m_alphaProperty->getFloat());
@@ -247,7 +279,10 @@ void ClusterLabelDisplay::updateColors()
 
 void ClusterLabelDisplay::updateSphereSize()
 {
-  m_tool->setSphereSize(m_sphereSizeProperty->getFloat());
+  if (auto* tool = getOrCreateLabelTool())
+  {
+    tool->setBrushSize(m_sphereSizeProperty->getFloat());
+  }
 }
 
 void ClusterLabelDisplay::updatePhantomVisual()
@@ -269,7 +304,7 @@ void ClusterLabelDisplay::fillPropertyOptions()
   m_colorsProperty->removeChildren();
   m_colorProperties.clear();
 
-  for (int i = 0; i < m_clusterList.size(); i++)
+  for (size_t i = 0; i < m_clusterList.size(); i++)
   {
     // Add cluster labels to dropdown menu
     m_activeVisualProperty->addOption(QString::fromStdString(m_clusterList[i].name), i);
@@ -296,15 +331,19 @@ void ClusterLabelDisplay::createVisualsFromClusterList()
 
   // Create a visual for each entry in the cluster list
   float colorIndex = 0.0;  // index for coloring
-  for (int i = 0; i < m_clusterList.size(); i++)
+  for (size_t i = 0; i < m_clusterList.size(); i++)
   {
     std::stringstream ss;
     ss << "ClusterLabelVisual_" << i;
 
     auto visual = std::make_shared<ClusterLabelVisual>(context_, ss.str(), m_geometry);
-    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Label Display: Create visual for label '" << m_clusterList[i].name << "'");
+    RCLCPP_DEBUG(
+      rclcpp::get_logger("rviz_mesh_tools_plugins"),
+      "Label Display: Create visual for label '%s' with %lu faces", m_clusterList[i].name.c_str(), m_clusterList[i].faces.size()
+    );
     visual->setFacesInCluster(m_clusterList[i].faces);
     visual->setColor(getRainbowColor((++colorIndex / m_clusterList.size())), m_alphaProperty->getFloat());
+    visual->setCullingMode(m_cullingMode);
     m_visuals.push_back(visual);
   }
 }
@@ -324,37 +363,53 @@ void ClusterLabelDisplay::createPhantomVisual()
 // =====================================================================================================================
 // Label tool
 
-void ClusterLabelDisplay::initializeLabelTool()
+ClusterLabelTool* ClusterLabelDisplay::getOrCreateLabelTool()
 {
+  ClusterLabelTool* tool = nullptr;
+
   // Check if the cluster label tool is already opened
   rviz_common::ToolManager* toolManager = context_->getToolManager();
   QStringList toolClasses = toolManager->getToolClasses();
-  bool foundTool = false;
   for (int i = 0; i < toolClasses.size(); i++)
   {
     if (toolClasses[i].contains("ClusterLabel"))
     {
-      m_tool = static_cast<ClusterLabelTool*>(toolManager->getTool(i));
-      foundTool = true;
-      break;
+      tool = dynamic_cast<ClusterLabelTool*>(toolManager->getTool(i));
+      if (nullptr == tool)
+      {
+        RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Found Tool with 'ClusterLabel' class but could not dynamic_cast to ClusterLabelTool*");
+        return nullptr;
+      }
     }
   }
 
-  if (!foundTool)
+  // Create a Tool instance
+  if (!tool)
   {
     auto tool_tmp = context_->getToolManager()->addTool("rviz_mesh_tools_plugins/ClusterLabel");
-    if(m_tool = dynamic_cast<ClusterLabelTool*>(tool_tmp); m_tool != nullptr)
+    if(tool = dynamic_cast<ClusterLabelTool*>(tool_tmp); tool != nullptr)
     {
-      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Created ClusterLabelTool");
-    } else {
+      RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Created ClusterLabelTool at Address: %llx", (unsigned long long) tool);
+    }
+    else
+    {
       RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Could not create ClusterLabelTool");
+      return nullptr;
     }
   }
+
+  return tool;
 }
 
 void ClusterLabelDisplay::notifyLabelTool()
 {
-  m_tool->setVisual(m_visuals[m_activeVisualId]); 
+  auto* tool = getOrCreateLabelTool();
+  if (!tool)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Failed to notify LabelTool of active Visual Change!");
+    return;
+  }
+  tool->setVisual(m_visuals[m_activeVisualId]); 
 }
 
 void ClusterLabelDisplay::addLabel(std::string label, std::vector<uint32_t> faces)

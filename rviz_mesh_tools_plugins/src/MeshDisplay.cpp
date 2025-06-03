@@ -858,6 +858,8 @@ void MeshDisplay::updateCullingMode()
   {
     visual->setCullingMode(static_cast<Ogre::CullingMode>(m_cullingMode->getOptionInt()));
   }
+
+  emit signalCullingModeChanged(static_cast<Ogre::CullingMode>(m_cullingMode->getOptionInt()));
 }
 
 // =====================================================================================================================

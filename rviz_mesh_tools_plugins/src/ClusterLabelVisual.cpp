@@ -147,6 +147,7 @@ ClusterLabelVisual::ClusterLabelVisual(
       RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "nullptr return: sceneManager->createEntity(\"ClusterLabelEntity\", \"ClusterLabelMesh\", \"General\"); ");
     }
     entity->setMaterialName("CustomMaterial", "General");
+    entity->setVisibilityFlags(m_displayContext->getDefaultVisibilityBit());
     m_sceneNode->attachObject(entity);
   }
 
@@ -287,6 +288,14 @@ void ClusterLabelVisual::setColor(Ogre::ColourValue facesColor, float alpha)
     m_material->setDiffuse(facesColor);
     m_material->setSelfIllumination(facesColor);
     m_color = facesColor;
+  }
+}
+
+void ClusterLabelVisual::setCullingMode(Ogre::CullingMode mode)
+{
+  if (m_material)
+  {
+    m_material->setCullingMode(mode);
   }
 }
 

@@ -198,6 +198,11 @@ public Q_SLOTS:  // not sure wether any of those actually need to be q slots ...
    */
   void setData(shared_ptr<Geometry> geometry, vector<Cluster> clusters);
 
+  /**
+   * @brief Slot for changing the culling mode used in the LabelTool, and the LabelVisuals
+   */
+  void setCullingMode(Ogre::CullingMode mode);
+
 private Q_SLOTS:
 
   /**
@@ -232,9 +237,12 @@ private:
   void onInitialize();
 
   /**
-   * @brief Programmatically create an instance of the label tool from this package
+   * @brief Find the instance of the ClusterLabelTool or create one.
+   *
+   * We cannot store a pointer to the tool because RViz could sometimes replaces
+   * the Tool instance, and that would invalidate our pointer.
    */
-  void initializeLabelTool();
+  ClusterLabelTool* getOrCreateLabelTool();
 
   /**
    * @brief Create visuals for each cluster in the list
@@ -266,9 +274,6 @@ private:
   /// Cluster data
   vector<Cluster> m_clusterList;
 
-  /// Label tool
-  ClusterLabelTool* m_tool;
-
   /// Property for the current active visual
   rviz_common::properties::EnumProperty* m_activeVisualProperty;
 
@@ -292,6 +297,9 @@ private:
 
   /// A variable that will be set to true, once the initial data has arrived
   bool has_data = false;
+
+  /// Current Culling Mode
+  Ogre::CullingMode m_cullingMode;
 
   
 };
