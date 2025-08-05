@@ -1088,11 +1088,39 @@ bool MeshVisual::updateVertexCosts(
     return false;
   }
 
-  // Get the needed information about the raw vertex buffer
+  /* ManualObject::getNumSections and ManualObject::getSection are deprecated
+   * in the Ogre version ROS Jazzy (and future versions) uses. Since the new
+   * API is not available in the Ogre version used by ROS Humble we use this
+   * check to keep Humble support.
+   *
+   * This can be removed when Humble support is dropped.
+   */
+#if OGRE_VERSION < ((1 << 16) | (12 << 8) | 7)
+  Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSection(0)->getRenderOperation();
+  const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
+
+  // findElementBySemantic does not support VES_COLOUR yet
+  const Ogre::VertexElement* color_sem = nullptr;
+  for (const auto& elem: v_decl->getElements())
+  {
+    // VET_COLOUR is deprecated in favour of VET_UBYTE4_NORM
+    if (Ogre::VET_UBYTE4_NORM == elem.getType())
+    {
+      color_sem = &elem;
+    }
+  }
+#else
+  // Get the needed Vertex Colour attribute information about the raw vertex buffer
   Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSections().front()->getRenderOperation();
-  // Information about the Vertex Colour attribute
   const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
   const Ogre::VertexElement* color_sem = v_decl->findElementBySemantic(Ogre::VES_COLOUR);
+#endif
+
+  if (nullptr == color_sem)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Vertex Cost Mesh has no Vertex Colour attribute!");
+    return false;
+  }
 
   // Get and lock the hardware vertex buffer of the mesh
   Ogre::HardwareVertexBufferSharedPtr vbuf = render_op->vertexData->vertexBufferBinding->getBuffer(0);
@@ -1164,9 +1192,6 @@ bool MeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
 {
   uint32_t width = texture.width;
   uint32_t height = texture.height;
-  uint32_t step = texture.channels;
-
-  uint32_t dataSize = width * height * step;
 
   Ogre::PixelFormat pixelFormat = getOgrePixelFormatFromRosString(texture.pixelFormat);
 
