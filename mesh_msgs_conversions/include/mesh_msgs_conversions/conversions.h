@@ -62,6 +62,7 @@
 #include "mesh_msgs/msg/mesh_vertex_colors.hpp"
 #include "mesh_msgs/msg/mesh_vertex_colors_stamped.hpp"
 #include "mesh_msgs/msg/mesh_vertex_costs_stamped.hpp"
+#include "mesh_msgs/msg/mesh_vertex_costs_sparse_stamped.hpp"
 #include "mesh_msgs/msg/mesh_vertex_tex_coords.hpp"
 #include "mesh_msgs/msg/mesh_material.hpp"
 #include "mesh_msgs/msg/mesh_texture.hpp"
@@ -224,6 +225,31 @@ inline const mesh_msgs::msg::MeshVertexCosts toVertexCosts(
   return costs_msg;
 }
 
+inline const mesh_msgs::msg::MeshVertexCostsSparse toVertexCostsSparse(
+    const lvr2::VertexMap<float>& costs,
+    const float default_value
+)
+{
+    mesh_msgs::msg::MeshVertexCostsSparse costs_msg;
+    costs_msg.vertices.resize(costs.numValues());
+    costs_msg.costs.resize(costs.numValues());
+    costs_msg.default_value = default_value;
+
+    std::transform(costs.begin(), costs.end(), costs_msg.vertices.begin(),
+        [](const lvr2::VertexHandle& v)
+        {
+            return v.idx();
+        }
+    );
+    std::transform(costs_msg.vertices.begin(), costs_msg.vertices.end(), costs_msg.costs.begin(),
+        [&costs](const uint32_t idx)
+        {
+            return costs[lvr2::VertexHandle(idx)];
+        }
+    );
+    return costs_msg;
+}
+
 inline const mesh_msgs::msg::MeshVertexCostsStamped toVertexCostsStamped(
     const lvr2::VertexMap<float>& costs,
     const size_t num_values,
@@ -241,6 +267,24 @@ inline const mesh_msgs::msg::MeshVertexCostsStamped toVertexCostsStamped(
   mesh_msg.header.frame_id = frame_id;
   mesh_msg.header.stamp = stamp;
   return mesh_msg;
+}
+
+inline const mesh_msgs::msg::MeshVertexCostsSparseStamped toVertexCostsSparseStamped(
+    const lvr2::VertexMap<float>& costs,
+    const float default_value,
+    const std::string& name,
+    const std::string& frame_id,
+    const std::string& uuid,
+    const rclcpp::Time& stamp = rclcpp::Time()
+)
+{
+  mesh_msgs::msg::MeshVertexCostsSparseStamped msg;
+  msg.mesh_vertex_costs = toVertexCostsSparse(costs, default_value);
+  msg.uuid = uuid;
+  msg.type = name;
+  msg.header.frame_id = frame_id;
+  msg.header.stamp = stamp;
+  return msg;
 }
 
 inline const mesh_msgs::msg::MeshVertexCosts toVertexCosts(

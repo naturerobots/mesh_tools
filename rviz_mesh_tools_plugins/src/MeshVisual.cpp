@@ -1066,6 +1066,96 @@ bool MeshVisual::setVertexCosts(const std::vector<float>& vertexCosts, int costC
   return true;
 }
 
+bool MeshVisual::updateVertexCosts(
+  const std::vector<uint32_t>& vertices,
+  const std::vector<float>& costs,
+  int costColorType,
+  float minCost,
+  float maxCost
+)
+{
+
+  float range = maxCost - minCost;
+  if (range <= 0)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Illegal vertex cost limits!");
+    return false;
+  }
+
+  if (!m_vertexCostMaterial)
+  {
+    // We only update existing materials, the caller has to make sure that the layer already exists
+    return false;
+  }
+
+  /* ManualObject::getNumSections and ManualObject::getSection are deprecated
+   * in the Ogre version ROS Jazzy (and future versions) uses. Since the new
+   * API is not available in the Ogre version used by ROS Humble we use this
+   * check to keep Humble support.
+   *
+   * This can be removed when Humble support is dropped.
+   */
+#if OGRE_VERSION < ((1 << 16) | (12 << 8) | 7)
+  Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSection(0)->getRenderOperation();
+  const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
+
+  // findElementBySemantic does not support VES_COLOUR yet
+  const Ogre::VertexElement* color_sem = nullptr;
+  for (const auto& elem: v_decl->getElements())
+  {
+    // VET_COLOUR is deprecated in favour of VET_UBYTE4_NORM
+    if (Ogre::VET_UBYTE4_NORM == elem.getType())
+    {
+      color_sem = &elem;
+    }
+  }
+#else
+  // Get the needed Vertex Colour attribute information about the raw vertex buffer
+  Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSections().front()->getRenderOperation();
+  const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
+  const Ogre::VertexElement* color_sem = v_decl->findElementBySemantic(Ogre::VES_COLOUR);
+#endif
+
+  if (nullptr == color_sem)
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Vertex Cost Mesh has no Vertex Colour attribute!");
+    return false;
+  }
+
+  // Get and lock the hardware vertex buffer of the mesh
+  Ogre::HardwareVertexBufferSharedPtr vbuf = render_op->vertexData->vertexBufferBinding->getBuffer(0);
+  Ogre::HardwareBufferLockGuard vbuf_lock(vbuf, Ogre::HardwareBuffer::HBL_WRITE_ONLY);
+  std::byte* raw = reinterpret_cast<std::byte*>(vbuf_lock.pData);
+
+  // write vertex colors
+  const auto& mesh = m_geometry;
+  for (uint32_t i = 0; i < vertices.size(); i++)
+  {
+    // Vertex handle
+    const uint32_t v = vertices[i];
+
+    if (v >= mesh.vertices.size())
+    {
+      continue;
+    }
+
+    // Point to the beginning of the vertex
+    std::byte* vertex = raw + v * vbuf->getVertexSize();
+    // Pointer to the color
+    Ogre::ABGR* vcolor = nullptr;
+    color_sem->baseVertexPointerToElement(vertex, &vcolor);
+
+    // write vertex colors that are calculated from the cost values
+    float normalizedCost = (costs[i] - minCost) / range;
+    normalizedCost = std::max(0.0f, normalizedCost);
+    normalizedCost = std::min(1.0f, normalizedCost);
+
+    *vcolor = calculateColorFromCost(normalizedCost, costColorType).getAsABGR();
+  }
+
+  return true;
+}
+
 bool MeshVisual::setMaterials(const vector<Material>& materials, const vector<TexCoords>& texCoords)
 {
   // check if there is a material index for each cluster
@@ -1102,9 +1192,6 @@ bool MeshVisual::addTexture(Texture& texture, uint32_t textureIndex)
 {
   uint32_t width = texture.width;
   uint32_t height = texture.height;
-  uint32_t step = texture.channels;
-
-  uint32_t dataSize = width * height * step;
 
   Ogre::PixelFormat pixelFormat = getOgrePixelFormatFromRosString(texture.pixelFormat);
 

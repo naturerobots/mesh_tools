@@ -29,6 +29,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MeshVertexColorsStamped.msg"
   "msg/MeshVertexCosts.msg"
   "msg/MeshVertexCostsStamped.msg"
+  "msg/MeshVertexCostsSparse.msg"
+  "msg/MeshVertexCostsSparseStamped.msg"
   "msg/MeshTexture.msg"
   "msg/MeshTriangleIndices.msg"
   "msg/VectorField.msg"
