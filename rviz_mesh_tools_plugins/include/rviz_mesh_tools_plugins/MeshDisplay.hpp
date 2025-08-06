@@ -85,7 +85,7 @@
 #include <message_filters/cache.h>
 
 #include <rviz_mesh_tools_plugins/RVizMessageFilter.hpp>
-#include <rviz_mesh_tools_plugins/ThreadSaveQueue.hpp>
+#include <rviz_mesh_tools_plugins/ThreadSafeQueue.hpp>
 
 #include <rviz_rendering/mesh_loader.hpp>
 
