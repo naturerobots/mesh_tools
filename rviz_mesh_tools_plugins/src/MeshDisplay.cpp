@@ -284,6 +284,7 @@ void MeshDisplay::onInitialize()
   m_meshTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexColorsTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexCostsTopic->initialize(context_->getRosNodeAbstraction());
+  m_vertexCostUpdateTopic->initialize(context_->getRosNodeAbstraction());
 
   m_meshTopicQos->initialize(
       [this](rclcpp::QoS profile) {
@@ -301,6 +302,12 @@ void MeshDisplay::onInitialize()
       [this](rclcpp::QoS profile) {
         m_vertexCostsQos = profile;
         updateVertexCostsSubscription();
+      });
+
+  m_vertexCostUpdateTopicQos->initialize(
+      [this](rclcpp::QoS profile) {
+        m_vertexCostUpdateQos = profile;
+        updateVertexCostsUpdateSubscription();
       });
 
   // Initialize service clients
