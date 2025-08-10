@@ -33,6 +33,7 @@
     <description>
       Displays a mesh.
     </description>
+    <message_type>mesh_msgs/msg/MeshGeometryStamped</message_type>
   </class>
   <class name="rviz_mesh_tools_plugins/MeshGoal"
          type="rviz_mesh_tools_plugins::MeshGoalTool"
