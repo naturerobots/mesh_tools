@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>mesh_tools</name>
-  <version>2.0.1</version>
+  <version>2.1.0</version>
   <description>The mesh_tools package</description>
   <maintainer email="spuetz@uos.de">Sebastian Pütz</maintainer>
   <license>BSD-3</license>

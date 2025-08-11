@@ -448,7 +448,17 @@ bool MapDisplay::loadData()
       const std::string mesh_part = "mesh";
 
       hdf5_mesh_io->open(mapFile);
+      hdf5_mesh_io->setMeshName(mesh_part);
       auto mesh_buffer = hdf5_mesh_io->MeshIO::load(mesh_part);
+
+      // MeshIO Loads colors as bool channel so we need to load it again.
+      // This is because HDF5 stores bools and uchars as the same data type and
+      // bool loading is tried before uchar
+      auto color_opt = hdf5_mesh_io->loadChannel<unsigned char>(mesh_part + "/vertex_attributes", "vertex_colors");
+      if (color_opt)
+      {
+        mesh_buffer->insert_or_assign("vertex_colors", color_opt.value());
+      }
 
       if (nullptr == mesh_buffer)
       {
