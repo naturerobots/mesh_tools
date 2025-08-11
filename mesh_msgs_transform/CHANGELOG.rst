@@ -2,6 +2,10 @@
 Changelog for package mesh_msgs_transform
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.1 (2025-08-11)
+------------------
+* Changes since the first ROS 2 port to enable the same functionality as the ROS 1 version
+
 2.0.0 (2024-05-15)
 ------------------
 * port package to ROS2
