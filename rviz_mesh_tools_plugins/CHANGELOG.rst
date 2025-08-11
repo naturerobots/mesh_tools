@@ -2,6 +2,11 @@
 Changelog for package rviz_mesh_tools_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.1.0 (2025-08-11)
+------------------
+* Add MeshVertexCostsSparse and MeshVertexCostsSparseStamped messages
+* Add support for visualizing cost map updates in RViz using the MeshDisplay
+
 2.0.1 (2025-08-11)
 ------------------
 * Changes since the first ROS 2 port to enable the same functionality as the ROS 1 version
