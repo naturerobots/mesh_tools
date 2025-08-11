@@ -1222,7 +1222,7 @@ void MeshDisplay::applyCachedCostUpdates()
         }
       }
       else
-    {
+      {
         if (m_costCache.count(m_selectVertexCostMap->getStdString()) != 0)
         {
           // The correct way is the get the limits from the whole layer
