@@ -85,7 +85,7 @@
 #include <message_filters/cache.h>
 
 #include <rviz_mesh_tools_plugins/RVizMessageFilter.hpp>
-#include <rviz_mesh_tools_plugins/ThreadSaveQueue.hpp>
+#include <rviz_mesh_tools_plugins/ThreadSafeQueue.hpp>
 
 #include <rviz_rendering/mesh_loader.hpp>
 
@@ -143,7 +143,7 @@ class MeshDisplay : public rviz_common::Display
   Q_OBJECT
 
 public:
-  /**#include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
+  /**
    * @brief Constructor
    */
   MeshDisplay();
@@ -176,6 +176,11 @@ public:
   void reset() override;
 
   void fixedFrameChanged() override;
+
+  /**
+   * @brief Used by RViz's "New display by topic" window
+   */
+  void setTopic(const QString& topic, const QString& datatype) override;
 
   /**
    * @brief Update all subscriptions. Individual subscription update function will check whether they are active. (e.g. vertex colors can also be inactive when the UI element is set to a fixed color).

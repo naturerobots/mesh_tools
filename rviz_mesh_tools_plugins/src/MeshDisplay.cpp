@@ -284,6 +284,7 @@ void MeshDisplay::onInitialize()
   m_meshTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexColorsTopic->initialize(context_->getRosNodeAbstraction());
   m_vertexCostsTopic->initialize(context_->getRosNodeAbstraction());
+  m_vertexCostUpdateTopic->initialize(context_->getRosNodeAbstraction());
 
   m_meshTopicQos->initialize(
       [this](rclcpp::QoS profile) {
@@ -301,6 +302,12 @@ void MeshDisplay::onInitialize()
       [this](rclcpp::QoS profile) {
         m_vertexCostsQos = profile;
         updateVertexCostsSubscription();
+      });
+
+  m_vertexCostUpdateTopicQos->initialize(
+      [this](rclcpp::QoS profile) {
+        m_vertexCostUpdateQos = profile;
+        updateVertexCostsUpdateSubscription();
       });
 
   // Initialize service clients
@@ -415,6 +422,21 @@ void MeshDisplay::fixedFrameChanged()
   this->transformMesh();
 }
 
+void MeshDisplay::setTopic(const QString& topic, const QString& datatype)
+{
+  (void) datatype;
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rviz_mesh_tools_plugins"),
+    // The char array returned by QString.data() may not be '\0' terminated! -> topic.toStdString().c_str()
+    "MeshDisplay::setTopic() - called with topic='%s'", topic.toStdString().c_str()
+  );
+  if (m_meshTopic)
+  {
+    // This also triggers the updateMeshGeometrySubscription() slot
+    m_meshTopic->setString(topic);
+  }
+}
+
 void MeshDisplay::reset()
 {
   Display::reset();
@@ -460,6 +482,7 @@ void MeshDisplay::updateAllSubscriptions()
   updateMeshGeometrySubscription();
   updateVertexColorsSubscription();
   updateVertexCostsSubscription();
+  updateVertexCostsUpdateSubscription();
 
   // TODO
   // initialServiceCall();
@@ -470,6 +493,7 @@ void MeshDisplay::unsubscribe()
   m_meshSubscriber.unsubscribe();
   m_vertexColorsSubscriber.unsubscribe();
   m_vertexCostsSubscriber.unsubscribe();
+  m_vertexCostUpdateSubscriber.unsubscribe();
 
   m_tfMeshFilter.reset();
   m_colorsMsgCache.reset();
