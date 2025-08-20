@@ -339,6 +339,11 @@ private Q_SLOTS:
    */
   void updateCullingMode();
 
+  /**
+   * @brief Updates the vertex cost update application frequency
+   */
+  void updateVertexCostUpdateFrequency();
+
 private:
   /**
    * @brief RViz callback on initialize
@@ -455,7 +460,8 @@ private:
 
   /// Cache for batching cost updates
   ThreadSafeQueue<mesh_msgs::msg::MeshVertexCostsSparseStamped::ConstSharedPtr> m_costsUpdateCache;
-  float m_timeSinceLastUpdateApply;
+  std::chrono::nanoseconds m_timeSinceLastUpdateApply;
+  std::chrono::nanoseconds m_invUpdateFreq;
 
 
   /// Counter for the received messages
@@ -516,6 +522,9 @@ private:
   rviz_common::properties::RosTopicProperty* m_vertexCostUpdateTopic;
   rviz_common::properties::QosProfileProperty* m_vertexCostUpdateTopicQos;
   rclcpp::QoS m_vertexCostUpdateQos;
+
+  /// Property to set the update processing frequency
+  rviz_common::properties::IntProperty* m_vertexCostsRefreshRate;
 
   /// Property to select different types of vertex cost maps to be shown
   rviz_common::properties::EnumProperty* m_selectVertexCostMap;
