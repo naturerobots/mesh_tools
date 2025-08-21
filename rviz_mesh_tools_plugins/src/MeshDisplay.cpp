@@ -104,7 +104,8 @@ namespace rviz_mesh_tools_plugins
 MeshDisplay::MeshDisplay() 
 : rviz_common::Display()
 , m_ignoreMsgs(false)
-, m_timeSinceLastUpdateApply(0.0)
+, m_timeSinceLastUpdateApply(0)
+, m_invUpdateFreq(std::chrono::nanoseconds(long(1e9)) / 10)
 , m_meshQos(rclcpp::QoS(1).transient_local())
 , m_vertexColorsQos(rclcpp::QoS(5))
 , m_vertexCostsQos(rclcpp::QoS(5))
@@ -199,6 +200,15 @@ MeshDisplay::MeshDisplay()
         "Vertex cost update topic to subscribe to.", m_displayType, SLOT(updateVertexCostsUpdateSubscription()), this
       );
       m_vertexCostUpdateTopicQos = new rviz_common::properties::QosProfileProperty(m_vertexCostUpdateTopic, m_vertexCostUpdateQos);
+
+      m_vertexCostsRefreshRate = new rviz_common::properties::IntProperty(
+        "Visualization Update Rate", 10,
+        "Sets the frequency (Hz) with which vertex cost updates are applied to the visual.",
+        m_displayType,
+        SLOT(updateVertexCostUpdateFrequency()),
+        this,
+        1  // Min value: This is 1 since we want at least one update per second
+      );
 
       m_selectVertexCostMap = new rviz_common::properties::EnumProperty("Vertex Costs Type", "-- None --",
                                                      "Select the type of vertex cost map to be displayed. New types "
@@ -320,16 +330,18 @@ void MeshDisplay::onInitialize()
 
 void MeshDisplay::update(float wall_dt, float ros_dt) 
 {
+  // NOTE: In rolling the update function uses std::chrono::nanoseconds instead of float
   (void) ros_dt;
 
-  if (m_timeSinceLastUpdateApply >= 1.0e9)
+  // Determine current configured update freq
+  if (m_timeSinceLastUpdateApply >= m_invUpdateFreq)
   {
     this->applyCachedCostUpdates();
-    m_timeSinceLastUpdateApply = 0.0;
+    m_timeSinceLastUpdateApply = std::chrono::nanoseconds(0);
   }
   else
   {
-    m_timeSinceLastUpdateApply += wall_dt;
+    m_timeSinceLastUpdateApply += std::chrono::nanoseconds(long(wall_dt));
   }
 
   this->transformMesh();
@@ -634,6 +646,8 @@ void MeshDisplay::updateDisplayType()
   m_textureServiceName->hide();
   m_costColorType->hide();
   m_vertexCostsTopic->hide();
+  m_vertexCostUpdateTopic->hide();
+  m_vertexCostsRefreshRate->hide();
   m_selectVertexCostMap->hide();
   m_costUseCustomLimits->hide();
   m_costLowerLimit->hide();
@@ -669,11 +683,13 @@ void MeshDisplay::updateDisplayType()
       if (!m_ignoreMsgs)
       {
         m_vertexCostsTopic->show();
+        m_vertexCostUpdateTopic->show();
         if (!m_costsMsgCache) // checks whether we are not subscribed yet, avoids resetting the subscription when something else changes in the display type
         {
           updateVertexCostsSubscription();
         }
       }
+      m_vertexCostsRefreshRate->show();
       m_selectVertexCostMap->show();
       m_costUseCustomLimits->show();
       if (m_costUseCustomLimits->getBool())
@@ -942,6 +958,33 @@ void MeshDisplay::updateCullingMode()
   }
 
   emit signalCullingModeChanged(static_cast<Ogre::CullingMode>(m_cullingMode->getOptionInt()));
+}
+
+void MeshDisplay::updateVertexCostUpdateFrequency()
+{
+  const int freq = m_vertexCostsRefreshRate->getInt();
+
+  // IntProperty::getInt returns 0 if invalid data was entered
+  // We set the min value to 1 so a 0 return is always an error
+  if (0 == freq)
+  {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("rviz_mesh_tools_plugins"),
+      "[MeshDisplay::updateVertexCostUpdateFrequency] Invalid update frequency entered!"
+    );
+    m_vertexCostsRefreshRate->setInt(1);
+    m_invUpdateFreq = std::chrono::seconds(1);
+    return;
+  }
+
+  using namespace std::chrono_literals;
+  m_invUpdateFreq = std::chrono::nanoseconds(1s) / freq;
+
+  RCLCPP_DEBUG(
+    rclcpp::get_logger("rviz_mesh_tools_plugins"),
+    "[MeshDisplay::updateVertexCostUpdateFrequency] Update frequency set to %i, delta t is %lu nanoseconds",
+    freq, m_invUpdateFreq.count()
+  );
 }
 
 // =====================================================================================================================
