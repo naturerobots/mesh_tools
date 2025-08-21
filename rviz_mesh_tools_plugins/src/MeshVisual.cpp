@@ -1089,36 +1089,31 @@ bool MeshVisual::updateVertexCosts(
   }
 
   /* ManualObject::getNumSections and ManualObject::getSection are deprecated
-   * in the Ogre version ROS Jazzy (and future versions) uses. Since the new
-   * API is not available in the Ogre version used by ROS Humble we use this
-   * check to keep Humble support.
+   * in the Ogre version ROS Jazzy (and future versions) uses. The VES_COLOUR
+   * semantic is also new in the ROS Jazzy Ogre version. Prior versions use
+   * VES_DIFFUSE for colours in the ManualObject. Since the new API is not
+   * available in the Ogre version used by ROS Humble we use this check to keep
+   * Humble support.
    *
    * This can be removed when Humble support is dropped.
    */
 #if OGRE_VERSION < ((1 << 16) | (12 << 8) | 7)
   Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSection(0)->getRenderOperation();
   const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
-
-  // findElementBySemantic does not support VES_COLOUR yet
-  const Ogre::VertexElement* color_sem = nullptr;
-  for (const auto& elem: v_decl->getElements())
-  {
-    // VET_COLOUR is deprecated in favour of VET_UBYTE4_NORM
-    if (Ogre::VET_UBYTE4_NORM == elem.getType())
-    {
-      color_sem = &elem;
-    }
-  }
+  const Ogre::VertexElement* color_elem = v_decl->findElementBySemantic(Ogre::VES_DIFFUSE);
 #else
   // Get the needed Vertex Colour attribute information about the raw vertex buffer
   Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSections().front()->getRenderOperation();
   const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
-  const Ogre::VertexElement* color_sem = v_decl->findElementBySemantic(Ogre::VES_COLOUR);
+  const Ogre::VertexElement* color_elem = v_decl->findElementBySemantic(Ogre::VES_COLOUR);
 #endif
 
-  if (nullptr == color_sem)
+  if (nullptr == color_elem)
   {
-    RCLCPP_ERROR(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Vertex Cost Mesh has no Vertex Colour attribute!");
+    RCLCPP_ERROR(
+      rclcpp::get_logger("rviz_mesh_tools_plugins"),
+      "Cannot update vertex costs: Vertex Cost Mesh has no Vertex Colour element!"
+    );
     return false;
   }
 
@@ -1143,7 +1138,7 @@ bool MeshVisual::updateVertexCosts(
     std::byte* vertex = raw + v * vbuf->getVertexSize();
     // Pointer to the color
     Ogre::ABGR* vcolor = nullptr;
-    color_sem->baseVertexPointerToElement(vertex, &vcolor);
+    color_elem->baseVertexPointerToElement(vertex, &vcolor);
 
     // write vertex colors that are calculated from the cost values
     float normalizedCost = (costs[i] - minCost) / range;
