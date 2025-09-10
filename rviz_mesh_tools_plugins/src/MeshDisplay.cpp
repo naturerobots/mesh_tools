@@ -87,7 +87,6 @@
 
 using namespace std::chrono_literals;
 using std::placeholders::_1;
-using std::placeholders::_2;
 
 namespace {
   constexpr struct {
@@ -176,6 +175,13 @@ MeshDisplay::MeshDisplay()
 
     // Vertex Costs
     {
+      m_selectVertexCostMap = new rviz_common::properties::EnumProperty("Vertex Costs Type", "-- None --",
+                                                     "Select the type of vertex cost map to be displayed. New types "
+                                                     "will appear here when a new message arrives.",
+                                                     m_displayType, SLOT(updateVertexCosts()), this);
+
+      m_selectVertexCostMap->addOption("-- None --", 0);
+
       m_costColorType = new rviz_common::properties::EnumProperty("Color Scale", "Rainbow",
                                                "Select color scale for vertex costs. Mesh will update when new data "
                                                "arrives.",
@@ -210,14 +216,11 @@ MeshDisplay::MeshDisplay()
         1  // Min value: This is 1 since we want at least one update per second
       );
 
-      m_selectVertexCostMap = new rviz_common::properties::EnumProperty("Vertex Costs Type", "-- None --",
-                                                     "Select the type of vertex cost map to be displayed. New types "
-                                                     "will appear here when a new message arrives.",
-                                                     m_displayType, SLOT(updateVertexCosts()), this);
-      m_selectVertexCostMap->addOption("-- None --", 0);
-
       m_costUseCustomLimits = new rviz_common::properties::BoolProperty("Use Custom limits", false, "Use custom vertex cost limits",
                                                      m_displayType, SLOT(updateVertexCosts()), this);
+      // Only allow editing of the limits when custom limits are active
+      m_costUseCustomLimits->setDisableChildrenIfFalse(true);
+
 
       // custom cost limits
       {
@@ -692,11 +695,8 @@ void MeshDisplay::updateDisplayType()
       m_vertexCostsRefreshRate->show();
       m_selectVertexCostMap->show();
       m_costUseCustomLimits->show();
-      if (m_costUseCustomLimits->getBool())
-      {
-        m_costLowerLimit->show();
-        m_costUpperLimit->show();
-      }
+      m_costLowerLimit->show();
+      m_costUpperLimit->show();
       break;
   }
 
