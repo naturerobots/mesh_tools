@@ -691,6 +691,10 @@ void MeshDisplay::updateDisplayType()
         {
           updateVertexCostsSubscription();
         }
+        if (!m_costsUpdateMsgCache)
+        {
+          updateVertexCostsUpdateSubscription();
+        }
       }
       m_vertexCostsRefreshRate->show();
       m_selectVertexCostMap->show();
