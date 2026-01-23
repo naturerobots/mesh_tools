@@ -1,7 +1,7 @@
 # Repositories in here contain dependencies of mesh_tools that are currently not avaiable via apt.
 # Every repository listed here will get cloned and built during CI runs.
 repositories:
-  uos/lvr2:
+  lvr2:
     type: git
     url: https://github.com/uos/lvr2.git
     version: main

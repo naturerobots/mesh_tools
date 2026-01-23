@@ -2,6 +2,10 @@
 Changelog for package label_manager
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.1.1 (2026-08-15)
+------------------
+* Update maintainer information
+
 2.1.0 (2025-08-11)
 ------------------
 * Add MeshVertexCostsSparse and MeshVertexCostsSparseStamped messages

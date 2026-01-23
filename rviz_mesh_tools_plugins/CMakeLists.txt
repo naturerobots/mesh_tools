@@ -39,9 +39,9 @@ find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 
 # include_directories(${ASSIMP_INCLUDE_DIRS})
 
-# LVR2 includes HighFive that we need here
+# lvr2 includes HighFive that we need here
 # - it was compiling before because globale lvr2 header were accessible
-find_package(LVR2 REQUIRED)
+find_package(lvr2 REQUIRED)
 
 ## This setting causes Qt's "MOC" generation to happen automatically.
 # set(CMAKE_AUTOMOC ON)
@@ -51,7 +51,6 @@ find_package(Qt5 COMPONENTS Core Widgets)
 
 include_directories(
   include
-  ${LVR2_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${HDF5_INCLUDE_DIRS}
 )
@@ -87,8 +86,6 @@ set(MOC_HEADER_FILES
   include/rviz_mesh_tools_plugins/InteractionHelper.hpp
 )
 
-add_definitions(${LVR2_DEFINITIONS})
-
 add_library(${PROJECT_NAME} SHARED
   ${SOURCE_FILES} 
   ${MOC_HEADER_FILES}
@@ -101,7 +98,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-  ${LVR2_LIBRARIES}
+  lvr2::lvr2
   rviz_ogre_vendor::OgreMain
   rviz_ogre_vendor::OgreOverlay
   Boost::system
