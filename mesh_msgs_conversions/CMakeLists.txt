@@ -22,18 +22,17 @@ find_package(rclcpp REQUIRED)
 find_package(mesh_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-find_package(LVR2 REQUIRED)
+find_package(lvr2 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(MPI REQUIRED)
 find_package(PkgConfig REQUIRED)
 
-add_definitions(${LVR2_DEFINITIONS} ${OpenCV_DEFINITIONS})
+add_definitions(${OpenCV_DEFINITIONS})
 
 # enable openmp support
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
 include_directories(
   include
-  ${LVR2_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
@@ -46,7 +45,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
   $<INSTALL_INTERFACE:include>)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC
-  ${LVR2_LIBRARY}
+  lvr2::lvr2
   ${OpenCV_LIBRARIES}
   rclcpp::rclcpp
   ${mesh_msgs_TARGETS}
