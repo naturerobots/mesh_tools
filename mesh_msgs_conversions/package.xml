@@ -6,8 +6,9 @@
   <description>converts point clouds and attributes into meshes and mesh attributes</description>
 
   <maintainer email="alexander.mock@naturerobots.com">Alexander Mock</maintainer>
-
   <license>BSD 3-Clause</license>
+
+  <url>http://github.com/naturerobots/mesh_tools</url>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
   <author email="hdeeken@uos.de">Henning Deeken</author>
 
