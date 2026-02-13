@@ -8,14 +8,16 @@
   <version>2.1.1</version>
   
   <maintainer email="alexander.mock@naturerobots.com">Alexander Mock</maintainer>
+  <license>BSD-3-Clause</license>
   
+  <url>http://github.com/naturerobots/mesh_tools</url>
+  <author email="alexander.mock@naturerobots.com">Alexander Mock</author>
+  <author email="jubraun@uos.de">Julian Braun</author>
+  <author email="lrabius@uos.de">Leon Rabius</author>
   <author email="spuetz@uos.de">Sebastian Pütz</author>
   <author email="krschmidt@uos.de">Kristin Schmidt</author>
   <author email="jvogtherr@uos.de">Jan Philipp Vogtherr</author>
   <author email="malte@klpiening.de">Malte kleine Piening</author>
-
-  <license>BSD-3</license>
-  <url>https://github.com/uos/mesh_tools/tree/master/rviz_mesh_tools_plugins</url>
   
   <buildtool_depend>ament_cmake</buildtool_depend>
   
