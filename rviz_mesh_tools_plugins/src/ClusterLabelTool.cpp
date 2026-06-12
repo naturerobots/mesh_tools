@@ -850,7 +850,7 @@ void ClusterLabelTool::initSelectionCircle()
   // Generate 2D circle
   for (uint32_t i = 0; i < 60; i++)
   {
-    const float rad = ((float) i / (60 - 1)) * 2.0 * M_PIf;
+    const float rad = ((float) i / (60 - 1)) * 2.0 * M_PI;
     const float x = std::cos(rad);
     const float y = std::sin(rad);
     m_selectionCircle->position(x, y, 0.0);
