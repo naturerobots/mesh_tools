@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(rviz_mesh_tools_plugins)
 
 # Default to C++17
