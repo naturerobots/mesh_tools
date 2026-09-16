@@ -33,7 +33,6 @@ find_package(pluginlib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(std_msgs REQUIRED)
 
-find_package(Boost REQUIRED COMPONENTS system filesystem)
 find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
 # find_package(assimp REQUIRED)
 
@@ -51,7 +50,6 @@ find_package(Qt5 COMPONENTS Core Widgets)
 
 include_directories(
   include
-  ${Boost_INCLUDE_DIRS}
   ${HDF5_INCLUDE_DIRS}
 )
 
@@ -101,8 +99,6 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
   lvr2::lvr2
   rviz_ogre_vendor::OgreMain
   rviz_ogre_vendor::OgreOverlay
-  Boost::system
-  Boost::filesystem
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
