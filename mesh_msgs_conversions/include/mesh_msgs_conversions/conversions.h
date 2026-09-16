@@ -31,6 +31,9 @@
 #define MESH_MSGS_CONVERSIONS_H_
 
 #include <map>
+#include <memory>
+#include <optional>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 
@@ -86,8 +89,8 @@ struct MaterialGroup
     std::vector<unsigned int> faceBuffer;
 };
 
-typedef std::vector <boost::shared_ptr<MaterialGroup>> GroupVector;
-typedef boost::shared_ptr <MaterialGroup> MaterialGroupPtr;
+typedef std::vector <std::shared_ptr<MaterialGroup>> GroupVector;
+typedef std::shared_ptr <MaterialGroup> MaterialGroupPtr;
 
 template<typename CoordType>
 inline const mesh_msgs::msg::MeshGeometry toMeshGeometry(
@@ -327,7 +330,7 @@ bool fromMeshBufferToMeshMessages(
     mesh_msgs::msg::MeshGeometry& mesh_geometry,
     mesh_msgs::msg::MeshMaterials& mesh_materials,
     mesh_msgs::msg::MeshVertexColors& mesh_vertex_colors,
-    boost::optional<std::vector<mesh_msgs::msg::MeshTexture>&> texture_cache,
+    std::optional<std::reference_wrapper<std::vector<mesh_msgs::msg::MeshTexture>>> texture_cache,
     std::string mesh_uuid
 );
 
