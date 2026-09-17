@@ -50,6 +50,8 @@
 #include <rviz_mesh_tools_plugins/ClusterLabelVisual.hpp>
 #include <rviz_mesh_tools_plugins/ClusterLabelTool.hpp>
 
+#include <filesystem>
+
 #include <rviz_common/properties/bool_property.hpp>
 #include <rviz_common/properties/color_property.hpp>
 #include <rviz_common/properties/enum_property.hpp>
@@ -422,7 +424,7 @@ bool MapDisplay::loadData()
     setStatus(rviz_common::properties::StatusProperty::Warn, "Map", "No map file path specified!");
     return false;
   }
-  if (!boost::filesystem::exists(mapFile))
+  if (!std::filesystem::exists(mapFile))
   {
     RCLCPP_WARN_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Specified map file does not exist!");
     setStatus(rviz_common::properties::StatusProperty::Warn, "Map", "Specified map file does not exist!");
@@ -433,7 +435,7 @@ bool MapDisplay::loadData()
 
   try
   {
-    if (boost::filesystem::path(mapFile).extension().compare(".h5") == 0)
+    if (std::filesystem::path(mapFile).extension().compare(".h5") == 0)
     {
       enableClusterLabelDisplay(); // enable label writing to hdf5
       enableMeshDisplay();
@@ -745,7 +747,7 @@ bool MapDisplay::loadData()
           m_materials[amesh->mMaterialIndex].faceIndices.resize(amesh->mNumFaces);
           std::iota(m_materials[amesh->mMaterialIndex].faceIndices.begin(), m_materials[amesh->mMaterialIndex].faceIndices.end(), numFaces);
 
-          m_materials[amesh->mMaterialIndex].textureIndex = boost::none;
+          m_materials[amesh->mMaterialIndex].textureIndex = std::nullopt;
 
           // load textures from file
           aiString textureFile;
@@ -754,14 +756,14 @@ bool MapDisplay::loadData()
             material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFile);
             
             // get current file path
-            boost::filesystem::path mapFilePath(mapFile);
-            boost::filesystem::path texturePath = mapFilePath.parent_path() / textureFile.C_Str();
+            std::filesystem::path mapFilePath(mapFile);
+            std::filesystem::path texturePath = mapFilePath.parent_path() / textureFile.C_Str();
 
             // If the texture image doesn't exist then try the next most likely path
-            if (!boost::filesystem::exists(texturePath))
+            if (!std::filesystem::exists(texturePath))
             {
               texturePath = mapFilePath.parent_path() / "../materials/textures" / textureFile.C_Str();
-              if (!boost::filesystem::exists(texturePath))
+              if (!std::filesystem::exists(texturePath))
               {
                 RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Texture: " << texturePath.c_str() << " could not be found!");
                 continue;
@@ -849,7 +851,16 @@ void MapDisplay::saveLabel(Cluster cluster)
   {
     // Split label into class and instance (tree_1 => class "tree" & instance "1")
     std::vector<std::string> results;
-    boost::split(results, label, [](char c) { return c == '_'; });
+    {
+      size_t start = 0;
+      size_t pos;
+      while ((pos = label.find('_', start)) != std::string::npos)
+      {
+        results.push_back(label.substr(start, pos - start));
+        start = pos + 1;
+      }
+      results.push_back(label.substr(start));
+    }
     if (results.size() != 2)
     {
       RCLCPP_ERROR_STREAM(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Map Display: Illegal label name '" << label << "'");

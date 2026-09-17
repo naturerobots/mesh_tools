@@ -52,14 +52,15 @@
 #include <vector>
 #include <string>
 #include <array>
-#include <boost/optional.hpp>
+#include <optional>
+#include <cstdint>
 
 namespace rviz_mesh_tools_plugins
 {
-using boost::optional;
 using std::array;
 using std::string;
 using std::vector;
+using std::optional;
 
 
 

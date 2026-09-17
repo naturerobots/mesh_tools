@@ -54,8 +54,6 @@
 
 #include <vector>
 #include <memory>
-#include <boost/lexical_cast.hpp>
-#include <boost/optional.hpp>
 
 #include <QMessageBox>
 #include <QApplication>

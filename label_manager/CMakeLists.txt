@@ -22,11 +22,6 @@ find_package(mesh_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
-find_package(Boost COMPONENTS 
-  system 
-  filesystem
-)
-
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/DeleteLabel.srv"
@@ -49,11 +44,6 @@ add_executable(${PROJECT_NAME}_node
 
 add_dependencies(${PROJECT_NAME}_node
   ${PROJECT_NAME}
-)
-
-target_link_libraries(${PROJECT_NAME}_node
-  Boost::system 
-  Boost::filesystem
 )
 
 ament_target_dependencies(${PROJECT_NAME}_node

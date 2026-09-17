@@ -2,11 +2,10 @@
 
 #include <algorithm>
 #include <fstream>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string/replace.hpp>
+#include <filesystem>
 #include "mesh_msgs/msg/mesh_face_cluster.h"
 
-using namespace boost::filesystem;
+using namespace std::filesystem;
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -119,9 +118,7 @@ namespace label_manager
             // if file is no dir
             if (is_regular_file(itr->path()))
             {
-                std::string label = itr->path().filename().string();
-                // remove extension from label
-                boost::replace_all(label, itr->path().filename().extension().string(), "");
+                std::string label = itr->path().stem().string();
 
                 mesh_msgs::msg::MeshFaceCluster c;
                 c.face_indices = readIndicesFromFile(itr->path().string());
@@ -153,9 +150,7 @@ namespace label_manager
             // if file is no dir
             if (is_regular_file(itr->path()))
             {
-                std::string label = itr->path().filename().string();
-                // remove extension from label
-                boost::replace_all(label, itr->path().filename().extension().string(), "");
+                std::string label = itr->path().stem().string();
 
                 // assuming the labels will look like this: 'GROUP_SOMETHINGELSE',
                 // remove everthing not representing the group
@@ -193,9 +188,7 @@ namespace label_manager
             // if file is no dir
             if (is_regular_file(itr->path()) && itr->path().filename().string().find(req->label_group) == 0)
             {
-                std::string label = itr->path().filename().string();
-                // remove extension from label
-                boost::replace_all(label, itr->path().filename().extension().string(), "");
+                std::string label = itr->path().stem().string();
 
                 mesh_msgs::msg::MeshFaceCluster c;
                 c.face_indices = readIndicesFromFile(itr->path().string());

@@ -91,7 +91,7 @@ bool fromMeshBufferToMeshMessages(
     mesh_msgs::msg::MeshGeometry& mesh_geometry,
     mesh_msgs::msg::MeshMaterials& mesh_materials,
     mesh_msgs::msg::MeshVertexColors& mesh_vertex_colors,
-    boost::optional<std::vector<mesh_msgs::msg::MeshTexture>&> texture_cache,
+    std::optional<std::reference_wrapper<std::vector<mesh_msgs::msg::MeshTexture>>> texture_cache,
     std::string mesh_uuid
 )
 {
@@ -195,7 +195,7 @@ bool fromMeshBufferToMeshMessages(
     if (texture_cache)
     {
         auto buffer_textures = buffer->getTextures();
-        texture_cache.get().resize(n_textures);
+        texture_cache->get().resize(n_textures);
         for (unsigned int i = 0; i < n_textures; i++)
         {
             sensor_msgs::msg::Image image;
@@ -211,7 +211,7 @@ bool fromMeshBufferToMeshMessages(
             texture.uuid = mesh_uuid;
             texture.texture_index = i;
             texture.image = image;
-            texture_cache.get().at(i) = texture;
+            texture_cache->get().at(i) = texture;
         }
         buffer_textures.clear();
     }
