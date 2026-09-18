@@ -68,6 +68,7 @@ QWidget* FileProperty::createEditor(
   QWidget* parent, 
   const QStyleOptionViewItem&)
 {
+  (void) parent;
   QFileDialog* editor = new QFileDialog(nullptr);
 
   QStringList filenameFilters;

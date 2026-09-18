@@ -620,7 +620,7 @@ void MeshDisplay::setPose(Ogre::Vector3& position, Ogre::Quaternion& orientation
 
 void MeshDisplay::updateBufferSize()
 {
-  while (m_visuals.size() > m_bufferSize->getInt())
+  while (int(m_visuals.size()) > m_bufferSize->getInt())
   {
     m_visuals.pop();
   }
@@ -987,7 +987,7 @@ void MeshDisplay::updateVertexCostUpdateFrequency()
   RCLCPP_DEBUG(
     rclcpp::get_logger("rviz_mesh_tools_plugins"),
     "[MeshDisplay::updateVertexCostUpdateFrequency] Update frequency set to %i, delta t is %lu nanoseconds",
-    freq, m_invUpdateFreq.count()
+    freq, (unsigned long) m_invUpdateFreq.count()
   );
 }
 
@@ -1353,7 +1353,6 @@ void MeshDisplay::requestMaterials(std::string uuid)
     return;
   }
 
-  mesh_msgs::srv::GetMaterials srv;
   auto req_materials = std::make_shared<mesh_msgs::srv::GetMaterials::Request>();
   req_materials->uuid = uuid;
 
@@ -1371,22 +1370,21 @@ void MeshDisplay::requestMaterials(std::string uuid)
         res_materials->mesh_materials_stamped;
 
     std::vector<Material> materials(meshMaterialsStamped.mesh_materials.materials.size());
-    for (int i = 0; i < meshMaterialsStamped.mesh_materials.materials.size(); i++)
+    for (size_t i = 0; i < meshMaterialsStamped.mesh_materials.materials.size(); i++)
     {
       const mesh_msgs::msg::MeshMaterial& mat = meshMaterialsStamped.mesh_materials.materials[i];
       materials[i].textureIndex = mat.texture_index;
       materials[i].color = Color(mat.color.r, mat.color.g, mat.color.b, mat.color.a);
     }
-    for (int i = 0; i < meshMaterialsStamped.mesh_materials.clusters.size(); i++)
+    for (size_t i = 0; i < meshMaterialsStamped.mesh_materials.clusters.size(); i++)
     {
       const mesh_msgs::msg::MeshFaceCluster& clu = meshMaterialsStamped.mesh_materials.clusters[i];
 
       uint32_t materialIndex = meshMaterialsStamped.mesh_materials.cluster_materials[i];
-      const mesh_msgs::msg::MeshMaterial& mat = meshMaterialsStamped.mesh_materials.materials[materialIndex];
 
       for (uint32_t face_index : clu.face_indices)
       {
-        materials[i].faceIndices.push_back(face_index);
+        materials[materialIndex].faceIndices.push_back(face_index);
       }
     }
 
@@ -1479,7 +1477,7 @@ std::shared_ptr<MeshVisual> MeshDisplay::addNewVisual()
     bufferCapacity = 1;
   }
 
-  if (m_visuals.size() > bufferCapacity)
+  if (int(m_visuals.size()) > bufferCapacity)
   {
     m_visuals.pop();
   }

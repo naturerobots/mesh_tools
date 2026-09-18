@@ -120,7 +120,7 @@ ClusterLabelVisual::ClusterLabelVisual(
     float* vertices = static_cast<float*>(vertexBuffer->lock(Ogre::HardwareBuffer::HBL_NORMAL));
 
     // Write the mesh data into the buffer
-    for (int i = 0; i < m_mesh->sharedVertexData->vertexCount; i++)
+    for (size_t i = 0; i < m_mesh->sharedVertexData->vertexCount; i++)
     {
       vertices[(i * 3) + 0] = geometry->vertices[i].x;
       vertices[(i * 3) + 1] = geometry->vertices[i].y;
@@ -219,10 +219,6 @@ void ClusterLabelVisual::reset()
   }
 }
 
-void ClusterLabelVisual::setGeometry(std::shared_ptr<Geometry> geometry)
-{
-}
-
 void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
 {
   m_faces = faces;
@@ -263,7 +259,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
   uint32_t* indices = static_cast<uint32_t*>(indexBuffer->lock(Ogre::HardwareBuffer::HBL_WRITE_ONLY));
 
   // Define the triangles
-  for (int i = 0; i < faces.size(); i++)
+  for (size_t i = 0; i < faces.size(); i++)
   {
     uint32_t faceId = faces[i];
     indices[i * 3 + 0] = m_geometry->faces[faceId].vertexIndices[0];
