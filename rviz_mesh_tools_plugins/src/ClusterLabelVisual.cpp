@@ -96,7 +96,7 @@ ClusterLabelVisual::ClusterLabelVisual(
 
   // Retrieve or create the mesh and attach it to the scene node
   m_mesh = Ogre::MeshManager::getSingleton().getByName("ClusterLabelMesh", "General");
-  if(m_mesh.isNull() && geometry)
+  if(m_mesh && geometry)
   {
     m_mesh = Ogre::MeshManager::getSingleton().createManual("ClusterLabelMesh", "General");
 
@@ -120,7 +120,7 @@ ClusterLabelVisual::ClusterLabelVisual(
     float* vertices = static_cast<float*>(vertexBuffer->lock(Ogre::HardwareBuffer::HBL_NORMAL));
 
     // Write the mesh data into the buffer
-    for (int i = 0; i < m_mesh->sharedVertexData->vertexCount; i++)
+    for (size_t i = 0; i < m_mesh->sharedVertexData->vertexCount; i++)
     {
       vertices[(i * 3) + 0] = geometry->vertices[i].x;
       vertices[(i * 3) + 1] = geometry->vertices[i].y;
@@ -152,7 +152,7 @@ ClusterLabelVisual::ClusterLabelVisual(
   }
 
   // Create a submesh and a custom material for it
-  if(!m_mesh.isNull())
+  if(!m_mesh)
   {
     m_subMesh = m_mesh->createSubMesh(m_labelId);
     m_subMesh->useSharedVertices = true;
@@ -160,7 +160,7 @@ ClusterLabelVisual::ClusterLabelVisual(
     sstm << "ClusterLabel_Material_" << m_labelId;
 
     m_material = Ogre::MaterialManager::getSingleton().getByName(sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
-    if(m_material.isNull())
+    if(m_material)
     {
       m_material = Ogre::MaterialManager::getSingleton().create(
         sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
@@ -180,7 +180,7 @@ ClusterLabelVisual::~ClusterLabelVisual()
 {
   reset();
 
-  if (!m_mesh.isNull())
+  if (!m_mesh)
   {
     RCLCPP_DEBUG(rclcpp::get_logger("rviz_mesh_tools_plugins"), "ClusterLabelVisual::~ClusterLabelVisual: Destroying SubMesh: %s", m_labelId.c_str());
 
@@ -205,7 +205,7 @@ ClusterLabelVisual::~ClusterLabelVisual()
 void ClusterLabelVisual::reset()
 {
   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Reset ClusterLabelVisual");
-  if(!m_material.isNull())
+  if(!m_material)
   {
     // if(auto materialptr = Ogre::MaterialManager::getSingleton().getByName(m_material->getName(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME))
     // {
@@ -217,10 +217,6 @@ void ClusterLabelVisual::reset()
   } else {
 
   }
-}
-
-void ClusterLabelVisual::setGeometry(std::shared_ptr<Geometry> geometry)
-{
 }
 
 void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
@@ -236,7 +232,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
   // don't draw the cluster if there are no faces in it
   if (faces.empty())
   {
-    m_subMesh->indexData->indexBuffer.setNull();
+    m_subMesh->indexData->indexBuffer.reset();
     m_subMesh->indexData->indexCount = 0;
     m_subMesh->indexData->indexStart = 0;
     m_material->getTechnique(0)->removeAllPasses();
@@ -263,7 +259,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
   uint32_t* indices = static_cast<uint32_t*>(indexBuffer->lock(Ogre::HardwareBuffer::HBL_WRITE_ONLY));
 
   // Define the triangles
-  for (int i = 0; i < faces.size(); i++)
+  for (size_t i = 0; i < faces.size(); i++)
   {
     uint32_t faceId = faces[i];
     indices[i * 3 + 0] = m_geometry->faces[faceId].vertexIndices[0];
@@ -282,7 +278,7 @@ void ClusterLabelVisual::setFacesInCluster(const std::vector<uint32_t>& faces)
 
 void ClusterLabelVisual::setColor(Ogre::ColourValue facesColor, float alpha)
 {
-  if (!m_material.isNull())
+  if (!m_material)
   {
     facesColor.a = alpha;
     m_material->setDiffuse(facesColor);

@@ -96,7 +96,6 @@ bool fromMeshBufferToMeshMessages(
 )
 {
     size_t n_vertices = buffer->numVertices();
-    size_t n_faces = buffer->numFaces();
 
     // copy vertices, faces and normals
     fromMeshBufferToMeshGeometryMessage(buffer, mesh_geometry);
@@ -587,6 +586,7 @@ void PointBufferToPointCloud2(
   type = buffer->getAllChannelsOfType<float>(floatChannels);
   std::map<std::string, lvr2::Channel<unsigned char> >  uCharChannels;
   int ucharType = buffer->getAllChannelsOfType<unsigned char>(uCharChannels);
+  (void) ucharType;
 
   size_t size = 0;
   // xyz needs to be at the start.

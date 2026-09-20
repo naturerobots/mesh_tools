@@ -129,13 +129,6 @@ public:
   void reset();
 
   /**
-   * @brief Sets the geometry
-   *
-   * @param geometry The geometry
-   */
-  void setGeometry(std::shared_ptr<Geometry> geometry);
-
-  /**
    * @brief Sets the faces, that are in the shown cluster
    *
    * @param faces A vector containing the face ids
