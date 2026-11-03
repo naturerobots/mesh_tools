@@ -58,6 +58,10 @@
 #include <OgreHardwarePixelBuffer.h>
 #include <OgrePixelFormat.h>
 #include <OgreTechnique.h>
+#include <OgreMesh.h>
+#include <OgreMeshManager.h>
+#include <OgreSubMesh.h>
+#include <OgreHardwareBufferManager.h>
 
 #include <limits>
 #include <stdint.h>
@@ -129,13 +133,7 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
   }
 
   // create manual objects and attach them to the scene node
-  std::stringstream sstm;
-  sstm << m_prefix << "_TriangleMesh_" << m_postfix << "_" << m_random;
-  m_mesh = sceneManager->createManualObject(sstm.str());
-  m_mesh->setDynamic(false);
-  m_mesh->setVisibilityFlags(context->getDefaultVisibilityBit());
-  m_sceneNode->attachObject(m_mesh);
-
+  // m_mesh is created in setGeometry
   std::stringstream sstmNormals;
   sstmNormals << m_prefix << "_Normals_" << m_postfix << "_" << m_random;
   m_normals = sceneManager->createManualObject(sstmNormals.str());
@@ -156,24 +154,14 @@ MeshVisual::MeshVisual(rviz_common::DisplayContext* context, size_t displayID, s
   m_noTexCluMesh->setDynamic(false);
   m_noTexCluMesh->setVisibilityFlags(context->getDefaultVisibilityBit());
   m_sceneNode->attachObject(m_noTexCluMesh);
-
-  std::stringstream sstmVertexCostsMesh;
-  sstmVertexCostsMesh << m_prefix << "_VertexCostsMesh_" << m_postfix << "_" << m_random;
-  m_vertexCostsMesh = sceneManager->createManualObject(sstmVertexCostsMesh.str());
-  m_vertexCostsMesh->setDynamic(false);
-  m_vertexCostsMesh->setVisibilityFlags(context->getDefaultVisibilityBit());
-  m_sceneNode->attachObject(m_vertexCostsMesh);
 }
 
 MeshVisual::~MeshVisual()
 {
   RCLCPP_INFO(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Destroying MeshVisual %lu_TexturedMesh_%lu_%lu", m_prefix, m_postfix, m_random);
 
+  // also destroys m_mesh
   reset();
-
-  std::stringstream sstm;
-  sstm << m_prefix << "_TriangleMesh_" << m_postfix << "_" << m_random;
-  m_displayContext->getSceneManager()->destroyManualObject(sstm.str());
 
   std::stringstream sstmNormals;
   sstmNormals << m_prefix << "_Normals_" << m_postfix << "_" << m_random;
@@ -187,13 +175,7 @@ MeshVisual::~MeshVisual()
   sstmNoTexCluMesh << m_prefix << "_NoTexCluMesh_" << m_postfix << "_" << m_random;
   m_displayContext->getSceneManager()->destroyManualObject(sstmNoTexCluMesh.str());
 
-  std::stringstream sstmVertexCostsMesh;
-  sstmVertexCostsMesh << m_prefix << "_VertexCostsMesh_" << m_postfix << "_" << m_random;
-  m_displayContext->getSceneManager()->destroyManualObject(sstmVertexCostsMesh.str());
-
   m_displayContext->getSceneManager()->destroySceneNode(m_sceneNode);
-  sstm.str("");
-  sstm.flush();
 }
 
 void MeshVisual::reset()
@@ -279,17 +261,10 @@ void MeshVisual::reset()
     Ogre::MaterialManager::getSingleton().remove(m_noTexCluMaterial);
   }
 
-  if (m_vertexCostMaterial)
-  {
-    m_vertexCostMaterial->unload();
-    Ogre::MaterialManager::getSingleton().remove(m_vertexCostMaterial);
-  }
-
-  m_mesh->clear();
+  destroyMesh();
   m_normals->clear();
   m_texturedMesh->clear();
   m_noTexCluMesh->clear();
-  m_vertexCostsMesh->clear();
   sstm.str("");
   sstm.flush();
 
@@ -297,7 +272,6 @@ void MeshVisual::reset()
   m_normalMaterial.reset();
   m_noTexCluMaterial.reset();
   m_textureMaterials.clear();
-  m_vertexCostMaterial.reset();
 
   m_images.clear();
 
@@ -344,15 +318,6 @@ void MeshVisual::hide()
     m_normals->setVisible(false);
   }
 
-  if(m_vertexCostsMesh)
-  {
-    if(m_vertexCostsMesh->getVisible())
-    {
-      m_vertexCostsMesh_hidden = true;
-    }
-    m_vertexCostsMesh->setVisible(false);
-  }
-
   if(m_texturedMesh)
   {
     if(m_texturedMesh->getVisible())
@@ -377,7 +342,10 @@ void MeshVisual::show()
   // m_mesh->setVisible(true);
   if(m_mesh_hidden)
   {
-    m_mesh->setVisible(true);
+    if(m_mesh)
+    {
+      m_mesh->setVisible(true);
+    }
     m_mesh_hidden = false;
   }
 
@@ -385,12 +353,6 @@ void MeshVisual::show()
   {
     m_normals->setVisible(true);
     m_normals_hidden = false;
-  }
-
-  if(m_vertexCostsMesh_hidden)
-  {
-    m_vertexCostsMesh->setVisible(true);
-    m_vertexCostsMesh_hidden = false;
   }
 
   if(m_texturedMesh_hidden)
@@ -470,11 +432,13 @@ void MeshVisual::updateMaterial(
 
   m_texturedMesh->setVisible(false);
   m_noTexCluMesh->setVisible(false);
-  m_vertexCostsMesh->setVisible(false);
+
+  // vertex costs are only shown once costs were received
+  const bool costsAvailable = showVertexCosts && m_vertex_costs_enabled;
 
   // if the material exists and the textures are not enabled
   // we can use the general mesh with the m_meshGeneralMaterial
-  if (m_meshGeneralMaterial && !showTextures && !showVertexCosts)
+  if (m_meshGeneralMaterial && !showTextures && (!showVertexCosts || costsAvailable))
   {
     if (showFaces)
     {
@@ -487,15 +451,19 @@ void MeshVisual::updateMaterial(
         pass->setName("faces");
       }
 
-      this->showFaces(pass, facesColor, facesAlpha, useVertexColors);
+      // vertex costs are drawn like vertex colors, only the uploaded colors differ
+      this->showFaces(pass, facesColor, facesAlpha, useVertexColors || costsAvailable);
     }
   }
 
-  // if there are vertex costs and the vertex cost are enabled
-  // the mesh with the colors calculated from vertex costs is made visible
-  if (m_vertex_costs_enabled && showVertexCosts)
+  // a fixed color ignores the color buffer, so its content is kept
+  if (costsAvailable)
   {
-    m_vertexCostsMesh->setVisible(true);
+    showColors(ColorSource::VertexCosts);
+  }
+  else if (useVertexColors)
+  {
+    showColors(ColorSource::VertexColors);
   }
 
   // if there are materials or textures the mesh with texture coordinates that
@@ -504,72 +472,6 @@ void MeshVisual::updateMaterial(
   {
     m_texturedMesh->setVisible(true);
     m_noTexCluMesh->setVisible(!showTexturedFacesOnly);
-  }
-}
-
-void MeshVisual::updateMaterial(
-  bool showWireframe, Ogre::ColourValue wireframeColor, float wireframeAlpha,
-  bool showFaces, Ogre::ColourValue facesColor, float facesAlpha,
-  bool useVertexColors, bool showVertexCosts, bool showTextures,
-  bool showTexturedFacesOnly, bool showNormals, Ogre::ColourValue normalsColor,
-  float normalsAlpha, float normalsScalingFactor)
-{
-  // remove all passes
-  if (m_meshGeneralMaterial)
-  {
-    m_meshGeneralMaterial->getTechnique(0)->removeAllPasses();
-  }
-
-  if (m_normalMaterial)
-  {
-    m_normalMaterial->getTechnique(0)->removeAllPasses();
-  }
-
-  m_texturedMesh->setVisible(false);
-  m_noTexCluMesh->setVisible(false);
-  m_vertexCostsMesh->setVisible(false);
-
-  // if the material exists and the textures are not enabled
-  // we can use the general mesh with the m_meshGeneralMaterial
-  if (m_meshGeneralMaterial && !showTextures && !showVertexCosts)
-  {
-    Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
-
-    if (showFaces)
-    {
-      this->showFaces(tech->createPass(), facesColor, facesAlpha, useVertexColors);
-    }
-  }
-
-  // if there are vertex costs and the vertex cost are enabled
-  // the mesh with the colors calculated from vertex costs is made visible
-  if (m_vertex_costs_enabled && showVertexCosts)
-  {
-    m_vertexCostsMesh->setVisible(true);
-  }
-
-  // if there are materials or textures the mesh with texture coordinates that
-  // uses the material and texture materials is made visible
-  if ((m_materials_enabled || m_textures_enabled) && showTextures)
-  {
-    m_texturedMesh->setVisible(true);
-    m_noTexCluMesh->setVisible(!showTexturedFacesOnly);  // TODO: dynamisch
-  }
-
-  if (showWireframe)
-  {
-    Ogre::Technique* tech = m_meshGeneralMaterial->getTechnique(0);
-    this->showWireframe(tech->createPass(), wireframeColor, wireframeAlpha);
-  }
-
-  if (m_normalMaterial)
-  {
-    if (showNormals)
-    {
-      Ogre::Technique* tech = m_normalMaterial->getTechnique(0);
-      this->showNormals(tech->createPass(), normalsColor, normalsAlpha);
-      updateNormals(normalsScalingFactor);
-    }
   }
 }
 
@@ -620,76 +522,6 @@ void MeshVisual::updateWireframe(bool showWireframe, Ogre::ColourValue wireframe
   }
 }
 
-void MeshVisual::enteringGeneralTriangleMesh(const Geometry& mesh)
-{
-  std::stringstream sstm;
-
-  sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
-
-  m_meshGeneralMaterial = Ogre::MaterialManager::getSingleton().create(
-      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-  m_meshGeneralMaterial->getTechnique(0)->removeAllPasses();
-
-  // start entering data
-  m_mesh->clear();
-  m_mesh->begin(sstm.str(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
-  // write vertices
-  for (size_t i = 0; i < mesh.vertices.size(); i++)
-  {
-    // write vertices
-    m_mesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-  }
-
-  // write triangles
-  for (size_t i = 0; i < mesh.faces.size(); i++)
-  {
-    m_mesh->triangle(mesh.faces[i].vertexIndices[0], mesh.faces[i].vertexIndices[1], mesh.faces[i].vertexIndices[2]);
-  }
-
-  // finish entering data
-  m_mesh->end();
-}
-
-void MeshVisual::enteringColoredTriangleMesh(const Geometry& mesh, const vector<Color>& vertexColors)
-{
-  if (!m_meshGeneralMaterial)
-  {
-    std::stringstream sstm;
-    sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
-
-    m_meshGeneralMaterial = Ogre::MaterialManager::getSingleton().create(
-        sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-    m_meshGeneralMaterial->getTechnique(0)->removeAllPasses();
-  }
-
-  // start entering data
-  m_mesh->clear();
-  m_mesh->begin(m_meshGeneralMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
-  // write vertices
-  // write vertex colors
-  for (size_t i = 0; i < mesh.vertices.size(); i++)
-  {
-    // write vertices
-    m_mesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-
-    // write vertex colors
-    m_mesh->colour(vertexColors[i].r, vertexColors[i].g, vertexColors[i].b, vertexColors[i].a);
-  }
-
-  // write triangles
-  for (size_t i = 0; i < mesh.faces.size(); i++)
-  {
-    m_mesh->triangle(mesh.faces[i].vertexIndices[0], mesh.faces[i].vertexIndices[1], mesh.faces[i].vertexIndices[2]);
-  }
-
-  // finish entering data
-  m_mesh->end();
-}
-
 void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const vector<float>& vertexCosts,
                                                              int costColorType)
 {
@@ -717,52 +549,135 @@ void MeshVisual::enteringTriangleMeshWithVertexCosts(const Geometry& mesh, const
     return;
   }
 
-  if (!m_vertexCostMaterial)
+  if (!m_mesh)
   {
-    std::stringstream sstm;
-    sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "VertexCostMaterial_";
-
-    m_vertexCostMaterial = Ogre::MaterialManager::getSingleton().create(
-        sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
-
-    Ogre::Pass* pass = m_vertexCostMaterial->getTechnique(0)->getPass(0);
-    pass->setCullingMode(m_cullingMode);
-    pass->setLightingEnabled(false);
-
-    // start entering data
-    m_vertexCostsMesh->clear();
-    m_vertexCostsMesh->begin(m_vertexCostMaterial->getName(), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-  }
-  else
-  {
-    // start updating data
-    m_vertexCostsMesh->beginUpdate(0);
+    return;
   }
 
-  // write vertices
-  // write vertex colors
-  // write vertex normals(if enabled)
+  // write vertex colors that are calculated from the cost values
   for (size_t i = 0; i < mesh.vertices.size(); i++)
   {
-    // write vertices
-    m_vertexCostsMesh->position(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
-
-    // write vertex colors that are calculated from the cost values
     float normalizedCost = (vertexCosts[i] - minCost) / range;
     normalizedCost = std::max(0.0f, normalizedCost);
     normalizedCost = std::min(1.0f, normalizedCost);
-    m_vertexCostsMesh->colour(calculateColorFromCost(normalizedCost, costColorType));
+    m_vertexCostColors[i] = calculateColorFromCost(normalizedCost, costColorType).getAsABGR();
   }
 
-  // write triangles
-  for (size_t i = 0; i < mesh.faces.size(); i++)
+  // otherwise the colors are uploaded when switching to the vertex costs
+  if (m_uploadedColors == ColorSource::VertexCosts)
   {
-    m_vertexCostsMesh->triangle(mesh.faces[i].vertexIndices[0], mesh.faces[i].vertexIndices[1],
-                                mesh.faces[i].vertexIndices[2]);
+    // discarding the old content lets the driver use fresh memory instead of waiting for the GPU
+    m_colorBuffer->writeData(0, m_colorBuffer->getSizeInBytes(), m_vertexCostColors.data(), true);
+  }
+}
+
+void MeshVisual::showColors(ColorSource source)
+{
+  if (!m_colorBuffer || m_uploadedColors == source)
+  {
+    return;
   }
 
-  // finish entering data
-  m_vertexCostsMesh->end();
+  const std::vector<Ogre::ABGR>& colors = source == ColorSource::VertexCosts ? m_vertexCostColors : m_vertexColors;
+  m_colorBuffer->writeData(0, m_colorBuffer->getSizeInBytes(), colors.data(), true);
+  m_uploadedColors = source;
+}
+
+void MeshVisual::createMesh(const Geometry& mesh)
+{
+  std::stringstream sstm;
+  sstm << m_prefix << "_TriangleMesh_" << m_postfix << "_" << m_random;
+
+  m_meshResource = Ogre::MeshManager::getSingleton().createManual(
+      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+  // edge lists are only needed for stencil shadows and would read back the write-only buffers
+  m_meshResource->setAutoBuildEdgeLists(false);
+
+  Ogre::SubMesh* subMesh = m_meshResource->createSubMesh();
+  subMesh->useSharedVertices = false;
+  subMesh->operationType = Ogre::RenderOperation::OT_TRIANGLE_LIST;
+  subMesh->vertexData = new Ogre::VertexData();
+  subMesh->vertexData->vertexStart = 0;
+  subMesh->vertexData->vertexCount = mesh.vertices.size();
+
+  // positions in source 0, colors in source 1
+  Ogre::VertexDeclaration* decl = subMesh->vertexData->vertexDeclaration;
+  decl->addElement(0, 0, Ogre::VET_FLOAT3, Ogre::VES_POSITION);
+#if OGRE_VERSION < ((1 << 16) | (12 << 8) | 7)
+  decl->addElement(1, 0, Ogre::VET_COLOUR_ABGR, Ogre::VES_DIFFUSE);
+#else
+  decl->addElement(1, 0, Ogre::VET_COLOUR_ABGR, Ogre::VES_COLOUR);
+#endif
+
+  Ogre::HardwareBufferManager& bufferManager = Ogre::HardwareBufferManager::getSingleton();
+
+  static_assert(sizeof(Vertex) == 3 * sizeof(float), "Vertex has to be tightly packed to be copied into the buffer");
+  Ogre::HardwareVertexBufferSharedPtr positionBuffer = bufferManager.createVertexBuffer(
+      decl->getVertexSize(0), mesh.vertices.size(), Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY);
+  positionBuffer->writeData(0, positionBuffer->getSizeInBytes(), mesh.vertices.data(), true);
+
+  // white until vertex colors or costs are received
+  m_vertexColors.assign(mesh.vertices.size(), Ogre::ColourValue::White.getAsABGR());
+  m_vertexCostColors.assign(mesh.vertices.size(), Ogre::ColourValue::White.getAsABGR());
+
+  m_colorBuffer = bufferManager.createVertexBuffer(
+      decl->getVertexSize(1), mesh.vertices.size(), Ogre::HardwareBuffer::HBU_DYNAMIC_WRITE_ONLY);
+  m_colorBuffer->writeData(0, m_colorBuffer->getSizeInBytes(), m_vertexColors.data(), true);
+  m_uploadedColors = ColorSource::VertexColors;
+
+  subMesh->vertexData->vertexBufferBinding->setBinding(0, positionBuffer);
+  subMesh->vertexData->vertexBufferBinding->setBinding(1, m_colorBuffer);
+
+  static_assert(sizeof(Face) == 3 * sizeof(uint32_t), "Face has to be tightly packed to be copied into the buffer");
+  Ogre::HardwareIndexBufferSharedPtr indexBuffer = bufferManager.createIndexBuffer(
+      Ogre::HardwareIndexBuffer::IT_32BIT, mesh.faces.size() * 3, Ogre::HardwareBuffer::HBU_STATIC_WRITE_ONLY);
+  indexBuffer->writeData(0, indexBuffer->getSizeInBytes(), mesh.faces.data(), true);
+
+  subMesh->indexData->indexBuffer = indexBuffer;
+  subMesh->indexData->indexStart = 0;
+  subMesh->indexData->indexCount = mesh.faces.size() * 3;
+
+  // Ogre needs the bounds for culling, the radius is measured from the mesh origin
+  Ogre::AxisAlignedBox bounds;
+  float maxSquaredRadius = 0.0f;
+  for (const Vertex& v : mesh.vertices)
+  {
+    Ogre::Vector3 position(v.x, v.y, v.z);
+    bounds.merge(position);
+    maxSquaredRadius = std::max(maxSquaredRadius, position.squaredLength());
+  }
+  m_meshResource->_setBounds(bounds);
+  m_meshResource->_setBoundingSphereRadius(std::sqrt(maxSquaredRadius));
+  m_meshResource->load();
+
+  m_mesh = m_displayContext->getSceneManager()->createEntity(sstm.str(), m_meshResource);
+  m_mesh->setMaterial(m_meshGeneralMaterial);
+  m_mesh->setCastShadows(false);
+  m_mesh->setVisibilityFlags(m_displayContext->getDefaultVisibilityBit());
+  // stay hidden if the visual is currently hidden
+  m_mesh->setVisible(!m_mesh_hidden);
+  // lets the interaction tools pick faces from m_geometry instead of reading back the GPU buffers
+  m_mesh->getUserObjectBindings().setUserAny(USER_ANY_KEY, Ogre::Any(this));
+  m_sceneNode->attachObject(m_mesh);
+}
+
+void MeshVisual::destroyMesh()
+{
+  if (m_mesh)
+  {
+    m_displayContext->getSceneManager()->destroyEntity(m_mesh);
+    m_mesh = nullptr;
+  }
+
+  if (m_meshResource)
+  {
+    Ogre::MeshManager::getSingleton().remove(m_meshResource);
+    m_meshResource.reset();
+  }
+
+  m_colorBuffer.reset();
+  m_vertexColors.clear();
+  m_vertexCostColors.clear();
 }
 
 void MeshVisual::enteringTexturedTriangleMesh(const Geometry& mesh, const vector<Material>& materials,
@@ -941,16 +856,20 @@ bool MeshVisual::setGeometry(const Geometry& mesh)
     return false;
   }
 
-  // defines the buffer sizes
-  int vertex_count = mesh.vertices.size();
-  int index_count = mesh.faces.size() * 3;
+  if (mesh.faces.empty())
+  {
+    RCLCPP_WARN(rclcpp::get_logger("rviz_mesh_tools_plugins"), "Received no faces, can't create mesh!");
+    return false;
+  }
 
-  // avoid memory reallocation
-  m_mesh->estimateVertexCount(vertex_count);
-  m_mesh->estimateIndexCount(index_count);
+  std::stringstream sstm;
+  sstm << m_prefix << "_TexturedMesh_" << m_postfix << "_" << m_random << "GeneralMaterial_";
+  m_meshGeneralMaterial = Ogre::MaterialManager::getSingleton().create(
+      sstm.str(), Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME, true);
+  m_meshGeneralMaterial->getTechnique(0)->removeAllPasses();
 
-  // entering a general triangle mesh into the internal buffer
-  enteringGeneralTriangleMesh(mesh);
+  // positions and faces are only uploaded once, later only the colors change
+  createMesh(mesh);
 
   return true;
 }
@@ -999,7 +918,22 @@ bool MeshVisual::setVertexColors(const vector<Color>& vertexColors)
     return false;
   }
 
-  enteringColoredTriangleMesh(m_geometry, vertexColors);
+  if (!m_mesh)
+  {
+    return false;
+  }
+
+  for (size_t i = 0; i < vertexColors.size(); i++)
+  {
+    const Color& c = vertexColors[i];
+    m_vertexColors[i] = Ogre::ColourValue(c.r, c.g, c.b, c.a).getAsABGR();
+  }
+
+  // otherwise the colors are uploaded when switching to the vertex colors
+  if (m_uploadedColors == ColorSource::VertexColors)
+  {
+    m_colorBuffer->writeData(0, m_colorBuffer->getSizeInBytes(), m_vertexColors.data(), true);
+  }
 
   return true;
 }
@@ -1082,71 +1016,44 @@ bool MeshVisual::updateVertexCosts(
     return false;
   }
 
-  if (!m_vertexCostMaterial)
+  if (!m_mesh || !m_vertex_costs_enabled)
   {
-    // We only update existing materials, the caller has to make sure that the layer already exists
+    // We only update existing layers, the caller has to make sure that the layer already exists
     return false;
   }
 
-  /* ManualObject::getNumSections and ManualObject::getSection are deprecated
-   * in the Ogre version ROS Jazzy (and future versions) uses. The VES_COLOUR
-   * semantic is also new in the ROS Jazzy Ogre version. Prior versions use
-   * VES_DIFFUSE for colours in the ManualObject. Since the new API is not
-   * available in the Ogre version used by ROS Humble we use this check to keep
-   * Humble support.
-   *
-   * This can be removed when Humble support is dropped.
-   */
-#if OGRE_VERSION < ((1 << 16) | (12 << 8) | 7)
-  Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSection(0)->getRenderOperation();
-  const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
-  const Ogre::VertexElement* color_elem = v_decl->findElementBySemantic(Ogre::VES_DIFFUSE);
-#else
-  // Get the needed Vertex Colour attribute information about the raw vertex buffer
-  Ogre::RenderOperation* render_op = m_vertexCostsMesh->getSections().front()->getRenderOperation();
-  const Ogre::VertexDeclaration* v_decl = render_op->vertexData->vertexDeclaration;
-  const Ogre::VertexElement* color_elem = v_decl->findElementBySemantic(Ogre::VES_COLOUR);
-#endif
-
-  if (nullptr == color_elem)
+  // write vertex colors into the CPU copy and remember the range of changed vertices
+  size_t first = m_vertexCostColors.size();
+  size_t last = 0;
+  for (size_t i = 0; i < vertices.size(); i++)
   {
-    RCLCPP_ERROR(
-      rclcpp::get_logger("rviz_mesh_tools_plugins"),
-      "Cannot update vertex costs: Vertex Cost Mesh has no Vertex Colour element!"
-    );
-    return false;
-  }
-
-  // Get and lock the hardware vertex buffer of the mesh
-  Ogre::HardwareVertexBufferSharedPtr vbuf = render_op->vertexData->vertexBufferBinding->getBuffer(0);
-  Ogre::HardwareBufferLockGuard vbuf_lock(vbuf, Ogre::HardwareBuffer::HBL_WRITE_ONLY);
-  std::byte* raw = reinterpret_cast<std::byte*>(vbuf_lock.pData);
-
-  // write vertex colors
-  const auto& mesh = m_geometry;
-  for (uint32_t i = 0; i < vertices.size(); i++)
-  {
-    // Vertex handle
     const uint32_t v = vertices[i];
 
-    if (v >= mesh.vertices.size())
+    if (v >= m_vertexCostColors.size())
     {
       continue;
     }
-
-    // Point to the beginning of the vertex
-    std::byte* vertex = raw + v * vbuf->getVertexSize();
-    // Pointer to the color
-    Ogre::ABGR* vcolor = nullptr;
-    color_elem->baseVertexPointerToElement(vertex, &vcolor);
 
     // write vertex colors that are calculated from the cost values
     float normalizedCost = (costs[i] - minCost) / range;
     normalizedCost = std::max(0.0f, normalizedCost);
     normalizedCost = std::min(1.0f, normalizedCost);
 
-    *vcolor = calculateColorFromCost(normalizedCost, costColorType).getAsABGR();
+    m_vertexCostColors[v] = calculateColorFromCost(normalizedCost, costColorType).getAsABGR();
+    first = std::min<size_t>(first, v);
+    last = std::max<size_t>(last, v);
   }
+
+  // otherwise the colors are uploaded when switching to the vertex costs
+  if (first > last || m_uploadedColors != ColorSource::VertexCosts)
+  {
+    return true;
+  }
+
+  // Upload the range covering all changed colors. Unchanged colors in between are taken from the CPU copy,
+  // so the GPU buffer never has to be read back.
+  const size_t colorSize = m_colorBuffer->getVertexSize();
+  m_colorBuffer->writeData(first * colorSize, (last - first + 1) * colorSize, &m_vertexCostColors[first]);
 
   return true;
 }
@@ -1282,10 +1189,6 @@ void MeshVisual::setCullingMode(Ogre::CullingMode cullingMode)
   if (m_normalMaterial)
   {
     m_normalMaterial->setCullingMode(cullingMode);
-  }
-  if (m_vertexCostMaterial)
-  {
-    m_vertexCostMaterial->setCullingMode(cullingMode);
   }
   if (m_noTexCluMaterial)
   {

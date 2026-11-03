@@ -2,6 +2,7 @@
 #define RVIZ_MESH_TOOLS_PLUGINS_MOUSE_EVENT_HELPER_HPP
 
 #include <OgreRay.h>
+#include <OgreMatrix4.h>
 #include <rviz_common/viewport_mouse_event.hpp>
 
 
@@ -12,6 +13,8 @@ namespace rviz_common
 
 namespace rviz_mesh_tools_plugins
 {
+
+class MeshVisual;
 
 struct Intersection {
   double          range;
@@ -26,7 +29,8 @@ Ogre::Ray getMouseEventRay(
   const rviz_common::ViewportMouseEvent& event);
 
 bool selectFace(
-  const Ogre::ManualObject* mesh, 
+  const MeshVisual& visual,
+  const Ogre::Affine3& mesh_to_world,
   const Ogre::Ray& ray,
   Intersection& intersection);
 
