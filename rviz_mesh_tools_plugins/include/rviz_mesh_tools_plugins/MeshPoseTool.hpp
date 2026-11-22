@@ -45,7 +45,7 @@
 #ifndef MESH_POSE_TOOL_HPP
 #define MESH_POSE_TOOL_HPP
 
-#include <OgreVector3.h>
+#include <OgreVector.h>
 #include <OgreQuaternion.h>
 #include <OgreManualObject.h>
 #include <OgreRay.h>
